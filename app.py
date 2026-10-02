@@ -89,3 +89,4 @@ if sector_mode == "US West Coast (Channel Islands)":
     if mission_mode == "Ecological Protection (IUU / Kelp)":
         radio_feed = "[14:02Z VHF-16] 'MARITIME COMM, this is F/V Horizon. Trawler running dark, hauling nets 3nm off Santa Cruz Is.'\n> ACOUSTIC MATCH: MMSI 413000000."
         risk_score = "RED
+
