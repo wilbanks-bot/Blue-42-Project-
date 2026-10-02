@@ -3,11 +3,12 @@ import pydeck as pdk
 import pandas as pd
 import json
 import ee
+import random
 from google.oauth2 import service_account
 import google.generativeai as genai
 
 # ---------------------------------------------------------
-# 1. PAGE SETUP & ENTERPRISE THEME CONFIGURATION
+# 1. PAGE SETUP & GOOGLE EARTH/MAPS THEME CONFIGURATION
 # ---------------------------------------------------------
 st.set_page_config(layout="wide", page_title="Blue 42 Strategic Command", page_icon="🌐", initial_sidebar_state="expanded")
 
@@ -16,11 +17,15 @@ night_vision = st.sidebar.toggle("🌙 Executive Dark Mode", value=True)
 if night_vision:
     bg_color = "#0B1120"; card_bg = "#1E293B"; text_color = "#F8FAFC"
     accent_blue = "#38BDF8"; accent_red = "#F43F5E"; accent_green = "#10B981"
-    map_style = "dark"; term_bg = "#0f172a"; term_color = "#38bdf8"
+    # Google Maps Night Navigation Style
+    map_style = "mapbox://styles/mapbox/navigation-night-v1" 
+    term_bg = "#0f172a"; term_color = "#38bdf8"
 else:
     bg_color = "#F8FAFC"; card_bg = "#FFFFFF"; text_color = "#0F172A"
     accent_blue = "#2563EB"; accent_red = "#E11D48"; accent_green = "#059669"
-    map_style = "light"; term_bg = "#F1F5F9"; term_color = "#0F172A"
+    # Google Earth Satellite Style
+    map_style = "mapbox://styles/mapbox/satellite-streets-v12" 
+    term_bg = "#F1F5F9"; term_color = "#0F172A"
 
 css = f"""
 <style>
@@ -52,7 +57,7 @@ try:
         ee.Initialize(credentials=creds, project=key_dict.get("project_id"))
         ee_status = "🟢 UPLINK SECURE"
     else:
-        ee_status = "🔴 UPLINK SEVERED"
+        ee_status = "🔴 UPLINK SEVERED (No Token)"
 except Exception as e:
     ee_status = "🔴 UPLINK SEVERED"
 
@@ -62,7 +67,7 @@ try:
         model = genai.GenerativeModel('gemini-2.5-flash')
         ai_status = "🟢 CORE ACTIVE"
     else:
-        ai_status = "🔴 CORE OFFLINE"
+        ai_status = "🔴 CORE OFFLINE (No Key)"
 except Exception as e:
     ai_status = "🔴 CORE OFFLINE"
 
@@ -84,6 +89,7 @@ sector_mode = st.sidebar.selectbox("Select Operational Theater:", ["US West Coas
 st.sidebar.markdown("---")
 
 st.sidebar.markdown("### 📊 STRATEGIC DATA OVERLAYS")
+st.sidebar.write("Toggle intelligence layers to assess material risk:")
 show_weather = st.sidebar.checkbox("⛈️ Supply Chain Resilience (Weather Hazards)", value=True)
 show_iuu = st.sidebar.checkbox("🐟 Regulatory Compliance (IUU / MPAs)", value=True)
 show_cables = st.sidebar.checkbox("🔌 Asset Protection (Subsea Infrastructure)", value=False)
@@ -91,7 +97,7 @@ show_sar = st.sidebar.checkbox("🚁 Crisis Response (Predictive SAR)", value=Fa
 st.sidebar.markdown("---")
 
 # ---------------------------------------------------------
-# 4. GENAI VOYAGE ROUTING ENGINE (WITH HISTORICAL CONTEXT)
+# 4. GENAI VOYAGE ROUTING ENGINE
 # ---------------------------------------------------------
 st.sidebar.markdown("### 🧭 GENAI ROUTING ENGINE")
 st.sidebar.markdown("<p class='hud-text'>Automated WeatherNext 3 route optimization.</p>", unsafe_allow_html=True)
@@ -99,7 +105,7 @@ st.sidebar.markdown("<p class='hud-text'>Automated WeatherNext 3 route optimizat
 if st.sidebar.button("Generate Voyage Plan Override"):
     with st.sidebar.status("GenAI correlating live weather with decadal baseline...", expanded=True):
         try:
-            routing_prompt = f"You are a strategic marine logistics AI. The sector is {sector_mode}. A weather hazard with significant wave heights (H_s) > 6.1m is detected ahead of commercial freighter MMSI 368123450. Using historical decadal weather trends (which show a 15% increase in such anomalies), generate a highly technical 3-step voyage rerouting plan to minimize hydrodynamic drag. Estimate bunker fuel saved (in MT and CO2e), and ensure operational continuity. Use bullet points."
+            routing_prompt = f"You are a strategic marine logistics AI. The sector is {sector_mode}. A weather hazard with significant wave heights (H_s) > 6.1m is detected ahead of commercial freighter MMSI 368123450. Using historical decadal weather trends, generate a highly technical 3-step voyage rerouting plan to minimize hydrodynamic drag. Estimate bunker fuel saved (in MT and CO2e), and ensure operational continuity. Use bullet points."
             route_response = model.generate_content(routing_prompt)
             st.success("Routing Plan Generated")
             st.markdown(f"<div class='terminal'>{route_response.text}</div>", unsafe_allow_html=True)
@@ -117,34 +123,51 @@ risk_level = "GREEN (Nominal Operational Risk)"
 
 if sector_mode == "US West Coast (Channel Islands)":
     view_state = pdk.ViewState(latitude=33.9, longitude=-119.5, zoom=7.5, pitch=50, bearing=-15)
-    vessels_data = [
-        {"lat": 34.12, "lon": -119.85, "name": "COMMERCIAL FREIGHTER (MMSI: 368123450)", "color": [37, 99, 235, 200], "analytics": "Vector normal. Operating within compliance parameters.", "source": "Verified AIS Telemetry"},
-        {"lat": 33.95, "lon": -120.15, "name": "UNVERIFIED ASSET (MMSI: 413000000)", "color": [225, 29, 72, 255], "analytics": "COMPLIANCE BREACH: Transponder disabled < 15nm from restricted zone.", "source": "AISStream Anomaly Detection"}
-    ]
+    
+    # Enhanced Vessel Data with Google Maps-style Icons
+    vessels_df = pd.DataFrame([
+        {"lat": 34.12, "lon": -119.85, "name": "COMMERCIAL FREIGHTER", "icon": "🚢", "color": [37, 99, 235, 200], "analytics": "Vector normal. Operating within compliance parameters.", "source": "Verified AIS Telemetry"},
+        {"lat": 33.95, "lon": -120.15, "name": "UNVERIFIED ASSET", "icon": "🔴", "color": [225, 29, 72, 255], "analytics": "COMPLIANCE BREACH: Transponder disabled < 15nm from restricted zone.", "source": "AISStream Anomaly Detection"}
+    ])
     
     if show_weather:
-        storm_data = pd.DataFrame([{"polygon": [[[-119.5, 33.6], [-119.1, 33.6], [-119.1, 34.0], [-119.5, 34.0]]], "name": "Severe Gale Warning", "analytics": "H_s > 6.1m detected. Significant drag coefficient identified.", "source": "WeatherNext 3 Predictive Models"}])
-        layers.append(pdk.Layer("PolygonLayer", data=storm_data, get_polygon="polygon", get_fill_color="[225, 29, 72, 40]", get_line_color="[225, 29, 72, 150]", line_width_min_pixels=2, pickable=True))
+        # Google Weather Style: Simulated Live Doppler Radar Heatmap
+        radar_data = pd.DataFrame([
+            {"lat": 33.8 + random.gauss(0, 0.15), "lon": -119.3 + random.gauss(0, 0.15), "weight": random.uniform(1, 10)}
+            for _ in range(800)
+        ])
+        radar_layer = pdk.Layer(
+            "HeatmapLayer",
+            data=radar_data,
+            get_position="[lon, lat]",
+            get_weight="weight",
+            radius_pixels=40,
+            intensity=1.5,
+            threshold=0.1,
+            color_range=[[0,0,0,0], [0,255,0,150], [255,255,0,200], [255,0,0,255]] # Green to Red Doppler
+        )
+        layers.append(radar_layer)
+        
         route_data = pd.DataFrame([{"path": [[-119.8, 33.5], [-119.6, 33.4], [-119.0, 33.4], [-118.8, 33.8]], "name": "AI Optimized Logistics Route", "analytics": "Fuel optimization vector.", "source": "AlphaEarth Optimization"}])
         layers.append(pdk.Layer("PathLayer", data=route_data, get_path="path", get_color="[16, 185, 129, 255]", width_min_pixels=4, pickable=True))
         active_alerts.append("Supply chain weather risk identified. Automated rerouting protocols initiated.")
 
     if show_iuu:
-        radio_feeds.append("[14:02Z PORT AUTHORITY] 'Unregistered commercial trawler detected hauling nets 3nm off Santa Cruz Is. No active transponder.'\n> AI CROSS-REFERENCE: MMSI 413000000.")
-        kelp_df = pd.DataFrame([{"lat": 34.02, "lon": -119.55, "name": "Verified Carbon Sink (K-1)", "analytics": "Depth 14m, SST 16.5°C. High-yield Blue Carbon potential.", "source": "Copernicus/GDM", "color": [16, 185, 129, 255]}])
-        layers.append(pdk.Layer("ScatterplotLayer", data=kelp_df, get_position="[lon, lat]", get_color="color", get_radius=4000, pickable=True))
+        radio_feeds.append("[14:02Z PORT AUTHORITY] 'Unregistered commercial trawler detected hauling nets 3nm off Santa Cruz Is.'\n> AI CROSS-REFERENCE: MMSI 413000000.")
+        kelp_df = pd.DataFrame([{"lat": 34.02, "lon": -119.55, "name": "Verified Carbon Sink (K-1)", "icon": "🌱", "analytics": "Depth 14m, SST 16.5°C. High-yield Blue Carbon potential.", "source": "Copernicus/GDM", "color": [16, 185, 129, 255]}])
+        layers.append(pdk.Layer("TextLayer", data=kelp_df, get_position="[lon, lat]", get_text="icon", get_size=40, pickable=True))
         active_alerts.append("Regulatory breach in protected biosphere. Significant ecological capital at risk.")
         risk_level = "RED (High Compliance Risk)"
         
     if show_cables:
-        radio_feeds.append("[14:15Z INFRASTRUCTURE ALERT] 'Unidentified vessel holding position in restricted cable corridor. Hydroacoustic anomaly detected.'\n> ASSET MATCH: Transpacific Data Trunk.")
+        radio_feeds.append("[14:15Z INFRASTRUCTURE ALERT] 'Hydroacoustic anomaly detected.'\n> ASSET MATCH: Transpacific Data Trunk.")
         cable_data = pd.DataFrame([{"path": [[-121.0, 33.5], [-119.0, 33.8], [-118.0, 34.2]], "name": "Tier-1 Transpacific Data Trunk", "analytics": "Critical infrastructure carrying 90% of regional financial data.", "source": "Submarine Cable Map", "color": [56, 189, 248, 255]}])
         layers.append(pdk.Layer("PathLayer", data=cable_data, get_path="path", get_color="color", width_min_pixels=5, pickable=True))
-        active_alerts.append("Asset vulnerability detected over Tier-1 fiber optic trunk. Immediate action required.")
+        active_alerts.append("Asset vulnerability detected over Tier-1 fiber optic trunk.")
         risk_level = "RED (Critical Asset Risk)"
         
     if show_sar:
-        radio_feeds.append("[14:22Z DISTRESS SIGNAL] 'S/V Orion. Engine failure. Lat 33.7, Lon -119.8. 4 personnel onboard.'\n> INITIATING: Predictive SAR Drift Grid.")
+        radio_feeds.append("[14:22Z DISTRESS SIGNAL] 'S/V Orion. Engine failure. Lat 33.7, Lon -119.8.'\n> INITIATING: Predictive SAR Drift Grid.")
         sar_data = pd.DataFrame([{"polygon": [[[-120.5, 33.7], [-119.8, 33.7], [-119.6, 34.2], [-120.3, 34.2]]], "name": "Predictive Drift Zone", "analytics": "AlphaEarth leeway grid based on 22kt winds.", "source": "WeatherNext 3"}])
         layers.append(pdk.Layer("PolygonLayer", data=sar_data, get_polygon="polygon", get_fill_color="[245, 158, 11, 80]", get_line_color="[245, 158, 11, 255]", line_width_min_pixels=3, pickable=True))
         active_alerts.append("Vessel adrift. Time-sensitive humanitarian exposure. Drift vector calculating.")
@@ -153,40 +176,59 @@ if sector_mode == "US West Coast (Channel Islands)":
 else:
     # PACIFIC (HAWAII) REGION
     view_state = pdk.ViewState(latitude=21.4, longitude=-157.9, zoom=7.5, pitch=50, bearing=-15)
-    vessels_data = [
-        {"lat": 21.1, "lon": -157.9, "name": "PACIFIC FREIGHT (MMSI: 366111000)", "color": [37, 99, 235, 200], "analytics": "Approaching Honolulu Port. Operating within compliance parameters.", "source": "Verified AIS"},
-        {"lat": 21.6, "lon": -158.3, "name": "UNVERIFIED ASSET (MMSI: 412999000)", "color": [225, 29, 72, 255], "analytics": "COMPLIANCE BREACH: Transponder disabled near Kaena Point.", "source": "AISStream Anomaly Detection"}
-    ]
+    
+    vessels_df = pd.DataFrame([
+        {"lat": 21.1, "lon": -157.9, "name": "PACIFIC FREIGHT", "icon": "🚢", "color": [37, 99, 235, 200], "analytics": "Approaching Honolulu Port. Operating within compliance parameters.", "source": "Verified AIS"},
+        {"lat": 21.6, "lon": -158.3, "name": "UNVERIFIED ASSET", "icon": "🔴", "color": [225, 29, 72, 255], "analytics": "COMPLIANCE BREACH: Transponder disabled near Kaena Point.", "source": "AISStream Anomaly Detection"}
+    ])
     
     if show_weather:
-        storm_data = pd.DataFrame([{"polygon": [[[-158.2, 21.0], [-157.5, 21.0], [-157.5, 21.4], [-158.2, 21.4]]], "name": "Tropical Squall Hazard Zone", "analytics": "H_s > 4.5m detected. Supply chain delay risk.", "source": "WeatherNext 3 Predictive Models"}])
-        layers.append(pdk.Layer("PolygonLayer", data=storm_data, get_polygon="polygon", get_fill_color="[225, 29, 72, 40]", get_line_color="[225, 29, 72, 150]", line_width_min_pixels=2, pickable=True))
+        # Google Weather Style: Simulated Live Doppler Radar Heatmap
+        radar_data = pd.DataFrame([
+            {"lat": 21.2 + random.gauss(0, 0.15), "lon": -157.8 + random.gauss(0, 0.15), "weight": random.uniform(1, 10)}
+            for _ in range(800)
+        ])
+        radar_layer = pdk.Layer(
+            "HeatmapLayer",
+            data=radar_data,
+            get_position="[lon, lat]",
+            get_weight="weight",
+            radius_pixels=40,
+            intensity=1.5,
+            threshold=0.1,
+            color_range=[[0,0,0,0], [0,255,0,150], [255,255,0,200], [255,0,0,255]] # Green to Red Doppler
+        )
+        layers.append(radar_layer)
+        
         route_data = pd.DataFrame([{"path": [[-158.5, 20.8], [-158.0, 20.9], [-157.4, 20.9], [-157.1, 21.2]], "name": "AI Optimized Logistics Route", "analytics": "Fuel optimization vector.", "source": "AlphaEarth Optimization"}])
         layers.append(pdk.Layer("PathLayer", data=route_data, get_path="path", get_color="[16, 185, 129, 255]", width_min_pixels=4, pickable=True))
         active_alerts.append("Tropical squall identified. Rerouting protocols active to maintain supply chain continuity.")
 
     if show_iuu:
         radio_feeds.append("[08:15W PORT AUTHORITY] 'Unidentified vessel deploying gear off Kaena Point MPA.'\n> AI CROSS-REFERENCE: MMSI 412999000.")
-        overlay_df = pd.DataFrame([{"lat": 21.45, "lon": -157.8, "name": "Verified Reef Restoration Zone", "analytics": "Depth 8m, SST 24.5°C. Optimal ESG rehabilitation zone.", "source": "Copernicus/GDM", "color": [16, 185, 129, 255]}])
-        layers.append(pdk.Layer("ScatterplotLayer", data=overlay_df, get_position="[lon, lat]", get_color="color", get_radius=4000, pickable=True))
+        overlay_df = pd.DataFrame([{"lat": 21.45, "lon": -157.8, "name": "Verified Reef Restoration Zone", "icon": "🪸", "analytics": "Depth 8m, SST 24.5°C. Optimal ESG rehabilitation zone.", "source": "Copernicus/GDM", "color": [16, 185, 129, 255]}])
+        layers.append(pdk.Layer("TextLayer", data=overlay_df, get_position="[lon, lat]", get_text="icon", get_size=40, pickable=True))
         active_alerts.append("Regulatory breach near protected reef. ESG investments at risk of degradation.")
         risk_level = "RED (High Compliance Risk)"
         
     if show_cables:
-        radio_feeds.append("[08:30W INFRASTRUCTURE ALERT] 'Unidentified vessel loitering in Honolulu landing corridor. Anchor drop detected.'\n> ASSET MATCH: Pacific Fiber Trunk.")
+        radio_feeds.append("[08:30W INFRASTRUCTURE ALERT] 'Hydroacoustic anomaly detected.'\n> ASSET MATCH: Pacific Fiber Trunk.")
         overlay_data = pd.DataFrame([{"path": [[-160.0, 22.0], [-157.8, 21.3], [-155.0, 20.0]], "name": "Honolulu Transpacific Landing", "analytics": "Critical infrastructure carrying Pacific financial routing.", "source": "Submarine Cable Map", "color": [56, 189, 248, 255]}])
         layers.append(pdk.Layer("PathLayer", data=overlay_data, get_path="path", get_color="color", width_min_pixels=5, pickable=True))
         active_alerts.append("Asset vulnerability detected at Honolulu landing trunk. Extreme exposure.")
         risk_level = "RED (Critical Asset Risk)"
         
     if show_sar:
-        radio_feeds.append("[08:45W DISTRESS SIGNAL] 'F/V Makai. Engine fire. Lat 21.6, Lon -158.2. 3 personnel onboard.'\n> INITIATING: SAR Drift Grid.")
+        radio_feeds.append("[08:45W DISTRESS SIGNAL] 'F/V Makai. Engine fire. Lat 21.6, Lon -158.2.'\n> INITIATING: SAR Drift Grid.")
         sar_data = pd.DataFrame([{"polygon": [[[-158.5, 21.5], [-158.0, 21.5], [-158.0, 21.8], [-158.5, 21.8]]], "name": "Predictive Drift Zone", "analytics": "AlphaEarth leeway grid based on 25kt Trade Winds.", "source": "WeatherNext 3"}])
         layers.append(pdk.Layer("PolygonLayer", data=sar_data, get_polygon="polygon", get_fill_color="[245, 158, 11, 80]", get_line_color="[245, 158, 11, 255]", line_width_min_pixels=3, pickable=True))
         active_alerts.append("Vessel adrift in Kauai Channel. Humanitarian protocols activated.")
         if risk_level == "GREEN (Nominal Operational Risk)": risk_level = "AMBER (Elevated Operational Risk)"
 
-layers.append(pdk.Layer("ScatterplotLayer", data=pd.DataFrame(vessels_data), get_position="[lon, lat]", get_color="color", get_radius=3000, pickable=True))
+# Google Maps Style Asset Layers (Icons + Floating Text)
+vessel_icon_layer = pdk.Layer("TextLayer", data=vessels_df, get_position="[lon, lat]", get_text="icon", get_size=35, get_alignment_baseline="'bottom'", pickable=True)
+vessel_text_layer = pdk.Layer("TextLayer", data=vessels_df, get_position="[lon, lat]", get_text="name", get_size=14, get_color="[255, 255, 255, 255]", get_alignment_baseline="'top'", get_pixel_offset="[0, 15]", pickable=False)
+layers.extend([vessel_icon_layer, vessel_text_layer])
 
 if not radio_feeds: radio_feeds.append("[14:30Z] Data streams clear. No material anomalies detected.")
 if not active_alerts: active_alerts.append("All assets and protected zones operating within nominal parameters.")
