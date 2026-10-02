@@ -143,4 +143,44 @@ vessels_df = pd.DataFrame([
 layers.append(pdk.Layer("ScatterplotLayer", data=vessels_df, get_position="[lon, lat]", get_color="color", get_radius=3000, pickable=True))
 
 if mission_mode == "Ecological Protection (IUU / Kelp)":
-    kelp_df = pd.DataFrame([{"lat": 34.02, "lon": -119.55, "name": "Kelp Restoration Zone (Sector K-1)", "analytics": "Depth 14
+    kelp_df = pd.DataFrame([{"lat": 34.02, "lon": -119.55, "name": "Kelp Restoration Zone (Sector K-1)", "analytics": "Depth 14m (Optimal) + SST 16.5°C. 98% Growth Probability.", "source": "Copernicus Bathymetry & GDM Model"}])
+    layers.append(pdk.Layer("ScatterplotLayer", data=kelp_df, get_position="[lon, lat]", get_color="[0, 153, 76, 255]", get_radius=4000, pickable=True))
+    with st.sidebar.expander("🚨 ALERT: Dark Vessel near Marine Reserve", expanded=True):
+        st.error("Vessel MMSI 413000000 disabled AIS near Channel Islands. Intercept recommended.")
+
+elif mission_mode == "Economic Security (Subsea Cables)":
+    cable_data = pd.DataFrame([{"path": [[-121.0, 33.5], [-119.0, 33.8], [-118.0, 34.2]], "name": "Transpacific Financial Data Trunk", "analytics": "Critical infrastructure carrying 99% of regional FX trading data.", "source": "Global Submarine Cable Map", "color": [0, 255, 255, 255]}])
+    layers.append(pdk.Layer("PathLayer", data=cable_data, get_path="path", get_color="color", width_min_pixels=5, pickable=True))
+    with st.sidebar.expander("🚨 ALERT: Loitering over Subsea Cable", expanded=True):
+        st.error("Dark vessel holding position directly over Transpacific Data Trunk. High risk of anchor sabotage.")
+
+elif mission_mode == "Humanitarian (Search & Rescue)":
+    sar_data = pd.DataFrame([{"polygon": [[[-120.5, 33.7], [-119.8, 33.7], [-119.6, 34.2], [-120.3, 34.2]]], "name": "Predictive Drift Zone (SAR Grid)", "analytics": "Drift calculation based on real-time wind leeway (22kts) and surface currents.", "source": "AlphaEarth + WeatherNext 3"}])
+    layers.append(pdk.Layer("PolygonLayer", data=sar_data, get_polygon="polygon", get_fill_color="[255, 165, 0, 80]", get_line_color="[255, 165, 0, 255]", line_width_min_pixels=3, pickable=True))
+    with st.sidebar.expander("🚨 ALERT: Predictive SAR Grid Active", expanded=True):
+        st.warning("Distress signal lost. AlphaEarth wind leeway models have calculated the highest-probability drift sector (Orange Zone).")
+
+# ---------------------------------------------------------
+# 7. RENDER THE 3D MAP WITH INTERACTIVE ANALYTICS TOOLTIPS
+# ---------------------------------------------------------
+custom_tooltip = {
+    "html": """
+    <div style='font-family: -apple-system, sans-serif; padding: 5px; line-height: 1.4;'>
+        <b style='font-size: 1.1em; color: #FFFFFF;'>{name}</b><br/>
+        <hr style='border: 0; border-top: 1px solid #444; margin: 8px 0;'/>
+        <b style='color: #00E676;'>🧠 AI Analytics:</b> <span style='color: #E0E0E0;'>{analytics}</span><br/>
+        <b style='color: #42A5F5;'>📡 Data Source:</b> <span style='color: #E0E0E0;'>{source}</span>
+    </div>
+    """,
+    "style": {
+        "backgroundColor": "#1E2130",
+        "border": "1px solid #444",
+        "borderRadius": "6px",
+        "boxShadow": "0 4px 6px rgba(0,0,0,0.5)"
+    }
+}
+
+view_state = pdk.ViewState(latitude=33.9, longitude=-119.5, zoom=7.5, pitch=45)
+r = pdk.Deck(layers=layers, initial_view_state=view_state, map_style=map_style, tooltip=custom_tooltip)
+st.pydeck_chart(r, use_container_width=True)
+
