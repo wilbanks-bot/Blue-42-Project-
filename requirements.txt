@@ -3,3 +3,4 @@ pydeck
 pandas
 earthengine-api
 google-auth
+google-generativeai
