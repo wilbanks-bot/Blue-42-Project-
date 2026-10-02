@@ -13,8 +13,7 @@ try:
     ee.Initialize(credentials=creds, project=key_dict.get("project_id"))
     st.sidebar.success("✅ Earth Engine Connected")
 except Exception as e:
-    st.sidebar.error("Earth Engine not connected. Operating in Mock-Up Mode.")
-
+    st.sidebar.error(f"Earth Engine Error: {e}")
 st.sidebar.title("🚨 Tactical Incident Command")
 st.sidebar.markdown("**Sector Status:** Condition ALPHA")
 
