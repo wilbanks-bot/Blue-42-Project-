@@ -16,46 +16,47 @@ except ImportError:
     WEBSOCKET_AVAILABLE = False
 
 # ---------------------------------------------------------
-# 1. ENTERPRISE PAGE SETUP
+# 1. PAGE SETUP & REFINED UX THEME CONFIGURATION
 # ---------------------------------------------------------
 st.set_page_config(layout="wide", page_title="Blue 42 | Maritime Command", page_icon="🌐", initial_sidebar_state="expanded")
 
-if "sar_tasked" not in st.session_state: st.session_state.sar_tasked = False
-if "messages" not in st.session_state: st.session_state.messages = [{"role": "assistant", "content": "Watchstander AI active. Awaiting queries."}]
+if "sar_tasked" not in st.session_state:
+    st.session_state.sar_tasked = False
 
 night_vision = st.sidebar.toggle("🌙 Tactical Night Vision", value=True)
 
 if night_vision:
-    bg_color = "#09090b"; card_bg = "#18181b"; text_color = "#f4f4f5"; muted_text = "#a1a1aa"
-    accent_blue = "#0ea5e9"; accent_red = "#ef4444"; accent_green = "#22c55e"; accent_purple = "#8b5cf6"; accent_amber = "#f59e0b"
-    map_style = "dark"; term_bg = "#000000"; term_color = "#10b981"
+    bg_color = "#0f172a"; card_bg = "#1e293b"; text_color = "#f8fafc"; muted_text = "#94a3b8"
+    accent_blue = "#38bdf8"; accent_red = "#fb7185"; accent_green = "#34d399"; accent_purple = "#a78bfa"; accent_amber = "#fbbf24"
+    map_style = "dark" 
 else:
-    bg_color = "#f8fafc"; card_bg = "#ffffff"; text_color = "#0f172a"; muted_text = "#64748b"
+    bg_color = "#f1f5f9"; card_bg = "#ffffff"; text_color = "#0f172a"; muted_text = "#64748b"
     accent_blue = "#0284c7"; accent_red = "#e11d48"; accent_green = "#059669"; accent_purple = "#7c3aed"; accent_amber = "#d97706"
-    map_style = "light"; term_bg = "#f1f5f9"; term_color = "#0f172a"
+    map_style = "light" 
 
 css = f"""
 <style>
     .stApp {{ background-color: {bg_color}; color: {text_color}; font-family: 'Inter', -apple-system, sans-serif; }}
-    .metric-card {{ background-color: {card_bg}; padding: 24px; border-radius: 8px; border-top: 4px solid {accent_blue}; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
+    .metric-card {{ background-color: {card_bg}; padding: 24px; border-radius: 12px; border-top: 4px solid {accent_blue}; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }}
     .protection-card {{ border-top: 4px solid {accent_red}; }}
     .mitigation-card {{ border-top: 4px solid {accent_green}; }}
     .military-card {{ border-top: 4px solid {accent_purple}; }}
     .logistics-card {{ border-top: 4px solid {accent_amber}; }}
-    h1, h2, h3, h4 {{ color: {text_color}; font-weight: 600; margin-top: 0; letter-spacing: -0.01em; }}
-    h4 {{ font-size: 0.85rem; text-transform: uppercase; color: {muted_text}; letter-spacing: 0.05em; margin-bottom: 8px; }}
+    h1, h2, h3, h4 {{ color: {text_color}; font-weight: 600; margin-top: 0; }}
+    h4 {{ font-size: 0.85rem; text-transform: uppercase; color: {muted_text}; letter-spacing: 0.05em; }}
     .kpi-value {{ font-size: 2.25rem; font-weight: 700; color: {text_color}; margin: 4px 0; line-height: 1.1; }}
-    .kpi-subtext {{ font-size: 0.85rem; color: {muted_text}; display: block; margin-top: 4px; }}
+    .kpi-subtext {{ font-size: 0.85rem; color: {muted_text}; display: block; margin-bottom: 4px; }}
     .streamlit-expanderHeader {{ font-weight: 600 !important; font-size: 0.95rem; color: {text_color} !important; border-radius: 8px; }}
     div[data-testid="stSidebar"] {{ background-color: {card_bg}; border-right: 1px solid rgba(100,116,139,0.2); }}
-    .terminal {{ background-color: {term_bg}; padding: 12px; border-radius: 4px; border: 1px solid {accent_green}; color: {term_color}; font-family: 'Courier New', monospace; font-size: 0.8rem; max-height: 250px; overflow-y: auto; white-space: pre-wrap; }}
+    .terminal {{ background-color: #000000; padding: 12px; border: 1px solid {accent_green}; border-radius: 4px; color: {accent_green}; font-family: 'Courier New', monospace; font-size: 0.8rem; box-shadow: inset 0 0 10px rgba(52, 211, 153, 0.2); }}
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 2. SECURE API INITIALIZATION
+# 2. BULLETPROOF API INITIALIZATION
 # ---------------------------------------------------------
+# Earth Engine Init
 try:
     if "EARTHENGINE_TOKEN" in st.secrets:
         key_dict = json.loads(st.secrets["EARTHENGINE_TOKEN"])
@@ -65,13 +66,22 @@ try:
     else: ee_status = "🔴 UPLINK SEVERED"
 except Exception as e: ee_status = "🔴 UPLINK SEVERED"
 
+# GenAI Init (Dynamically seeks a valid model to prevent 404 Errors)
+model = None
 try:
     if "GEMINI_API_KEY" in st.secrets:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        ai_status = "🟢 CORE ACTIVE"
+        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        
+        if 'models/gemini-1.5-flash' in available_models: target_model = 'gemini-1.5-flash'
+        elif 'models/gemini-1.0-pro' in available_models: target_model = 'gemini-1.0-pro'
+        elif 'models/gemini-pro' in available_models: target_model = 'gemini-pro'
+        else: target_model = available_models[0].replace('models/', '') if available_models else 'gemini-1.5-flash'
+            
+        model = genai.GenerativeModel(target_model)
+        ai_status = f"🟢 CORE ACTIVE"
     else: ai_status = "🔴 CORE OFFLINE"
-except Exception as e: ai_status = "🔴 CORE OFFLINE"
+except Exception as e: ai_status = f"🔴 CORE OFFLINE"
 
 try:
     ais_key = st.secrets.get("AISSTREAM_API_KEY", "")
@@ -79,7 +89,7 @@ try:
 except: ais_status = "🔴 RADAR OFFLINE"
 
 # ---------------------------------------------------------
-# 3. SIDEBAR: OPCON NAVIGATION
+# 3. SIDEBAR: PROFESSIONAL UX NAVIGATION
 # ---------------------------------------------------------
 st.sidebar.markdown(f"""
 <div style="margin-bottom: 30px; text-align: center;">
@@ -118,84 +128,67 @@ with col4: st.markdown(f"<div class='metric-card mitigation-card'><h4>🌱 PLANE
 # ---------------------------------------------------------
 map_layers = []
 
+# Highly optimized HTML string for PyDeck to prevent crashes
 def get_tooltip():
     return {
         "html": f"""
-        <div style='background: {card_bg}; border: 1px solid {accent_blue}; padding: 16px; border-radius: 8px; color: {text_color}; font-family: Inter, sans-serif; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); min-width: 300px;'>
-            <div style='font-size: 1.1rem; font-weight: 700; color: {accent_blue}; margin-bottom: 4px; border-bottom: 1px solid {border_color}; padding-bottom: 4px;'>{{name}}</div>
-            <div style='margin-bottom: 12px; margin-top: 8px;'>
-                <div style='font-size: 0.85rem; color: {muted_text};'><b>Metric 1:</b> {{primary_metric}}</div>
-                <div style='font-size: 0.85rem; color: {muted_text};'><b>Metric 2:</b> {{secondary_metric}}</div>
+        <div style='background: {card_bg}; border: 1px solid {accent_blue}; padding: 12px; border-radius: 8px; color: {text_color}; font-family: sans-serif; box-shadow: 0 4px 10px rgba(0,0,0,0.4); max-width: 280px;'>
+            <div style='font-size: 1.05rem; font-weight: 700; color: {accent_blue}; margin-bottom: 4px;'>{{name}}</div>
+            <div style='font-size: 0.8rem; color: {muted_text}; margin-bottom: 2px;'>{{primary_metric}}</div>
+            <div style='font-size: 0.8rem; color: {muted_text}; margin-bottom: 10px;'>{{secondary_metric}}</div>
+            <div style='border-top: 1px solid rgba(148, 163, 184, 0.2); padding-top: 8px;'>
+                <span style='color: {accent_green}; font-weight: 600; font-size: 0.75rem;'>AI ANALYTICS:</span><br/>
+                <span style='font-size: 0.8rem; line-height: 1.3; color: {text_color};'>{{analytics}}</span>
             </div>
-            <div style='background: rgba(14, 165, 233, 0.05); border-left: 3px solid {accent_blue}; padding: 8px; margin-bottom: 8px;'>
-                <span style='color: {accent_green}; font-weight: 600; font-size: 0.75rem; letter-spacing: 1px;'>AI ANALYTICS & INSIGHT:</span><br/>
-                <span style='font-size: 0.85rem; line-height: 1.4; color: {text_color};'>{{analytics}}</span>
-            </div>
-            <div style='font-size: 0.75rem; color: {muted_text}; font-style: italic; text-align: right;'>Source Auth: {{source}}</div>
+            <div style='margin-top: 8px; font-size: 0.7rem; color: {muted_text}; font-style: italic;'>Source: {{source}}</div>
         </div>
         """,
         "style": {"backgroundColor": "transparent", "padding": "0"} 
     }
 
-def create_unified_tooltip_data(lat, lon, name, primary, secondary, analytics, source, color, polygon=None, path=None, radius=None, elevation=0):
-    return {"lat": lat, "lon": lon, "name": name, "primary_metric": primary, "secondary_metric": secondary, "analytics": analytics, "source": source, "color": color, "polygon": polygon, "path": path, "radius": radius, "elevation": elevation}
-
-def get_battleship_polygon(lat, lon, cog, length_m, width_m):
-    cog_rad = math.radians(cog)
-    scale = 3.5 
-    L, W = length_m * scale, width_m * scale
-    lat_deg_per_m = 1.0 / 111111.0
-    lon_deg_per_m = 1.0 / (111111.0 * math.cos(math.radians(lat)))
-    pts = [(-W/2, -L/2), (W/2, -L/2), (W/2, L/4), (0, L/2), (-W/2, L/4)]
-    poly = []
-    for dx, dy in pts:
-        x_rot = dx * math.cos(cog_rad) + dy * math.sin(cog_rad)
-        y_rot = -dx * math.sin(cog_rad) + dy * math.cos(cog_rad)
-        poly.append([lon + x_rot * lon_deg_per_m, lat + y_rot * lat_deg_per_m])
-    return [poly]
+def create_unified_tooltip_data(lat, lon, name, primary, secondary, analytics, source, color, polygon=None, path=None, radius=None):
+    return {"lat": lat, "lon": lon, "name": name, "primary_metric": primary, "secondary_metric": secondary, "analytics": analytics, "source": source, "color": color, "polygon": polygon, "path": path, "radius": radius}
 
 # ---------------------------------------------------------
 # 6. DYNAMIC MAP LOGIC (FILTERED BY FOCUS)
 # ---------------------------------------------------------
 if sector_mode == "US West Coast (Channel Islands)":
-    view_state = pdk.ViewState(latitude=33.9, longitude=-119.5, zoom=7.5, pitch=50, bearing=-15)
+    view_state = pdk.ViewState(latitude=33.9, longitude=-119.5, zoom=7.5, pitch=45, bearing=0)
     ais_bounds = [[[33.0, -121.0], [35.0, -118.0]]]
     base_lat, base_lon = 33.8, -119.5
     regional_ports = ["Port of Los Angeles", "Port of Long Beach", "Port Hueneme"]
     
     if focus_mode in ["🌍 Global Overview", "🌱 Planetary Capital (ESG)"]:
-        # THE UPGRADE: 3D Volumetric Columns for Blue Carbon
+        depth_data = pd.DataFrame([{"polygon": [[[-119.7, 33.9], [-119.4, 33.9], [-119.4, 34.1], [-119.7, 34.1]]], "name": "Optimal Bathymetric Shelf", "analytics": "Copernicus Depth: -5m to -30m.", "source": "Copernicus Marine"}])
+        map_layers.append(pdk.Layer("PolygonLayer", data=depth_data, get_polygon="polygon", get_fill_color="[45, 212, 191, 30]", get_line_color="[45, 212, 191, 150]", line_width_min_pixels=2, pickable=True))
+        
         kelp_data = [
-            create_unified_tooltip_data(34.02, -119.55, "Verified Bio-Sink (Sector K-1)", "Asset Size: 5.1 HA", "Drawdown: 898 tCO2e/yr", "Optimal bathymetric shelf. High-yield Blue Carbon potential verified against decadal SST regression models.", "DeepMind SDM / Copernicus", [16, 185, 129, 255], radius=1800, elevation=8980),
-            create_unified_tooltip_data(33.98, -119.60, "Verified Bio-Sink (Sector K-2)", "Asset Size: 4.8 HA", "Drawdown: 845 tCO2e/yr", "Deep-water thermal refuge. High resilience to projected marine heatwaves. Capital deployment cleared.", "DeepMind SDM / Copernicus", [16, 185, 129, 255], radius=1500, elevation=8450),
-            create_unified_tooltip_data(34.05, -120.00, "Verified Bio-Sink (Sector K-3)", "Asset Size: 4.3 HA", "Drawdown: 757 tCO2e/yr", "Shallow hyper-growth zone. Provides critical nursery habitat generating +22% local fishery biomass.", "DeepMind SDM / Copernicus", [16, 185, 129, 255], radius=1200, elevation=7570)
+            create_unified_tooltip_data(34.02, -119.55, "Verified Carbon Sink K-1", "Area: 5.1 HA", "Status: VERIFIED", "Depth 14m, SST 16.5°C. High-yield blue carbon potential.", "DeepMind SDM", [34, 197, 94, 200], radius=3500),
+            create_unified_tooltip_data(33.98, -119.60, "Verified Carbon Sink K-2", "Area: 4.8 HA", "Status: VERIFIED", "Depth 22m, SST 16.1°C. High resilience to warming.", "DeepMind SDM", [34, 197, 94, 200], radius=3500)
         ]
-        map_layers.append(pdk.Layer("ColumnLayer", data=pd.DataFrame(kelp_data), get_position="[lon, lat]", get_elevation="elevation", elevation_scale=1, radius="radius", get_fill_color="color", pickable=True, extruded=True, auto_highlight=True))
+        map_layers.append(pdk.Layer("ScatterplotLayer", data=pd.DataFrame(kelp_data), get_position="[lon, lat]", get_fill_color="color", get_radius="radius", radius_min_pixels=8, pickable=True))
 
     if focus_mode in ["🌍 Global Overview", "🛡️ Ecocide & Human Rights (IUU)"]:
-        mpa_data = pd.DataFrame([{"polygon": [[[-120.2, 33.8], [-119.2, 33.8], [-119.2, 34.2], [-120.2, 34.2]]], "name": "Channel Islands Marine Sanctuary", "analytics": "Federally Protected Boundary. Zero commercial take allowed.", "source": "UNEP-WCMC"}])
+        mpa_data = pd.DataFrame([{"polygon": [[[-120.2, 33.8], [-119.2, 33.8], [-119.2, 34.2], [-120.2, 34.2]]], "name": "Channel Islands MPA", "analytics": "Federally Protected Boundary. Zero commercial take allowed.", "source": "UNEP-WCMC"}])
         map_layers.append(pdk.Layer("PolygonLayer", data=mpa_data, get_polygon="polygon", get_fill_color="[56, 189, 248, 20]", get_line_color="[56, 189, 248, 150]", line_width_min_pixels=2, pickable=True))
 
     if focus_mode in ["🌍 Global Overview", "🌪️ Macro-Economic Resilience"]:
-        storm_data = pd.DataFrame([{"polygon": [[[-119.5, 33.6], [-119.1, 33.6], [-119.1, 34.0], [-119.5, 34.0]]], "name": "Severe Gale Warning", "analytics": "H_s > 6.1m detected.", "source": "WeatherNext 3"}])
+        storm_data = pd.DataFrame([{"polygon": [[[-119.5, 33.6], [-119.1, 33.6], [-119.1, 34.0], [-119.5, 34.0]]], "name": "Severe Gale Warning", "analytics": "H_s > 6.1m detected. High drag coefficient area.", "source": "WeatherNext 3"}])
         map_layers.append(pdk.Layer("PolygonLayer", data=storm_data, get_polygon="polygon", get_fill_color="[239, 68, 68, 30]", get_line_color="[239, 68, 68, 150]", line_width_min_pixels=2, pickable=True))
         route_data = pd.DataFrame([{"path": [[-119.8, 33.5], [-119.6, 33.4], [-119.0, 33.4], [-118.8, 33.8]], "name": "AI Optimized Route", "analytics": "Fuel optimization vector.", "source": "AlphaEarth"}])
-        map_layers.append(pdk.Layer("PathLayer", data=route_data, get_path="path", get_color="[34, 197, 94, 200]", width_min_pixels=3, pickable=True))
+        map_layers.append(pdk.Layer("PathLayer", data=route_data, get_path="path", get_color="[34, 197, 94, 200]", width_min_pixels=4, pickable=True))
 
 else: # HAWAII
-    view_state = pdk.ViewState(latitude=21.4, longitude=-157.9, zoom=7.5, pitch=50, bearing=-15)
-    ais_bounds = [[[19.0, -161.0], [23.0, -154.0]]]
+    view_state = pdk.ViewState(latitude=21.4, longitude=-157.9, zoom=7.5, pitch=45, bearing=0)
     base_lat, base_lon = 21.2, -158.0
+    ais_bounds = [[[19.0, -161.0], [23.0, -154.0]]]
     regional_ports = ["Honolulu Harbor", "Pearl Harbor", "Kahului"]
     
     if focus_mode in ["🌍 Global Overview", "🌱 Planetary Capital (ESG)"]:
-        # THE UPGRADE: 3D Volumetric Columns for Blue Carbon
-        reef_data = [
-            create_unified_tooltip_data(21.45, -157.8, "Verified Reef Restoration (R-1)", "Asset Size: 6.5 HA", "Drawdown: 1,144 tCO2e/yr", "Optimal ESG rehabilitation zone in Kaneohe Bay. Attenuates storm wave kinetic energy by 38%.", "DeepMind SDM / Copernicus", [16, 185, 129, 255], radius=2500, elevation=11440),
-            create_unified_tooltip_data(21.39, -157.71, "Verified Reef Restoration (R-2)", "Asset Size: 4.2 HA", "Drawdown: 739 tCO2e/yr", "Lanikai coastal shelf thermal refuge. Generates +18% localized increase in critical fishery biomass.", "DeepMind SDM / Copernicus", [16, 185, 129, 255], radius=2000, elevation=7390),
-            create_unified_tooltip_data(21.34, -157.68, "Verified Reef Restoration (R-3)", "Asset Size: 3.5 HA", "Drawdown: 616 tCO2e/yr", "Waimanalo deep water coral sink. High resilience to projected marine heatwaves.", "DeepMind SDM / Copernicus", [16, 185, 129, 255], radius=1500, elevation=6160)
-        ]
-        map_layers.append(pdk.Layer("ColumnLayer", data=pd.DataFrame(reef_data), get_position="[lon, lat]", get_elevation="elevation", elevation_scale=1, radius="radius", get_fill_color="color", pickable=True, extruded=True, auto_highlight=True))
+        depth_data = pd.DataFrame([{"polygon": [[[-158.0, 21.3], [-157.6, 21.3], [-157.6, 21.6], [-158.0, 21.6]]], "name": "Reef Bathymetric Contour", "analytics": "Copernicus Depth: -5m to -30m.", "source": "Copernicus Marine"}])
+        map_layers.append(pdk.Layer("PolygonLayer", data=depth_data, get_polygon="polygon", get_fill_color="[45, 212, 191, 30]", get_line_color="[45, 212, 191, 150]", line_width_min_pixels=2, pickable=True))
+        reef_data = pd.DataFrame([create_unified_tooltip_data(21.45, -157.8, "Verified Reef Restoration R-1", "Area: 6.5 HA", "Status: VERIFIED", "Depth 8m, SST 24.5°C.", "GDM", [34, 197, 94, 200], radius=3500)])
+        map_layers.append(pdk.Layer("ScatterplotLayer", data=reef_data, get_position="[lon, lat]", get_fill_color="color", get_radius="radius", radius_min_pixels=8, pickable=True))
 
     if focus_mode in ["🌍 Global Overview", "🛡️ Ecocide & Human Rights (IUU)"]:
         mpa_data = pd.DataFrame([{"polygon": [[[-158.3, 21.4], [-157.8, 21.4], [-157.8, 21.7], [-158.3, 21.7]]], "name": "Kaena Point MPA Expansion", "analytics": "Federally Protected Boundary. Zero commercial take allowed.", "source": "UNEP-WCMC"}])
@@ -204,16 +197,16 @@ else: # HAWAII
     if focus_mode in ["🌍 Global Overview", "🌪️ Macro-Economic Resilience"]:
         storm_data = pd.DataFrame([{"polygon": [[[-158.2, 21.0], [-157.5, 21.0], [-157.5, 21.4], [-158.2, 21.4]]], "name": "Tropical Squall Hazard Zone", "analytics": "H_s > 4.5m detected. Supply chain delay risk.", "source": "WeatherNext 3"}])
         map_layers.append(pdk.Layer("PolygonLayer", data=storm_data, get_polygon="polygon", get_fill_color="[239, 68, 68, 30]", get_line_color="[239, 68, 68, 150]", line_width_min_pixels=2, pickable=True))
-        route_data = pd.DataFrame([{"path": [[-158.5, 20.8], [-158.0, 20.9], [-157.4, 20.9], [-157.1, 21.2]], "name": "AI Optimized Route", "analytics": "Fuel optimization vector.", "source": "AlphaEarth"}])
-        map_layers.append(pdk.Layer("PathLayer", data=route_data, get_path="path", get_color="[34, 197, 94, 200]", width_min_pixels=3, pickable=True))
+        route_data = pd.DataFrame([{"path": [[-158.5, 20.8], [-158.0, 20.9], [-157.4, 20.9], [-157.1, 21.2]], "name": "AI Optimized Route", "analytics": "Fuel optimization vector.", "source": "AlphaEarth Optimization"}])
+        map_layers.append(pdk.Layer("PathLayer", data=route_data, get_path="path", get_color="[34, 197, 94, 200]", width_min_pixels=4, pickable=True))
 
 # ---------------------------------------------------------
-# 7. LIVE VESSEL TRACKING & ARPA KINEMATICS
+# 7. HIGH-FIDELITY VESSEL SIMULATION (GUARANTEED TO RENDER)
 # ---------------------------------------------------------
 live_vessels_data = []
 
-# High-Fidelity Tactical Simulation Engine
-for i in range(25):
+# Generate exactly 30 ships so the map looks populated but clean
+for i in range(30):
     sog = random.uniform(8.0, 22.0)
     v_type = random.choice(["CARGO", "TANKER", "BULK"])
     mmsi = f"36{random.randint(1000000, 9999999)}"
@@ -221,46 +214,50 @@ for i in range(25):
     lon = base_lon + random.uniform(-2.0, 2.0)
     cog = random.uniform(0, 360)
     v_len = int(random.uniform(150,350))
-    v_width = int(v_len * 0.15)
-    v_draft = round(random.uniform(8.0, 16.0), 1)
+    v_draft = round(random.uniform(9.0,16.0), 1)
     
     live_vessels_data.append({
-        "MMSI": mmsi, "Vessel Name": f"MERCHANT {mmsi[-4:]}", "Type": "MERCHANT",
+        "MMSI": mmsi, "Vessel Name": f"{v_type} {mmsi[-4:]}", "Type": v_type,
         "lat": lat, "lon": lon, "sog": round(sog,1), "cog": round(cog,1),
-        "Length (m)": v_len, "Width (m)": v_width, "Draft (m)": v_draft, "Gross Tonnage": int(v_len * v_width * v_draft * 0.7),
+        "Length (m)": v_len, "Draft (m)": v_draft, "Gross Tonnage": int(v_len * (v_len*0.15) * v_draft * 0.7),
         "Risk Status": "Nominal", "Cargo Value ($M)": round(random.uniform(10, 150), 1), "Fuel Saved (MT)": round(random.uniform(5, 25), 1)
     })
 
+# Add the Dark Target
 dt_lat, dt_lon = base_lat + 0.15, base_lon - 0.65
 live_vessels_data.append({
     "MMSI": "413000000", "Vessel Name": "UNVERIFIED DARK TARGET", "Type": "SUSPECT",
     "lat": dt_lat, "lon": dt_lon, "sog": 2.5, "cog": 80.0,
-    "Length (m)": 45, "Width (m)": 8, "Draft (m)": 3.2, "Gross Tonnage": 806,
+    "Length (m)": 45, "Draft (m)": 3.2, "Gross Tonnage": 806,
     "Risk Status": "CRITICAL ANOMALY", "Cargo Value ($M)": 0.0, "Fuel Saved (MT)": 0.0
 })
 
 vessels = []
 for v in live_vessels_data:
     is_threat = v['Risk Status'] != "Nominal"
+    
+    # Clean filters: only show relevant ships
     if focus_mode == "🌱 Planetary Capital (ESG)" and not is_threat: continue
     
     cog_rad = math.radians(v['cog'])
     vec_len = max(v['sog'] * 0.003, 0.01)
-    color = [239, 68, 68, 255] if is_threat else [56, 189, 248, 200]
-    ship_poly = get_battleship_polygon(v['lat'], v['lon'], v['cog'], v['Length (m)'], v['Width (m)'])
-    elevation = 150 if is_threat else max(30, v['Length (m)'] / 4.0)
+    color = [239, 68, 68, 255] if is_threat else [56, 189, 248, 180]
+    
     analysis = "CRITICAL HUMAN RIGHTS ANOMALY: Vessel disabled transponder 15nm from MPA. Kinematics strongly suggest illicit fishing and forced labor operations." if is_threat else "Vessel kinetics operate within nominal parameters. Compliant track."
     
     vessels.append(create_unified_tooltip_data(
         v['lat'], v['lon'], v['Vessel Name'], f"Speed: {v['sog']} kts | Heading: {v['cog']}°", 
-        f"Size: {v['Length (m)']}m x {v['Width (m)']}m | Draft: {v['Draft (m)']}m", analysis, 
-        "Verified AIS Telemetry", color, polygon=ship_poly, path=[[v['lon'], v['lat']], [v['lon'] + vec_len * math.sin(cog_rad), v['lat'] + vec_len * math.cos(cog_rad)]], elevation=elevation
+        f"Length: {v['Length (m)']}m | Tonnage: {v['Gross Tonnage']:,} GT", analysis, 
+        "Verified AIS Telemetry", color, 
+        path=[[v['lon'], v['lat']], [v['lon'] + vec_len * math.sin(cog_rad), v['lat'] + vec_len * math.cos(cog_rad)]], 
+        radius=2500 if is_threat else 1200
     ))
 
 vessels_df = pd.DataFrame(vessels)
 if not vessels_df.empty:
-    map_layers.append(pdk.Layer("PolygonLayer", data=vessels_df, get_polygon="polygon", get_fill_color="color", get_line_color="[255,255,255,100]", line_width_min_pixels=1, extruded=True, get_elevation="elevation", pickable=True))
-    map_layers.append(pdk.Layer("PathLayer", data=vessels_df, get_path="path", get_color="color", width_min_pixels=2, pickable=False))
+    # SAFEGUARD: Using Scatterplot + Line ensures perfect scaling at all zoom levels
+    map_layers.append(pdk.Layer("ScatterplotLayer", data=vessels_df, get_position="[lon, lat]", get_fill_color="color", get_radius="radius", radius_min_pixels=4, pickable=True))
+    map_layers.append(pdk.Layer("PathLayer", data=vessels_df, get_path="path", get_color="color", width_min_pixels=3, pickable=False))
 
 # ---------------------------------------------------------
 # 8. RENDER THE INTERACTIVE SMART MAP & DEEP DIVES
@@ -282,20 +279,21 @@ with col_details:
         st.write(f"• **Total Assets Tracked:** {len(live_vessels_data)}")
         st.write("• **Active Anomalies:** 1")
 
-    elif focus_mode == "🛡️ Human Rights & Ecocide (IUU)":
+    elif focus_mode == "🛡️ Ecocide & Human Rights (IUU)":
         st.markdown(f"<h3 style='color: {accent_red}; font-size: 1.25rem;'>🛡️ Dark Fleet Analytics</h3>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color: {muted_text}; font-size: 0.9rem;'>When a vessel disables its AIS transponder near a Marine Protected Area (MPA), it correlates strongly with Illegal, Unreported, and Unregulated (IUU) fishing and forced labor operations.</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color: {muted_text}; font-size: 0.9rem;'>IUU fishing is intrinsically linked to modern slavery. By tracking 'Dark Targets,' we enforce human rights on the high seas.</p>", unsafe_allow_html=True)
         st.markdown("#### The Mathematical Trigger")
-        st.code("IF (Distance_to_MPA < 15nm) \nAND (Signal_Loss > 60m) \nAND (Speed < 4kts):\n   TRIGGER = HIGH_THREAT", language="python")
+        st.code("IF (Distance_to_MPA < 15nm) \nAND (Signal_Loss > 60m) \nAND (Speed < 4kts):\n   TRIGGER = HUMAN_RIGHTS_THREAT", language="python")
         
-        st.markdown("#### Tactical Action")
-        if st.button("🛰️ INITIATE SAR TASKING", use_container_width=True): st.session_state["sar_tasked"] = True
-        if st.session_state.get("sar_tasked", False): st.success("SAR CONFIRMATION: 45m metallic hull detected. Intercept authorized.")
+        if st.button("🛰️ INITIATE SAR TASKING", use_container_width=True):
+            st.session_state["sar_tasked"] = True
+        if st.session_state.get("sar_tasked", False):
+            st.success("SAR CONFIRMATION: 45m metallic hull detected. Intercept authorized.")
 
     elif focus_mode == "🌪️ Macro-Economic Resilience":
         st.markdown(f"<h3 style='color: {accent_blue}; font-size: 1.25rem;'>🌪️ Voyage Optimization</h3>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color: {muted_text}; font-size: 0.9rem;'>By avoiding severe weather polygons, fleets save millions of dollars and drastically cut Scope 3 emissions.</p>", unsafe_allow_html=True)
-        st.markdown("#### Hydrodynamic Drag")
+        st.markdown(f"<p style='color: {muted_text}; font-size: 0.9rem;'>Severe weather halts shipping, causing massive supply chain shocks that drive global inflation.</p>", unsafe_allow_html=True)
+        st.markdown("#### Hydrodynamic Drag Equation")
         st.latex(r"R_T = \frac{1}{2} \rho v^2 S C_T")
         
         st.markdown("#### 🧭 GenAI Routing Engine")
@@ -310,26 +308,23 @@ with col_details:
                 target_v = next((v for v in live_vessels_data if v['MMSI'] in selected_vessel), None)
                 v_len = target_v['Length (m)'] if target_v else 300
                 with st.spinner(f"GenAI calculating drag for {v_len}m vessel..."):
-                    try:
-                        routing_prompt = f"You are a strategic marine logistics AI. A {v_len}m freighter is transiting from {origin_port} to {dest_port}. Avoid 6.1m waves. Generate a concise 2-step rerouting plan. Estimate fuel saved."
-                        res = model.generate_content(routing_prompt)
-                        st.markdown(f"<div class='terminal'>{res.text}</div>", unsafe_allow_html=True)
-                    except: st.error("AI Comms Offline.")
+                    if model:
+                        try:
+                            routing_prompt = f"You are a strategic marine logistics AI. A {v_len}m freighter is transiting from {origin_port} to {dest_port}. Avoid 6.1m waves. Generate 2-step rerouting plan. Estimate fuel saved."
+                            res = model.generate_content(routing_prompt)
+                            st.markdown(f"<div class='terminal'>{res.text}</div>", unsafe_allow_html=True)
+                        except Exception as e:
+                            st.error(f"AI Error: {e}")
+                    else:
+                        st.error("AI Comms Offline. Model not initialized.")
 
     elif focus_mode == "🌱 Planetary Capital (ESG)":
         st.markdown(f"<h3 style='color: {accent_green}; font-size: 1.25rem;'>🌱 Capital Verification</h3>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color: {muted_text}; font-size: 0.9rem;'>Fusing Earth Engine bathymetry with DeepMind Species Distribution Models to find the exact biological envelope for bio-sinks, completely de-risking the capital investment.</p>", unsafe_allow_html=True)
-        
-        # EXPLICITLY MAPPING THE DATA FOR THE USER
-        st.markdown("#### Verified Investment Portfolio:")
-        if sector_mode == "US West Coast (Channel Islands)":
-            st.info("📍 **Site K-1:** Lat 34.02° N, Lon -119.55° W (5.1 HA)\n\n📍 **Site K-2:** Lat 33.98° N, Lon -119.60° W (4.8 HA)\n\n📍 **Site K-3:** Lat 34.05° N, Lon -120.00° W (4.3 HA)")
-        else:
-            st.info("📍 **Kaneohe R-1:** Lat 21.45° N, Lon -157.80° W (6.5 HA)\n\n📍 **Lanikai R-2:** Lat 21.39° N, Lon -157.71° W (4.2 HA)\n\n📍 **Waimanalo R-3:** Lat 21.34° N, Lon -157.68° W (3.5 HA)")
-
-        st.markdown("#### Institutional Asset Minting")
+        st.markdown(f"<p style='color: {muted_text}; font-size: 0.9rem;'>Fusing Earth Engine's bathymetry with DeepMind's Species Distribution Models to find the exact biological envelope for Giant Kelp.</p>", unsafe_allow_html=True)
+        st.write("• **Depth Threshold:** -5m to -30m")
+        st.write("• **Thermal Threshold:** SST < 18°C")
         if st.button("Mint Verified Blue Carbon Credits", use_container_width=True):
-            st.success("SUCCESS: 2,500 tCO₂e validated. Asset ID #BC-8492-GEE minted to registry.")
+            st.success("SUCCESS: 2,500 tCO₂e validated. Asset ID #BC-8492-GEE minted.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -338,30 +333,16 @@ with col_details:
 # ---------------------------------------------------------
 st.write("---")
 st.markdown("### 📈 Operational Analytics & Financial Ledger")
-tab1, tab2, tab3 = st.tabs(["🚢 Active Fleet Kinematics", "💰 Scope 3 Financial & Carbon Ledger", "📋 Executive Action Reports"])
+tab1, tab2 = st.tabs(["🚢 Active Fleet Kinematics", "💰 Scope 3 Financial & Carbon Ledger"])
 
 with tab1:
-    st.markdown("<p class='hud-text'>Live tactical breakdown of all assets currently operating in the sector.</p>", unsafe_allow_html=True)
     fleet_df = pd.DataFrame(live_vessels_data)[["MMSI", "Vessel Name", "Type", "Length (m)", "Draft (m)", "Gross Tonnage", "sog", "cog", "Risk Status"]]
     fleet_df.rename(columns={"sog": "Speed (kts)", "cog": "Heading (°)"}, inplace=True)
     st.dataframe(fleet_df, use_container_width=True)
 
 with tab2:
-    st.markdown("<p class='hud-text'>Live accounting of protected maritime cargo value and calculated Scope 3 emissions reductions.</p>", unsafe_allow_html=True)
     ledger_df = pd.DataFrame(live_vessels_data)[["MMSI", "Vessel Name", "Risk Status", "Cargo Value ($M)", "Fuel Saved (MT)"]]
     total_cargo = ledger_df["Cargo Value ($M)"].sum()
-    total_fuel = ledger_df["Fuel Saved (MT)"].sum()
-    total_carbon = total_fuel * 3.11 
-    total_carbon_value = total_carbon * 75.00
-    st.markdown(f"**Total Capital Protected:** ${total_cargo:,.1f} Million | **Total Scope 3 Averted:** {total_carbon:,.1f} MT CO₂e | **Verified Carbon Value:** ${total_carbon_value:,.2f}")
+    total_carbon = ledger_df["Fuel Saved (MT)"].sum() * 3.11 
+    st.markdown(f"**Total Capital Protected:** ${total_cargo:,.1f} Million | **Verified Carbon Value:** ${total_carbon * 75.00:,.2f}")
     st.dataframe(ledger_df.style.highlight_max(axis=0, subset=["Fuel Saved (MT)"], color=accent_green), use_container_width=True)
-
-with tab3:
-    st.markdown("<p class='hud-text'>GenAI automated formal reporting for Coast Guard incident dispatch and Corporate ESG audits.</p>", unsafe_allow_html=True)
-    if st.button("Generate Official Action Report via Gemini", use_container_width=True):
-        with st.spinner("Drafting formal compliance and incident report..."):
-            try:
-                report_prompt = f"You are an executive ESG auditor. Based on the {sector_mode} sector with a strategic focus on {focus_mode}, write a highly formal, 2-paragraph executive incident report covering operational impact."
-                response = model.generate_content(report_prompt)
-                st.info(response.text)
-            except: st.error("AI Comms Offline.")
