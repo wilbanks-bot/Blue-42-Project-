@@ -4,4 +4,4 @@ pandas
 earthengine-api
 google-auth
 google-generativeai
-websockets
+websockets-client
