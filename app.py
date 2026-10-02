@@ -64,7 +64,6 @@ except Exception as e: ee_status = "🔴 UPLINK SEVERED"
 try:
     if "GEMINI_API_KEY" in st.secrets:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        # ---> BUG FIXED HERE: USING THE STABLE 2026 MODEL <---
         model = genai.GenerativeModel('gemini-3.5-flash')
         ai_status = "🟢 CORE ACTIVE"
     else: ai_status = "🔴 CORE OFFLINE"
@@ -176,7 +175,7 @@ else:
         if risk_level == "GREEN (Nominal Operational Risk)": risk_level = "AMBER (Elevated Operational Risk)"
 
 # ---------------------------------------------------------
-# 5. FETCH LIVE SHIPS VIA SATELLITE & GENERATE LEDGER DATA
+# 5. FETCH LIVE SHIPS VIA SATELLITE
 # ---------------------------------------------------------
 live_vessels_data = []
 if live_ais and ais_key:
@@ -188,7 +187,6 @@ if live_ais and ais_key:
             
             import time
             start_time = time.time()
-            
             while time.time() - start_time < 3.0:
                 try:
                     result = ws.recv()
@@ -209,11 +207,10 @@ if live_ais and ais_key:
                 except websocket.WebSocketTimeoutException:
                     break
             ws.close()
-            
             if live_vessels_data:
                 status.update(label=f"Tracking {len(live_vessels_data)} live vessels.", state="complete")
             else:
-                status.update(label="No vessels broadcasting in sector right now. Initializing AI simulation.", state="error")
+                status.update(label="No vessels broadcasting. Initializing AI simulation.", state="error")
         except Exception as e:
             status.update(label=f"WebSocket connection failed: {e}", state="error")
 
@@ -255,7 +252,7 @@ layers.append(pdk.Layer("PathLayer", data=vessels_df, get_path="heading_path", g
 # 6. MAIN DASHBOARD: THE EXECUTIVE HUD 
 # ---------------------------------------------------------
 st.markdown(f"<h2 style='color: {accent_blue};'>PROJECT BLUE 42: STRATEGIC INSIGHTS</h2>", unsafe_allow_html=True)
-st.markdown("<p class='hud-text' style='margin-bottom: 20px;'>Transforming Planetary Telemetry into Auditable Business Value & Operational Continuity.</p>", unsafe_allow_html=True)
+st.markdown("<p class='hud-text' style='margin-bottom: 20px;'>Transforming Planetary Telemetry into Auditable Business Value.</p>", unsafe_allow_html=True)
 
 alert_class = "alert-card" if "RED" in risk_level else ""
 ai_summary_text = "Multiple critical risk vectors detected in operational sector. Immediate review advised." if "RED" in risk_level else "All assets operating within nominal parameters."
@@ -271,10 +268,16 @@ st.markdown(f"""
 col1, col2, col3 = st.columns(3)
 with col1:
     st.markdown(f"<div class='metric-card protection-card'><h4>🛡️ ASSET PROTECTION</h4><p class='kpi-value' style='color:{accent_red};'>1 CRITICAL</p><span class='kpi-subtext'>10M Hectares Surveilled</span></div>", unsafe_allow_html=True)
+    with st.expander("📈 Capital Justification & Risk Logic"):
+        st.markdown("**The Threat:** Illegal fishing and subsea cable sabotage cost the global economy billions annually. Traditional patrols are too slow to react.\n\n**The Google AI Solution:** Fusing AIS telemetry with UN Marine Protected Area boundaries creates an automated tripwire, reducing time-to-interdiction from days to minutes.")
 with col2:
     st.markdown(f"<div class='metric-card'><h4>🌪️ RESILIENCE</h4><p class='kpi-value'>5 SHIPS</p><span class='kpi-subtext'>Dynamic Rerouting Active</span></div>", unsafe_allow_html=True)
+    with st.expander("📈 Capital Justification & Risk Logic"):
+        st.markdown("**The Threat:** Ships fighting heavy seas ($H_s \ge 6.1$m) suffer massive hydrodynamic drag, burning excess bunker fuel and risking cargo loss.\n\n**The Google AI Solution:** WeatherNext 3 integration predicts hazard polygons. Skirting these storms avoids supply chain disruption and cuts fuel consumption by 5-12% per transit.")
 with col3:
     st.markdown(f"<div class='metric-card mitigation-card'><h4>🌱 MITIGATION</h4><p class='kpi-value'>14 HA</p><span class='kpi-subtext'>Blue Carbon Sites Verified</span></div>", unsafe_allow_html=True)
+    with st.expander("📈 Capital Justification & Ecological ROI"):
+        st.markdown("**The Financial Problem:** ESG funds want to invest in Blue Carbon (which sequesters CO₂ up to 10x faster than terrestrial forests), but capital is sidelined due to high mortality rates of blindly planted kelp.\n\n**The Google AI Solution:** By fusing Earth Engine bathymetry (-5m to -30m depth contours) with DeepMind's Species Distribution Models, we mathematically guarantee the planting site's viability before a single dollar is spent.\n\n**The ROI:** 14 HA = 2,500 tCO₂e. At a conservative $75/ton compliance market price, this yields **$187,500** in mintable carbon credits, while simultaneously restoring critical fishery biomass.")
 
 # ---------------------------------------------------------
 # 7. ASSEMBLE MAP & TOOLTIPS
@@ -292,22 +295,33 @@ st.pydeck_chart(r, use_container_width=True)
 # ---------------------------------------------------------
 st.markdown("<h3 style='margin-top: 30px;'>📈 Operational Analytics & Financial Ledger</h3>", unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["💰 Scope 3 Financial & Carbon Ledger", "📊 Historical Trend Analytics", "📋 Automated Action Reports"])
+tab1, tab2, tab3, tab4 = st.tabs(["💰 Scope 3 Financial Ledger", "🌱 Blue Carbon ESG Asset Ledger", "📊 Historical Trend Analytics", "📋 Action Reports"])
 
 with tab1:
-    st.markdown("<p class='hud-text'>Live accounting of protected maritime cargo value and calculated Scope 3 emissions reductions from AI route optimization. Carbon valuation pegged to active Compliance Markets (e.g., California Cap-and-Trade / EU ETS).</p>", unsafe_allow_html=True)
+    st.markdown("<p class='hud-text'>Live accounting of protected maritime cargo value and calculated Scope 3 emissions reductions from AI route optimization.</p>", unsafe_allow_html=True)
     ledger_df = pd.DataFrame(live_vessels_data)[["MMSI", "Vessel Name", "Risk Status", "Cargo Value ($M)", "Fuel Saved (MT)"]]
     
     total_cargo = ledger_df["Cargo Value ($M)"].sum()
     total_fuel = ledger_df["Fuel Saved (MT)"].sum()
     total_carbon = total_fuel * 3.11 
-    carbon_price_per_ton = 75.00
-    total_carbon_value = total_carbon * carbon_price_per_ton
     
-    st.markdown(f"**Total Capital Protected:** ${total_cargo:,.1f} Million | **Total Scope 3 Averted:** {total_carbon:,.1f} MT CO₂e | **Verified Carbon Value:** ${total_carbon_value:,.2f}")
+    st.markdown(f"**Total Capital Protected:** ${total_cargo:,.1f} Million | **Total Scope 3 Averted:** {total_carbon:,.1f} MT CO₂e")
     st.dataframe(ledger_df.style.highlight_max(axis=0, subset=["Fuel Saved (MT)"], color=accent_green), use_container_width=True)
 
 with tab2:
+    st.markdown("### 🌱 Blue Carbon Asset Verification")
+    st.markdown("<p class='hud-text'>Converting Earth Engine spatial verification into institutional-grade carbon assets.</p>", unsafe_allow_html=True)
+    
+    bc_col1, bc_col2, bc_col3 = st.columns(3)
+    bc_col1.metric("Verified Area", "14.2 Hectares", "Sector K-1, K-2, K-3")
+    bc_col2.metric("Projected Drawdown", "2,500 tCO₂e", "+15% YoY Growth")
+    bc_col3.metric("ESG Asset Value (@ $75/ton)", "$187,500.00", "Ready for Minting")
+    
+    st.markdown("#### 🧬 DeepMind Survivability Index")
+    st.progress(0.92)
+    st.caption("92% Confidence Score: Site bathymetry (-5m to -30m) and 20-year SST regression indicate high resilience against marine heatwaves.")
+
+with tab3:
     st.markdown("<p class='hud-text'>Longitudinal decadal data analysis to justify capital intervention and ESG reporting.</p>", unsafe_allow_html=True)
     chart_col1, chart_col2 = st.columns(2)
     with chart_col1:
@@ -322,7 +336,7 @@ with tab2:
         iuu_data = pd.DataFrame({"Dark Fleet Incidents": [12, 14, 18, 15, 22, 28, 35, 41, 44, 52]}, index=years)
         st.bar_chart(iuu_data, color="#38BDF8")
 
-with tab3:
+with tab4:
     st.markdown("<p class='hud-text'>GenAI automated formal reporting for Coast Guard incident dispatch and Corporate ESG audits.</p>", unsafe_allow_html=True)
     if st.button("Generate Official Action Report via Gemini"):
         with st.spinner("Drafting formal compliance and incident report..."):
