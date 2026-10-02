@@ -207,5 +207,44 @@ with col1:
     with st.expander("📊 Data Lineage & Logic"):
         st.markdown("**Core Logic:** Correlation of AIS anomalies with WDPA spatial boundaries mitigates regulatory non-compliance.\n\n**Data Provenance:** UNEP WDPA & Verified AIS.")
 with col2:
-    st.markdown(f"<div class='metric-card'><h4>🌪️ SUPPLY CHAIN RESILIENCE</h4><p class='kpi-value'>5 VECTORS OPTIMIZED</p><span class='kpi-subtext'>Dynamic Weather Rerouting Activated</span><span class='kpi-impact'>Strategic ROI: $450K Fuel Cost Avoided (54 MT Scope 3 CO2e)</span></div>", unsafe
+    st.markdown(f"<div class='metric-card'><h4>🌪️ SUPPLY CHAIN RESILIENCE</h4><p class='kpi-value'>5 VECTORS OPTIMIZED</p><span class='kpi-subtext'>Dynamic Weather Rerouting Activated</span><span class='kpi-impact'>Strategic ROI: $450K Fuel Cost Avoided (54 MT Scope 3 CO2e)</span></div>", unsafe_allow_html=True)
+    with st.expander("📊 Data Lineage & Logic"):
+        st.markdown("**Core Logic:** Route optimization away from $H_s \ge 6.1$m sea states reduces hydrodynamic drag and associated bunker fuel burn.\n\n**Data Provenance:** Copernicus Marine & WeatherNext 3.")
+with col3:
+    st.markdown(f"<div class='metric-card mitigation-card'><h4>🌱 ESG CAPITAL ALLOCATION</h4><p class='kpi-value'>14 HA VERIFIED</p><span class='kpi-subtext'>Optimal Blue Carbon Sites Mathematically Identified</span><span class='kpi-impact'>Strategic ROI: 2,500 tCO2e Sequestration Potential Unlocked</span></div>", unsafe_allow_html=True)
+    with st.expander("📊 Data Lineage & Logic"):
+        st.markdown("**Core Logic:** Precision site-selection utilizing depth and SST overlays provides the spatial verification required for institutional carbon-credit financing.\n\n**Data Provenance:** DeepMind Species Distribution Models.")
 
+# ---------------------------------------------------------
+# 7. ASSEMBLE MAP & TOOLTIPS
+# ---------------------------------------------------------
+custom_tooltip = {
+    "html": f"<div style='font-family: -apple-system, sans-serif; padding: 10px;'><b style='color: {accent_blue}; font-size: 1.1em;'>{{name}}</b><br/><hr style='border-color: #333; margin: 8px 0;'/><b style='color: {accent_green};'>AI Insight:</b> <span style='color: #ccc;'>{{analytics}}</span><br/><b style='color: #888;'>Source:</b> <span style='color: #ccc;'>{{source}}</span></div>",
+    "style": {"backgroundColor": "#1E293B", "border": f"1px solid {accent_blue}", "color": "#F8FAFC", "borderRadius": "8px", "boxShadow": "0 10px 15px -3px rgba(0, 0, 0, 0.5)"}
+}
+
+r = pdk.Deck(layers=layers, initial_view_state=view_state, map_style=map_style, tooltip=custom_tooltip)
+st.pydeck_chart(r, use_container_width=True)
+
+# ---------------------------------------------------------
+# 8. SIDEBAR: LIVE GEMINI INTERROGATION
+# ---------------------------------------------------------
+st.sidebar.markdown("### 💬 STRATEGIC ADVISORY AI")
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for message in st.session_state.messages[-3:]: 
+    with st.sidebar.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+if prompt := st.sidebar.chat_input("Request strategic risk evaluation..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.sidebar.chat_message("user"): st.markdown(prompt)
+    with st.sidebar.chat_message("assistant"):
+        try:
+            tactical_prompt = f"You are a Senior Strategic Advisor and Global Risk Expert. Sector is {sector_mode}. Active overlays: Compliance={show_iuu}, Weather={show_weather}, Assets={show_cables}, Resiliency={show_sar}. Analyze the query focusing on business value, capital risk, and operational continuity. Be highly professional and concise: {prompt}"
+            response = model.generate_content(tactical_prompt)
+            st.markdown(response.text)
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
+        except Exception as e:
+            st.error("Comms failure.")
