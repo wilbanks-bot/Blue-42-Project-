@@ -6,6 +6,7 @@ import json
 import ee
 import math
 import random
+import time
 import websocket
 from google.oauth2 import service_account
 import google.generativeai as genai
@@ -21,17 +22,19 @@ except ImportError:
 # ---------------------------------------------------------
 st.set_page_config(layout="wide", page_title="Blue 42 | Maritime Command", page_icon="🌐", initial_sidebar_state="expanded")
 
+if "sar_tasked" not in st.session_state:
+    st.session_state.sar_tasked = False
+
 night_vision = st.sidebar.toggle("🌙 Tactical Night Vision", value=True)
 
-# FIXED: Removed paid Mapbox styles. Using free, native PyDeck styles.
 if night_vision:
     bg_color = "#0f172a"; card_bg = "#1e293b"; text_color = "#f8fafc"
     accent_blue = "#38bdf8"; accent_red = "#fb7185"; accent_green = "#34d399"; accent_purple = "#a78bfa"; accent_amber = "#fbbf24"
-    map_style = "dark" 
+    map_style = "mapbox://styles/mapbox/dark-v11"
 else:
     bg_color = "#f1f5f9"; card_bg = "#ffffff"; text_color = "#0f172a"
     accent_blue = "#0284c7"; accent_red = "#e11d48"; accent_green = "#059669"; accent_purple = "#7c3aed"; accent_amber = "#d97706"
-    map_style = "satellite" 
+    map_style = "mapbox://styles/mapbox/light-v11"
 
 css = f"""
 <style>
@@ -48,6 +51,7 @@ css = f"""
     .kpi-subtext {{ font-size: 0.85rem; color: #64748b; display: block; margin-bottom: 4px; }}
     .streamlit-expanderHeader {{ font-weight: 600 !important; font-size: 0.95rem; color: {text_color} !important; border-radius: 8px; }}
     div[data-testid="stSidebar"] {{ background-color: {card_bg}; border-right: 1px solid rgba(100,116,139,0.2); }}
+    .terminal {{ background-color: #000000; padding: 12px; border: 1px solid {accent_green}; border-radius: 4px; color: {accent_green}; font-family: 'Courier New', monospace; font-size: 0.8rem; box-shadow: inset 0 0 10px rgba(52, 211, 153, 0.2); }}
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
@@ -92,19 +96,21 @@ st.sidebar.markdown("### 🌍 REGIONAL DEPLOYMENT")
 sector_mode = st.sidebar.selectbox("Operational Theater:", ["US West Coast (Channel Islands)", "Pacific Operations (Hawaiian Islands)"], label_visibility="collapsed")
 st.sidebar.markdown("---")
 
-# NEW FEATURE: 2D vs 3D Map Toggle
 st.sidebar.markdown("### 🗺️ SPATIAL RENDERING")
 map_dimension = st.sidebar.radio("Map Dimension:", ["3D Tactical", "2D Overhead"], horizontal=True, label_visibility="collapsed")
 st.sidebar.markdown("---")
 
 st.sidebar.markdown("### 📊 TACTICAL DATA OVERLAYS")
-st.sidebar.caption("Toggle layers to analyze geospatial risk factors.")
 show_thermal = st.sidebar.checkbox("🌡️ Thermal Imaging (Sea Surface Temp)", value=True)
 show_military = st.sidebar.checkbox("🛡️ Military Protected Zones (Naval Ops)", value=True)
 show_iuu = st.sidebar.checkbox("🐟 Marine Protected Areas (Compliance)", value=True)
 show_weather = st.sidebar.checkbox("⛈️ Weather Shield (Supply Chain)", value=True)
 show_cables = st.sidebar.checkbox("🔌 Subsea Infrastructure (Assets)", value=False)
+show_sar = st.sidebar.checkbox("🚁 Predictive SAR Drift (Humanitarian)", value=False)
 st.sidebar.markdown("---")
+
+st.sidebar.markdown("### 📡 SYSTEM DIAGNOSTICS")
+st.sidebar.caption(f"**Geospatial Engine:** {ee_status}\n\n**GenAI Reasoning:** {ai_status}\n\n**AIS Telemetry:** {ais_status}")
 
 # ---------------------------------------------------------
 # 4. UNIFIED DATA SCHEMA FOR DEEP-DIVE TOOLTIPS
@@ -148,9 +154,7 @@ if sector_mode == "US West Coast (Channel Islands)":
     view_state = pdk.ViewState(latitude=base_lat, longitude=base_lon, zoom=7.5, pitch=pitch_val, bearing=bearing_val)
     
     if show_thermal:
-        # Generate a live Thermal Heatmap layer (Blue = Cold, Red = Warm)
         thermal_data = [{"lat": base_lat + random.gauss(0, 0.6), "lon": base_lon + random.gauss(0, 0.6), "temp": random.uniform(14, 28)} for _ in range(500)]
-        # Cool to Warm Gradient
         color_range = [[10, 10, 255, 100], [0, 255, 255, 120], [255, 255, 0, 140], [255, 0, 0, 160]]
         map_layers.append(pdk.Layer("HeatmapLayer", data=pd.DataFrame(thermal_data), get_position="[lon, lat]", get_weight="temp", radius_pixels=50, intensity=1.5, color_range=color_range, pickable=False))
 
@@ -198,7 +202,7 @@ else: # HAWAII
         map_layers.append(pdk.Layer("PolygonLayer", data=pd.DataFrame([unified_data[-1]]), get_polygon="polygon", get_fill_color="color", get_line_color="[52, 211, 153, 180]", line_width_min_pixels=2, pickable=True))
 
 # ---------------------------------------------------------
-# 6. VESSEL ENGINE & ARPA KINEMATICS
+# 6. VESSEL ENGINE (LIVE WEBSOCKET OR HIGH-FIDELITY SIM)
 # ---------------------------------------------------------
 vessels = []
 for i in range(35):
@@ -247,8 +251,23 @@ col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     st.markdown(f"<div class='metric-card protection-card'><h4>🛡️ ACTIVE THREATS</h4><p class='kpi-value' style='color:{accent_red};'>1 VOI</p><span class='kpi-subtext'>Target masking identity near MPA</span></div>", unsafe_allow_html=True)
-    with st.expander("📊 Threat Interdiction Analytics"):
-        st.markdown("**Algorithm:** `Distance_to_MPA < 15nm` + `Signal_Loss > 60m` = `HIGH THREAT`\n\n**Response:** Automate USCG Cutter vectoring to intercept dark targets.")
+    with st.expander("📊 Threat Interdiction & SAR Tasking"):
+        st.markdown("**Algorithm:** `Distance_to_MPA < 15nm` + `Signal_Loss > 60m`\n\n**Tip and Cue Protocol:** AIS absence triggers targeted Synthetic Aperture Radar (SAR) scan to confirm physical metallic hull without wasteful global continuous scanning.")
+        
+        # ---> NEW FEATURE: LIVE SAR TASKING BUTTON <---
+        if st.button("🛰️ INITIATE SAR TASKING (Sentinel-1)", use_container_width=True):
+            st.session_state.sar_tasked = True
+            
+        if st.session_state.sar_tasked:
+            with st.status("Uplink to Sentinel-1 Constellation...", expanded=True) as status:
+                st.write("Retasking orbital pass over target sector...")
+                time.sleep(1.5)
+                st.write("Acquiring C-band Synthetic Aperture Radar backscatter...")
+                time.sleep(1.5)
+                st.write("Correlating radar signature against AIS absence...")
+                time.sleep(1)
+                status.update(label="SAR Verification Complete", state="complete", expanded=False)
+            st.error("🚨 SAR CONFIRMATION: 45m metallic hull detected at 33.95°N, -120.15°W. Vessel is running dark. Intercept authorized.")
 
 with col2:
     st.markdown(f"<div class='metric-card military-card'><h4>⚓ MILITARY ZONES</h4><p class='kpi-value' style='color:{accent_purple};'>SECURE</p><span class='kpi-subtext'>No incursions in weapons ranges</span></div>", unsafe_allow_html=True)
