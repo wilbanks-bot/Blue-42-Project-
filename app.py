@@ -107,4 +107,82 @@ else:
     risk_score = "AMBER (Elevated Risk)"
     ai_summary = "Vessel adrift. WeatherNext indicates deteriorating sea state. Amber status: Time-sensitive exposure for 4 souls on board. Drift vector initialized."
 
-st.sidebar.markdown(f
+st.sidebar.markdown(f"<div class='terminal'>{radio_feed}</div>", unsafe_allow_html=True)
+
+# ---------------------------------------------------------
+# 4. MAIN DASHBOARD: THE HUD
+# ---------------------------------------------------------
+st.markdown("<h2>⚓ PROJECT BLUE 42: PLANETARY COMMAND</h2>", unsafe_allow_html=True)
+st.markdown("<p class='hud-text'>AUTOMATED MARITIME DOMAIN AWARENESS & INTELLIGENCE</p>", unsafe_allow_html=True)
+st.write("")
+
+# Dynamic Intelligence Risk Prioritization
+st.markdown(f"""
+<div class='cyber-card alert-card' style='margin-bottom: 25px;'>
+    <h4>⚠️ GENAI TACTICAL RISK ASSESSMENT</h4>
+    <p style='color: #f8fafc; font-size: 1.1rem;'><b>THREAT LEVEL: <span style='color: #ef4444;'>{risk_score}</span></b></p>
+    <p class='hud-text'>{ai_summary}</p>
+</div>
+""", unsafe_allow_html=True)
+
+# M.A.P. KPIs
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.markdown("<div class='cyber-card'><h4>🛡️ PROTECTION</h4><p class='kpi-value kpi-alert'>1 TARGET</p><p class='hud-text'>10M Hectares Surveilled</p></div>", unsafe_allow_html=True)
+with col2:
+    st.markdown("<div class='cyber-card'><h4>🌪️ ADAPTATION</h4><p class='kpi-value'>5 SHIPS</p><p class='hud-text'>Rerouted (54 MT Fuel Saved)</p></div>", unsafe_allow_html=True)
+with col3:
+    st.markdown("<div class='cyber-card'><h4>🌱 MITIGATION</h4><p class='kpi-value'>14 HA</p><p class='hud-text'>Blue Carbon Verified</p></div>", unsafe_allow_html=True)
+
+# ---------------------------------------------------------
+# 5. DYNAMIC DATA LAYERS & 3D MAP
+# ---------------------------------------------------------
+layers = []
+
+vessels_df = pd.DataFrame([
+    {"lat": 34.12, "lon": -119.85, "name": "CARGO (MMSI: 368123450)", "color": [14, 165, 233, 200], "analytics": "Vector normal.", "source": "Live AIS"},
+    {"lat": 33.95, "lon": -120.15, "name": "DARK TARGET (MMSI: 413000000)", "color": [239, 68, 68, 255], "analytics": "ANOMALY: Transponder disabled.", "source": "AISStream"}
+])
+layers.append(pdk.Layer("ScatterplotLayer", data=vessels_df, get_position="[lon, lat]", get_color="color", get_radius=3000, pickable=True))
+
+if mission_mode == "Ecological Protection (IUU / Kelp)":
+    kelp_df = pd.DataFrame([{"lat": 34.02, "lon": -119.55, "name": "Kelp Restoration (K-1)", "analytics": "Depth 14m, SST 16.5°C.", "source": "Copernicus/GDM"}])
+    layers.append(pdk.Layer("ScatterplotLayer", data=kelp_df, get_position="[lon, lat]", get_color="[34, 197, 94, 255]", get_radius=4000, pickable=True))
+elif mission_mode == "Economic Security (Subsea Cables)":
+    cable_data = pd.DataFrame([{"path": [[-121.0, 33.5], [-119.0, 33.8], [-118.0, 34.2]], "name": "Transpacific Data Trunk", "analytics": "Critical infrastructure.", "source": "Submarine Cable Map", "color": [14, 165, 233, 255]}])
+    layers.append(pdk.Layer("PathLayer", data=cable_data, get_path="path", get_color="color", width_min_pixels=5, pickable=True))
+elif mission_mode == "Humanitarian (Search & Rescue)":
+    sar_data = pd.DataFrame([{"polygon": [[[-120.5, 33.7], [-119.8, 33.7], [-119.6, 34.2], [-120.3, 34.2]]], "name": "Predictive Drift Zone", "analytics": "AlphaEarth leeway grid.", "source": "WeatherNext 3"}])
+    layers.append(pdk.Layer("PolygonLayer", data=sar_data, get_polygon="polygon", get_fill_color="[249, 115, 22, 80]", get_line_color="[249, 115, 22, 255]", line_width_min_pixels=3, pickable=True))
+
+custom_tooltip = {
+    "html": "<div style='font-family: monospace; padding: 5px;'><b style='color: #38bdf8;'>{name}</b><br/><b style='color: #22c55e;'>AI:</b> {analytics}<br/><b style='color: #94a3b8;'>SRC:</b> {source}</div>",
+    "style": {"backgroundColor": "rgba(2, 6, 23, 0.9)", "border": "1px solid #0ea5e9", "color": "#f8fafc"}
+}
+view_state = pdk.ViewState(latitude=33.9, longitude=-119.5, zoom=7.5, pitch=50, bearing=-15)
+r = pdk.Deck(layers=layers, initial_view_state=view_state, map_style="dark", tooltip=custom_tooltip)
+st.pydeck_chart(r, use_container_width=True)
+
+# ---------------------------------------------------------
+# 6. SIDEBAR: LIVE GEMINI INTERROGATION
+# ---------------------------------------------------------
+st.sidebar.markdown("### 💬 INTERROGATE AI")
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for message in st.session_state.messages[-3:]: 
+    with st.sidebar.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+if prompt := st.sidebar.chat_input("Request risk evaluation..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.sidebar.chat_message("user"): st.markdown(prompt)
+    with st.sidebar.chat_message("assistant"):
+        try:
+            # Generalized intelligence prompt (Removed Coast Guard / GAR specific language)
+            tactical_prompt = f"You are a Global Maritime Intelligence Analyst. Analyze this query using a strategic Risk Assessment model (Green, Amber, Red) evaluating Severity, Probability, and Exposure. Keep it highly tactical, brief, and format it like an intelligence dispatch: {prompt}"
+            response = model.generate_content(tactical_prompt)
+            st.markdown(response.text)
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
+        except:
+            st.error("Comms failure.")
