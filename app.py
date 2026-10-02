@@ -136,3 +136,4 @@ elif mission_mode == "Humanitarian (Search & Rescue)":
 view_state = pdk.ViewState(latitude=33.9, longitude=-119.5, zoom=7.5, pitch=45)
 r = pdk.Deck(layers=layers, initial_view_state=view_state, map_style=map_style, tooltip={"html": "<b>{name}</b>"})
 st.pydeck_chart(r, use_container_width=True)
+
