@@ -6,8 +6,7 @@ import json
 import ee
 import math
 import random
-import asyncio
-import websockets
+import websocket
 from google.oauth2 import service_account
 import google.generativeai as genai
 
@@ -43,7 +42,6 @@ css = f"""
     .terminal {{ background-color: {term_bg}; padding: 16px; border-radius: 6px; border-left: 4px solid {accent_blue}; color: {term_color}; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; }}
     @keyframes pulse-border {{ 0% {{ box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }} 70% {{ box-shadow: 0 0 0 10px rgba(225, 29, 72, 0); }} 100% {{ box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }} }}
     .streamlit-expanderHeader {{ font-weight: 600 !important; font-size: 0.95rem; color: {text_color} !important; }}
-    /* Style Tabs */
     .stTabs [data-baseweb="tab-list"] {{ gap: 24px; }}
     .stTabs [data-baseweb="tab"] {{ height: 50px; white-space: pre-wrap; background-color: transparent; border-radius: 4px 4px 0px 0px; gap: 1px; padding-top: 10px; padding-bottom: 10px; }}
     .stTabs [aria-selected="true"] {{ background-color: {card_bg}; border-bottom: 2px solid {accent_blue}; color: {accent_blue}; }}
@@ -66,7 +64,7 @@ except Exception as e: ee_status = "🔴 UPLINK SEVERED"
 try:
     if "GEMINI_API_KEY" in st.secrets:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         ai_status = "🟢 CORE ACTIVE"
     else: ai_status = "🔴 CORE OFFLINE"
 except Exception as e: ai_status = "🔴 CORE OFFLINE"
@@ -105,7 +103,7 @@ show_sar = st.sidebar.checkbox("🚁 Crisis Response (Predictive SAR)", value=Fa
 st.sidebar.markdown("---")
 
 # ---------------------------------------------------------
-# 4. DATA LOGIC & LIVE WEBSOCKET TRACKING
+# 4. DATA LOGIC
 # ---------------------------------------------------------
 layers = []
 active_alerts = []
@@ -165,43 +163,43 @@ else:
 # ---------------------------------------------------------
 live_vessels_data = []
 if live_ais and ais_key:
-    with st.sidebar.status("📡 Connecting to Global Maritime Network...", expanded=True) as status:
+    with st.sidebar.status("📡 Synchronous connection to AIS Network...", expanded=True) as status:
         try:
-            def fetch_live_data():
-                async def get_live_ships():
-                    sub_msg = {"APIKey": ais_key, "BoundingBoxes": ais_bounds, "FilterMessageTypes": ["PositionReport"]}
-                    ships = []
-                    async with websockets.connect("wss://stream.aisstream.io/v0/stream") as ws:
-                        await ws.send(json.dumps(sub_msg))
-                        end_time = asyncio.get_event_loop().time() + 4.0
-                        while asyncio.get_event_loop().time() < end_time:
-                            try:
-                                msg = await asyncio.wait_for(ws.recv(), timeout=0.5)
-                                data = json.loads(msg)
-                                if data.get("MessageType") == "PositionReport":
-                                    pr = data["Message"]["PositionReport"]
-                                    mmsi = str(data.get("MetaData", {}).get("MMSI", "UNKNOWN"))
-                                    name = data.get("MetaData", {}).get("ShipName", "").strip() or f"MMSI: {mmsi}"
-                                    lat, lon = pr.get('Latitude', 0), pr.get('Longitude', 0)
-                                    if lat != 0 and lon != 0:
-                                        ships.append({
-                                            "MMSI": mmsi, "Vessel Name": name, "lat": lat, "lon": lon, 
-                                            "sog": pr.get('Sog', 0), "cog": pr.get('Cog', 0),
-                                            "Risk Status": "Nominal", "Cargo Value ($M)": round(random.uniform(10, 150), 1),
-                                            "Fuel Saved (MT)": round(random.uniform(5, 25), 1)
-                                        })
-                                    if len(ships) >= 40: break
-                            except: continue
-                    return ships
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                return loop.run_until_complete(get_live_ships())
-
-            live_vessels_data = fetch_live_data()
+            # Using synchronous websocket to bypass Streamlit async thread issues
+            ws = websocket.create_connection("wss://stream.aisstream.io/v0/stream", timeout=4)
+            sub_msg = {"APIKey": ais_key, "BoundingBoxes": ais_bounds, "FilterMessageTypes": ["PositionReport"]}
+            ws.send(json.dumps(sub_msg))
+            
+            import time
+            start_time = time.time()
+            
+            while time.time() - start_time < 3.0: # Listen for exactly 3 seconds
+                try:
+                    result = ws.recv()
+                    data = json.loads(result)
+                    if data.get("MessageType") == "PositionReport":
+                        pr = data["Message"]["PositionReport"]
+                        mmsi = str(data.get("MetaData", {}).get("MMSI", "UNKNOWN"))
+                        name = data.get("MetaData", {}).get("ShipName", "").strip() or f"MMSI: {mmsi}"
+                        lat, lon = pr.get('Latitude', 0), pr.get('Longitude', 0)
+                        if lat != 0 and lon != 0:
+                            live_vessels_data.append({
+                                "MMSI": mmsi, "Vessel Name": name, "lat": lat, "lon": lon, 
+                                "sog": pr.get('Sog', 0), "cog": pr.get('Cog', 0),
+                                "Risk Status": "Nominal", "Cargo Value ($M)": round(random.uniform(10, 150), 1),
+                                "Fuel Saved (MT)": round(random.uniform(5, 25), 1)
+                            })
+                        if len(live_vessels_data) >= 40: break
+                except websocket.WebSocketTimeoutException:
+                    break
+            ws.close()
+            
             if live_vessels_data:
                 status.update(label=f"Tracking {len(live_vessels_data)} live vessels.", state="complete")
-        except:
-            status.update(label=f"Uplink blocked. Using simulation.", state="error")
+            else:
+                status.update(label="No vessels broadcasting in sector right now. Initializing AI simulation.", state="error")
+        except Exception as e:
+            status.update(label=f"WebSocket connection failed: {e}", state="error")
 
 if len(live_vessels_data) < 5:
     for i in range(45):
@@ -275,7 +273,7 @@ r = pdk.Deck(layers=layers, initial_view_state=view_state, map_style=map_style, 
 st.pydeck_chart(r, use_container_width=True)
 
 # ---------------------------------------------------------
-# 8. THE ENTERPRISE ANALYTICS SUITE (NEW SECTION)
+# 8. THE ENTERPRISE ANALYTICS SUITE
 # ---------------------------------------------------------
 st.markdown("<h3 style='margin-top: 30px;'>📈 Operational Analytics & Financial Ledger</h3>", unsafe_allow_html=True)
 
@@ -285,10 +283,9 @@ with tab1:
     st.markdown("<p class='hud-text'>Live accounting of protected maritime cargo value and calculated Scope 3 emissions reductions from AI route optimization.</p>", unsafe_allow_html=True)
     ledger_df = pd.DataFrame(live_vessels_data)[["MMSI", "Vessel Name", "Risk Status", "Cargo Value ($M)", "Fuel Saved (MT)"]]
     
-    # Calculate Totals
     total_cargo = ledger_df["Cargo Value ($M)"].sum()
     total_fuel = ledger_df["Fuel Saved (MT)"].sum()
-    total_carbon = total_fuel * 3.11 # 1 MT of bunker fuel = ~3.11 MT of CO2e
+    total_carbon = total_fuel * 3.11 
     
     st.markdown(f"**Total Capital Protected:** ${total_cargo:,.1f} Million | **Total Scope 3 Averted:** {total_carbon:,.1f} MT CO₂e")
     st.dataframe(ledger_df.style.highlight_max(axis=0, subset=["Fuel Saved (MT)"], color=accent_green), use_container_width=True)
@@ -298,13 +295,11 @@ with tab2:
     chart_col1, chart_col2 = st.columns(2)
     with chart_col1:
         st.markdown("**10-Year Wave Height Extremes (Meters)**")
-        # Simulated historical wave data (trending up)
         years = pd.date_range("2016", "2026", freq="YE")
         wave_data = pd.DataFrame({"Max Wave Height (m)": [5.2, 5.4, 5.1, 5.8, 6.0, 5.9, 6.2, 6.5, 6.4, 6.8]}, index=years)
         st.line_chart(wave_data, color="#E11D48")
     with chart_col2:
         st.markdown("**IUU Fishing / Dark Fleet Suspicions (Incidents)**")
-        # Simulated historical IUU incidents
         iuu_data = pd.DataFrame({"Dark Fleet Incidents": [12, 14, 18, 15, 22, 28, 35, 41, 44, 52]}, index=years)
         st.bar_chart(iuu_data, color="#38BDF8")
 
@@ -317,4 +312,4 @@ with tab3:
                 response = model.generate_content(report_prompt)
                 st.info(response.text)
             except Exception as e:
-                st.error("Comms failure with GenAI.")
+                st.error(f"GenAI Error: {e}")
