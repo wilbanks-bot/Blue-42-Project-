@@ -9,6 +9,12 @@ import random
 from google.oauth2 import service_account
 import google.generativeai as genai
 
+try:
+    import websocket
+    WEBSOCKET_AVAILABLE = True
+except ImportError:
+    WEBSOCKET_AVAILABLE = False
+
 # ---------------------------------------------------------
 # 1. PAGE SETUP & REFINED UX THEME CONFIGURATION
 # ---------------------------------------------------------
@@ -27,7 +33,8 @@ if night_vision:
 else:
     bg_color = "#f1f5f9"; card_bg = "#ffffff"; text_color = "#0f172a"
     accent_blue = "#0284c7"; accent_red = "#e11d48"; accent_green = "#059669"; accent_purple = "#7c3aed"; accent_amber = "#d97706"
-    map_style = "satellite" 
+    # THE FIX: Switched from paid "satellite" to the free, native "light" CartoDB map style
+    map_style = "light" 
 
 css = f"""
 <style>
@@ -63,7 +70,7 @@ except Exception as e: ee_status = "🔴 UPLINK SEVERED"
 try:
     if "GEMINI_API_KEY" in st.secrets:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         ai_status = "🟢 CORE ACTIVE"
     else: ai_status = "🔴 CORE OFFLINE"
 except Exception as e: ai_status = "🔴 CORE OFFLINE"
@@ -143,12 +150,12 @@ if sector_mode == "US West Coast (Channel Islands)":
     if focus_mode in ["🌍 Global Overview", "🌱 ESG Blue Carbon"]:
         depth_data = pd.DataFrame([{"polygon": [[[-119.7, 33.9], [-119.4, 33.9], [-119.4, 34.1], [-119.7, 34.1]]], "name": "Optimal Bathymetric Shelf", "analytics": "Copernicus Depth: -5m to -30m.", "source": "Copernicus Marine"}])
         map_layers.append(pdk.Layer("PolygonLayer", data=depth_data, get_polygon="polygon", get_fill_color="[45, 212, 191, 30]", get_line_color="[45, 212, 191, 150]", line_width_min_pixels=2, pickable=True))
-        kelp_df = pd.DataFrame([{"lat": 34.02, "lon": -119.55, "name": "Verified Carbon Sink", "analytics": "Depth 14m, SST 16.5°C.", "source": "GDM", "color": [16, 185, 129, 255]}])
-        map_layers.append(pdk.Layer("ScatterplotLayer", data=kelp_df, get_position="[lon, lat]", get_fill_color="color", get_radius=4000, pickable=True))
+        kelp_df = pd.DataFrame([{"lat": 34.02, "lon": -119.55, "name": "Verified Carbon Sink", "analytics": "Depth 14m, SST 16.5°C.", "source": "GDM", "color": [34, 197, 94, 200]}])
+        map_layers.append(pdk.Layer("ScatterplotLayer", data=kelp_df, get_position="[lon, lat]", get_fill_color="color", get_radius=3000, pickable=True))
 
     if focus_mode in ["🌍 Global Overview", "🛡️ Threat Interdiction"]:
         mpa_data = pd.DataFrame([{"polygon": [[[-120.2, 33.8], [-119.2, 33.8], [-119.2, 34.2], [-120.2, 34.2]]], "name": "Channel Islands MPA", "analytics": "Federally Protected Boundary.", "source": "UNEP-WCMC"}])
-        map_layers.append(pdk.Layer("PolygonLayer", data=mpa_data, get_polygon="polygon", get_fill_color="[56, 189, 248, 30]", get_line_color="[56, 189, 248, 150]", line_width_min_pixels=2, pickable=True))
+        map_layers.append(pdk.Layer("PolygonLayer", data=mpa_data, get_polygon="polygon", get_fill_color="[56, 189, 248, 20]", get_line_color="[56, 189, 248, 150]", line_width_min_pixels=2, pickable=True))
 
     if focus_mode in ["🌍 Global Overview", "🌪️ Supply Chain Resilience"]:
         storm_data = pd.DataFrame([{"polygon": [[[-119.5, 33.6], [-119.1, 33.6], [-119.1, 34.0], [-119.5, 34.0]]], "name": "Severe Gale Warning", "analytics": "H_s > 6.1m detected.", "source": "WeatherNext 3"}])
@@ -190,6 +197,7 @@ else: # HAWAII
 # 6. VESSELS ENGINE (Muted styling for professional look)
 # ---------------------------------------------------------
 vessels = []
+
 if focus_mode in ["🌍 Global Overview", "🌪️ Supply Chain Resilience"]:
     for i in range(25):
         sog = random.uniform(8.0, 22.0)
@@ -242,7 +250,6 @@ with col_details:
         st.code("IF (Distance_to_MPA < 15nm) \nAND (Signal_Loss > 60m) \nAND (Speed < 4kts):\n   TRIGGER = HIGH_THREAT", language="python")
         
         st.markdown("#### Tactical Action")
-        # SAFEGUARD: The .get() method safely checks the state without crashing if it's missing!
         if st.button("🛰️ INITIATE SAR TASKING", use_container_width=True):
             st.session_state["sar_tasked"] = True
         
@@ -262,12 +269,6 @@ with col_details:
         st.markdown("#### Hydrodynamic Drag")
         st.latex(r"R_T = \frac{1}{2} \rho v^2 S C_T")
         st.markdown(f"<span style='color: #64748b; font-size: 0.85rem;'>Altering the route to avoid $H_s \ge 6.1$m waves drops the drag coefficient ($C_T$) by ~42%.</span>", unsafe_allow_html=True)
-        if st.button("Calculate New Route via Gemini", use_container_width=True):
-            with st.spinner("AI calculating..."):
-                try:
-                    res = model.generate_content("Generate a concise, 2-step bulleted voyage rerouting plan to minimize drag through a 6-meter sea state.")
-                    st.info(res.text)
-                except: st.error("AI Comms Offline.")
 
     elif focus_mode == "🌱 ESG Blue Carbon":
         st.markdown(f"<h3 style='color: {accent_green}; font-size: 1.25rem;'>🌱 Capital Verification</h3>", unsafe_allow_html=True)
