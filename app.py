@@ -64,7 +64,7 @@ except Exception as e: ee_status = "🔴 UPLINK SEVERED"
 try:
     if "GEMINI_API_KEY" in st.secrets:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         ai_status = "🟢 CORE ACTIVE"
     else: ai_status = "🔴 CORE OFFLINE"
 except Exception as e: ai_status = "🔴 CORE OFFLINE"
@@ -132,7 +132,7 @@ if sector_mode == "US West Coast (Channel Islands)":
     if show_sar:
         sar_data = pd.DataFrame([{"polygon": [[[-120.5, 33.7], [-119.8, 33.7], [-119.6, 34.2], [-120.3, 34.2]]]}])
         layers.append(pdk.Layer("PolygonLayer", data=sar_data, get_polygon="polygon", get_fill_color="[245, 158, 11, 80]", get_line_color="[245, 158, 11, 255]", line_width_min_pixels=3, pickable=True))
-        if risk_level == "GREEN": risk_level = "AMBER (Elevated Operational Risk)"
+        if risk_level == "GREEN (Nominal Operational Risk)": risk_level = "AMBER (Elevated Operational Risk)"
 
 else:
     view_state = pdk.ViewState(latitude=21.4, longitude=-157.9, zoom=7.5, pitch=50, bearing=-15)
@@ -157,6 +157,7 @@ else:
     if show_sar:
         sar_data = pd.DataFrame([{"polygon": [[[-158.5, 21.5], [-158.0, 21.5], [-158.0, 21.8], [-158.5, 21.8]]]}])
         layers.append(pdk.Layer("PolygonLayer", data=sar_data, get_polygon="polygon", get_fill_color="[245, 158, 11, 80]", get_line_color="[245, 158, 11, 255]", line_width_min_pixels=3, pickable=True))
+        if risk_level == "GREEN (Nominal Operational Risk)": risk_level = "AMBER (Elevated Operational Risk)"
 
 # ---------------------------------------------------------
 # 5. FETCH LIVE SHIPS VIA SATELLITE & GENERATE LEDGER DATA
@@ -165,7 +166,6 @@ live_vessels_data = []
 if live_ais and ais_key:
     with st.sidebar.status("📡 Synchronous connection to AIS Network...", expanded=True) as status:
         try:
-            # Using synchronous websocket to bypass Streamlit async thread issues
             ws = websocket.create_connection("wss://stream.aisstream.io/v0/stream", timeout=4)
             sub_msg = {"APIKey": ais_key, "BoundingBoxes": ais_bounds, "FilterMessageTypes": ["PositionReport"]}
             ws.send(json.dumps(sub_msg))
@@ -173,7 +173,7 @@ if live_ais and ais_key:
             import time
             start_time = time.time()
             
-            while time.time() - start_time < 3.0: # Listen for exactly 3 seconds
+            while time.time() - start_time < 3.0:
                 try:
                     result = ws.recv()
                     data = json.loads(result)
@@ -219,7 +219,6 @@ if len(live_vessels_data) < 5:
         "Risk Status": "CRITICAL ANOMALY", "Cargo Value ($M)": 0.0, "Fuel Saved (MT)": 0.0
     })
 
-# Format for map rendering
 map_vessels = []
 for v in live_vessels_data:
     cog_rad = math.radians(v['cog'])
@@ -273,7 +272,7 @@ r = pdk.Deck(layers=layers, initial_view_state=view_state, map_style=map_style, 
 st.pydeck_chart(r, use_container_width=True)
 
 # ---------------------------------------------------------
-# 8. THE ENTERPRISE ANALYTICS SUITE
+# 8. THE ENTERPRISE ANALYTICS SUITE 
 # ---------------------------------------------------------
 st.markdown("<h3 style='margin-top: 30px;'>📈 Operational Analytics & Financial Ledger</h3>", unsafe_allow_html=True)
 
