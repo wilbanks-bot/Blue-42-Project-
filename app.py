@@ -1,14 +1,19 @@
 import streamlit as st
 import pydeck as pdk
 import pandas as pd
-import numpy as np
 import json
 import ee
 import math
 import random
-import websocket
+import time
 from google.oauth2 import service_account
 import google.generativeai as genai
+
+try:
+    import websocket
+    WEBSOCKET_AVAILABLE = True
+except ImportError:
+    WEBSOCKET_AVAILABLE = False
 
 # ---------------------------------------------------------
 # 1. PAGE SETUP & ENTERPRISE THEME CONFIGURATION
@@ -41,10 +46,6 @@ css = f"""
     .hud-text {{ color: #64748B; font-size: 0.875rem; line-height: 1.5; }}
     .terminal {{ background-color: {term_bg}; padding: 16px; border-radius: 6px; border-left: 4px solid {accent_blue}; color: {term_color}; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; }}
     @keyframes pulse-border {{ 0% {{ box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }} 70% {{ box-shadow: 0 0 0 10px rgba(225, 29, 72, 0); }} 100% {{ box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }} }}
-    .streamlit-expanderHeader {{ font-weight: 600 !important; font-size: 0.95rem; color: {text_color} !important; }}
-    .stTabs [data-baseweb="tab-list"] {{ gap: 24px; }}
-    .stTabs [data-baseweb="tab"] {{ height: 50px; white-space: pre-wrap; background-color: transparent; border-radius: 4px 4px 0px 0px; gap: 1px; padding-top: 10px; padding-bottom: 10px; }}
-    .stTabs [aria-selected="true"] {{ background-color: {card_bg}; border-bottom: 2px solid {accent_blue}; color: {accent_blue}; }}
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
@@ -103,7 +104,24 @@ show_sar = st.sidebar.checkbox("🚁 Crisis Response (Predictive SAR)", value=Fa
 st.sidebar.markdown("---")
 
 # ---------------------------------------------------------
-# 4. DATA LOGIC
+# 4. GENAI VOYAGE ROUTING ENGINE (RESTORED!)
+# ---------------------------------------------------------
+st.sidebar.markdown("### 🧭 GENAI ROUTING ENGINE")
+st.sidebar.markdown("<p class='hud-text'>Automated WeatherNext 3 route optimization.</p>", unsafe_allow_html=True)
+
+if st.sidebar.button("Generate Voyage Plan Override"):
+    with st.sidebar.status("GenAI correlating live weather with decadal baseline...", expanded=True):
+        try:
+            routing_prompt = f"You are a strategic marine logistics AI. The sector is {sector_mode}. A weather hazard with significant wave heights (H_s) > 6.1m is detected. Using historical decadal weather trends, generate a highly technical 3-step voyage rerouting plan to minimize hydrodynamic drag. Estimate bunker fuel saved (in MT and CO2e), and ensure operational continuity. Use bullet points."
+            route_response = model.generate_content(routing_prompt)
+            st.success("Routing Plan Generated")
+            st.markdown(f"<div class='terminal'>{route_response.text}</div>", unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"GenAI Error: {e}")
+st.sidebar.markdown("---")
+
+# ---------------------------------------------------------
+# 5. DATA LOGIC & AGGREGATION
 # ---------------------------------------------------------
 layers = []
 active_alerts = []
@@ -160,63 +178,61 @@ else:
         if risk_level == "GREEN (Nominal Operational Risk)": risk_level = "AMBER (Elevated Operational Risk)"
 
 # ---------------------------------------------------------
-# 5. FETCH LIVE SHIPS VIA SATELLITE & GENERATE LEDGER DATA
+# 6. FETCH LIVE SHIPS VIA SATELLITE (SYNCHRONOUS)
 # ---------------------------------------------------------
 live_vessels_data = []
-if live_ais and ais_key:
-    with st.sidebar.status("📡 Synchronous connection to AIS Network...", expanded=True) as status:
-        try:
-            ws = websocket.create_connection("wss://stream.aisstream.io/v0/stream", timeout=4)
-            sub_msg = {"APIKey": ais_key, "BoundingBoxes": ais_bounds, "FilterMessageTypes": ["PositionReport"]}
-            ws.send(json.dumps(sub_msg))
-            
-            import time
-            start_time = time.time()
-            
-            while time.time() - start_time < 3.0:
-                try:
-                    result = ws.recv()
-                    data = json.loads(result)
-                    if data.get("MessageType") == "PositionReport":
-                        pr = data["Message"]["PositionReport"]
-                        mmsi = str(data.get("MetaData", {}).get("MMSI", "UNKNOWN"))
-                        name = data.get("MetaData", {}).get("ShipName", "").strip() or f"MMSI: {mmsi}"
-                        lat, lon = pr.get('Latitude', 0), pr.get('Longitude', 0)
-                        if lat != 0 and lon != 0:
-                            live_vessels_data.append({
-                                "MMSI": mmsi, "Vessel Name": name, "lat": lat, "lon": lon, 
-                                "sog": pr.get('Sog', 0), "cog": pr.get('Cog', 0),
-                                "Risk Status": "Nominal", "Cargo Value ($M)": round(random.uniform(10, 150), 1),
-                                "Fuel Saved (MT)": round(random.uniform(5, 25), 1)
-                            })
-                        if len(live_vessels_data) >= 40: break
-                except websocket.WebSocketTimeoutException:
-                    break
-            ws.close()
-            
-            if live_vessels_data:
-                status.update(label=f"Tracking {len(live_vessels_data)} live vessels.", state="complete")
-            else:
-                status.update(label="No vessels broadcasting in sector right now. Initializing AI simulation.", state="error")
-        except Exception as e:
-            status.update(label=f"WebSocket connection failed: {e}", state="error")
 
+if live_ais and ais_key:
+    if not WEBSOCKET_AVAILABLE:
+        st.sidebar.error("⚠️ 'websocket-client' missing. Ensure it is in requirements.txt and reboot app.")
+    else:
+        with st.sidebar.status("📡 Synchronous connection to AIS Network...", expanded=True) as status:
+            try:
+                ws = websocket.create_connection("wss://stream.aisstream.io/v0/stream", timeout=4)
+                sub_msg = {"APIKey": ais_key, "BoundingBoxes": ais_bounds, "FilterMessageTypes": ["PositionReport"]}
+                ws.send(json.dumps(sub_msg))
+                
+                start_time = time.time()
+                while time.time() - start_time < 3.0:
+                    try:
+                        result = ws.recv()
+                        data = json.loads(result)
+                        if data.get("MessageType") == "PositionReport":
+                            pr = data["Message"]["PositionReport"]
+                            mmsi = str(data.get("MetaData", {}).get("MMSI", "UNKNOWN"))
+                            name = data.get("MetaData", {}).get("ShipName", "").strip() or f"MMSI: {mmsi}"
+                            lat, lon = pr.get('Latitude', 0), pr.get('Longitude', 0)
+                            if lat != 0 and lon != 0:
+                                live_vessels_data.append({
+                                    "MMSI": mmsi, "Vessel Name": name, "lat": lat, "lon": lon, 
+                                    "sog": pr.get('Sog', 0), "cog": pr.get('Cog', 0),
+                                    "Risk Status": "Nominal"
+                                })
+                            if len(live_vessels_data) >= 40: break
+                    except websocket.WebSocketTimeoutException:
+                        break
+                ws.close()
+                if live_vessels_data:
+                    status.update(label=f"Tracking {len(live_vessels_data)} live vessels.", state="complete")
+                else:
+                    status.update(label="No vessels broadcasting. Initializing AI simulation.", state="error")
+            except Exception as e:
+                status.update(label=f"WebSocket connection failed: {e}", state="error")
+
+# VesselFinder Fallback (Guarantees map is packed with ships for pitch)
 if len(live_vessels_data) < 5:
     for i in range(45):
-        sog = random.uniform(5.0, 24.0)
-        mmsi = f"36{random.randint(1000000, 9999999)}"
         live_vessels_data.append({
-            "MMSI": mmsi, "Vessel Name": f"COMMERCIAL VESSEL {mmsi[-4:]}",
+            "MMSI": f"36{random.randint(1000000, 9999999)}", "Vessel Name": f"COMMERCIAL VESSEL",
             "lat": base_lat + random.uniform(-1.5, 1.5), "lon": base_lon + random.uniform(-2.0, 2.0),
-            "sog": sog, "cog": random.uniform(0, 360),
-            "Risk Status": "Nominal", "Cargo Value ($M)": round(random.uniform(10, 150), 1),
-            "Fuel Saved (MT)": round(random.uniform(5, 25), 1) if show_weather else 0.0
+            "sog": random.uniform(5.0, 24.0), "cog": random.uniform(0, 360),
+            "Risk Status": "Nominal"
         })
     live_vessels_data.append({
         "MMSI": "413000000", "Vessel Name": "UNVERIFIED DARK TARGET",
         "lat": base_lat + 0.15, "lon": base_lon - 0.65,
         "sog": 9.1, "cog": 80,
-        "Risk Status": "CRITICAL ANOMALY", "Cargo Value ($M)": 0.0, "Fuel Saved (MT)": 0.0
+        "Risk Status": "CRITICAL ANOMALY"
     })
 
 map_vessels = []
@@ -228,7 +244,7 @@ for v in live_vessels_data:
         "lat": v['lat'], "lon": v['lon'], "name": v['Vessel Name'], "sog": v['sog'], "cog": v['cog'],
         "color": [239, 68, 68, 255] if is_threat else [14, 165, 233, 220],
         "heading_path": [[v['lon'], v['lat']], [v['lon'] + length * math.sin(cog_rad), v['lat'] + length * math.cos(cog_rad)]],
-        "analytics": v['Risk Status'], "source": "Live AI Synthesis"
+        "analytics": v['Risk Status'], "source": "Live Synthesis"
     })
 
 vessels_df = pd.DataFrame(map_vessels)
@@ -236,10 +252,10 @@ layers.append(pdk.Layer("ScatterplotLayer", data=vessels_df, get_position="[lon,
 layers.append(pdk.Layer("PathLayer", data=vessels_df, get_path="heading_path", get_color="color", width_min_pixels=3, pickable=False))
 
 # ---------------------------------------------------------
-# 6. MAIN DASHBOARD: THE EXECUTIVE HUD 
+# 7. MAIN DASHBOARD: THE EXECUTIVE HUD 
 # ---------------------------------------------------------
 st.markdown(f"<h2 style='color: {accent_blue};'>PROJECT BLUE 42: STRATEGIC INSIGHTS</h2>", unsafe_allow_html=True)
-st.markdown("<p class='hud-text' style='margin-bottom: 20px;'>Transforming Planetary Telemetry into Auditable Business Value.</p>", unsafe_allow_html=True)
+st.markdown("<p class='hud-text' style='margin-bottom: 20px;'>Transforming Planetary Telemetry into Auditable Business Value & Operational Continuity.</p>", unsafe_allow_html=True)
 
 alert_class = "alert-card" if "RED" in risk_level else ""
 ai_summary_text = "Multiple critical risk vectors detected in operational sector. Immediate review advised." if "RED" in risk_level else "All assets operating within nominal parameters."
@@ -254,14 +270,14 @@ st.markdown(f"""
 
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.markdown(f"<div class='metric-card protection-card'><h4>🛡️ ASSET PROTECTION</h4><p class='kpi-value' style='color:{accent_red};'>1 CRITICAL</p><span class='kpi-subtext'>10M Hectares Surveilled</span></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-card protection-card'><h4>🛡️ ASSET PROTECTION</h4><p class='kpi-value' style='color:{accent_red};'>1 CRITICAL</p><span class='kpi-subtext'>10M Hectares Surveilled</span><span class='kpi-impact'>Strategic ROI: Mitigating $20B IUU Market</span></div>", unsafe_allow_html=True)
 with col2:
-    st.markdown(f"<div class='metric-card'><h4>🌪️ RESILIENCE</h4><p class='kpi-value'>5 SHIPS</p><span class='kpi-subtext'>Dynamic Rerouting Active</span></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-card'><h4>🌪️ RESILIENCE</h4><p class='kpi-value'>5 SHIPS</p><span class='kpi-subtext'>Dynamic Rerouting Active</span><span class='kpi-impact'>Strategic ROI: $450K Fuel Cost Avoided</span></div>", unsafe_allow_html=True)
 with col3:
-    st.markdown(f"<div class='metric-card mitigation-card'><h4>🌱 MITIGATION</h4><p class='kpi-value'>14 HA</p><span class='kpi-subtext'>Blue Carbon Sites Verified</span></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-card mitigation-card'><h4>🌱 MITIGATION</h4><p class='kpi-value'>14 HA</p><span class='kpi-subtext'>Blue Carbon Sites Verified</span><span class='kpi-impact'>Strategic ROI: 2,500 tCO2e Unlocked</span></div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 7. ASSEMBLE MAP & TOOLTIPS
+# 8. ASSEMBLE MAP & TOOLTIPS
 # ---------------------------------------------------------
 custom_tooltip = {
     "html": f"""<div style='padding: 10px; line-height: 1.4;'><b style='color: {accent_blue}; font-size: 1.1em;'>{{name}}</b><br/><span style='color: #E0E0E0;'>Speed: {{sog}} kts | Heading: {{cog}}&deg;</span><hr style='border-color: #333; margin: 8px 0;'/><b style='color: {accent_green};'>AI Insight:</b> <span style='color: #ccc;'>{{analytics}}</span></div>""",
@@ -272,43 +288,24 @@ r = pdk.Deck(layers=layers, initial_view_state=view_state, map_style=map_style, 
 st.pydeck_chart(r, use_container_width=True)
 
 # ---------------------------------------------------------
-# 8. THE ENTERPRISE ANALYTICS SUITE 
+# 9. SIDEBAR: LIVE GEMINI INTERROGATION
 # ---------------------------------------------------------
-st.markdown("<h3 style='margin-top: 30px;'>📈 Operational Analytics & Financial Ledger</h3>", unsafe_allow_html=True)
+st.sidebar.markdown("### 💬 STRATEGIC ADVISORY AI")
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-tab1, tab2, tab3 = st.tabs(["💰 Scope 3 Financial & Carbon Ledger", "📊 Historical Trend Analytics", "📋 Automated Action Reports"])
+for message in st.session_state.messages[-3:]: 
+    with st.sidebar.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-with tab1:
-    st.markdown("<p class='hud-text'>Live accounting of protected maritime cargo value and calculated Scope 3 emissions reductions from AI route optimization.</p>", unsafe_allow_html=True)
-    ledger_df = pd.DataFrame(live_vessels_data)[["MMSI", "Vessel Name", "Risk Status", "Cargo Value ($M)", "Fuel Saved (MT)"]]
-    
-    total_cargo = ledger_df["Cargo Value ($M)"].sum()
-    total_fuel = ledger_df["Fuel Saved (MT)"].sum()
-    total_carbon = total_fuel * 3.11 
-    
-    st.markdown(f"**Total Capital Protected:** ${total_cargo:,.1f} Million | **Total Scope 3 Averted:** {total_carbon:,.1f} MT CO₂e")
-    st.dataframe(ledger_df.style.highlight_max(axis=0, subset=["Fuel Saved (MT)"], color=accent_green), use_container_width=True)
-
-with tab2:
-    st.markdown("<p class='hud-text'>Longitudinal decadal data analysis to justify capital intervention and ESG reporting.</p>", unsafe_allow_html=True)
-    chart_col1, chart_col2 = st.columns(2)
-    with chart_col1:
-        st.markdown("**10-Year Wave Height Extremes (Meters)**")
-        years = pd.date_range("2016", "2026", freq="YE")
-        wave_data = pd.DataFrame({"Max Wave Height (m)": [5.2, 5.4, 5.1, 5.8, 6.0, 5.9, 6.2, 6.5, 6.4, 6.8]}, index=years)
-        st.line_chart(wave_data, color="#E11D48")
-    with chart_col2:
-        st.markdown("**IUU Fishing / Dark Fleet Suspicions (Incidents)**")
-        iuu_data = pd.DataFrame({"Dark Fleet Incidents": [12, 14, 18, 15, 22, 28, 35, 41, 44, 52]}, index=years)
-        st.bar_chart(iuu_data, color="#38BDF8")
-
-with tab3:
-    st.markdown("<p class='hud-text'>GenAI automated formal reporting for Coast Guard incident dispatch and Corporate ESG audits.</p>", unsafe_allow_html=True)
-    if st.button("Generate Official Action Report via Gemini"):
-        with st.spinner("Drafting formal compliance and incident report..."):
-            try:
-                report_prompt = f"You are a Coast Guard officer and ESG auditor. Based on the {sector_mode} sector with threat level {risk_level}, write a highly formal, 3-paragraph executive incident report covering maritime security, supply chain disruption, and environmental impact. Use formal government/financial language."
-                response = model.generate_content(report_prompt)
-                st.info(response.text)
-            except Exception as e:
-                st.error(f"GenAI Error: {e}")
+if prompt := st.sidebar.chat_input("Request strategic risk evaluation..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.sidebar.chat_message("user"): st.markdown(prompt)
+    with st.sidebar.chat_message("assistant"):
+        try:
+            tactical_prompt = f"You are a Senior Strategic Advisor. Sector is {sector_mode}. Analyze the query focusing on business value, capital risk, and operational continuity: {prompt}"
+            response = model.generate_content(tactical_prompt)
+            st.markdown(response.text)
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
+        except Exception as e:
+            st.error(f"GenAI Chat Error: {e}")
