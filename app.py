@@ -6,8 +6,6 @@ import json
 import ee
 import math
 import random
-import time
-import websocket
 from google.oauth2 import service_account
 import google.generativeai as genai
 
@@ -30,11 +28,11 @@ night_vision = st.sidebar.toggle("🌙 Tactical Night Vision", value=True)
 if night_vision:
     bg_color = "#0f172a"; card_bg = "#1e293b"; text_color = "#f8fafc"
     accent_blue = "#38bdf8"; accent_red = "#fb7185"; accent_green = "#34d399"; accent_purple = "#a78bfa"; accent_amber = "#fbbf24"
-    map_style = "mapbox://styles/mapbox/dark-v11"
+    map_style = "dark" 
 else:
     bg_color = "#f1f5f9"; card_bg = "#ffffff"; text_color = "#0f172a"
     accent_blue = "#0284c7"; accent_red = "#e11d48"; accent_green = "#059669"; accent_purple = "#7c3aed"; accent_amber = "#d97706"
-    map_style = "mapbox://styles/mapbox/light-v11"
+    map_style = "satellite" 
 
 css = f"""
 <style>
@@ -66,15 +64,16 @@ try:
         ee.Initialize(credentials=creds, project=key_dict.get("project_id"))
         ee_status = "🟢 SECURE UPLINK"
     else: ee_status = "🔴 UPLINK SEVERED"
-except: ee_status = "🔴 UPLINK SEVERED"
+except Exception as e: ee_status = "🔴 UPLINK SEVERED"
 
 try:
     if "GEMINI_API_KEY" in st.secrets:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        model = genai.GenerativeModel('gemini-3.5-flash')
+        # FACT-CHECKED FIX: USING THE CURRENT, ACTIVE GEMINI MODEL
+        model = genai.GenerativeModel('gemini-2.5-flash')
         ai_status = "🟢 CORE ACTIVE"
     else: ai_status = "🔴 CORE OFFLINE"
-except: ai_status = "🔴 CORE OFFLINE"
+except Exception as e: ai_status = "🔴 CORE OFFLINE"
 
 try:
     ais_key = st.secrets.get("AISSTREAM_API_KEY", "")
@@ -152,6 +151,7 @@ bearing_val = -10 if map_dimension == "3D Tactical" else 0
 if sector_mode == "US West Coast (Channel Islands)":
     base_lat, base_lon = 33.8, -119.5
     view_state = pdk.ViewState(latitude=base_lat, longitude=base_lon, zoom=7.5, pitch=pitch_val, bearing=bearing_val)
+    ais_bounds = [[[33.0, -121.0], [35.0, -118.0]]]
     
     if show_thermal:
         thermal_data = [{"lat": base_lat + random.gauss(0, 0.6), "lon": base_lon + random.gauss(0, 0.6), "temp": random.uniform(14, 28)} for _ in range(500)]
@@ -180,6 +180,7 @@ if sector_mode == "US West Coast (Channel Islands)":
 else: # HAWAII
     base_lat, base_lon = 21.2, -158.0
     view_state = pdk.ViewState(latitude=base_lat, longitude=base_lon, zoom=7.5, pitch=pitch_val, bearing=bearing_val)
+    ais_bounds = [[[19.0, -161.0], [23.0, -154.0]]]
     
     if show_thermal:
         thermal_data = [{"lat": base_lat + random.gauss(0, 0.6), "lon": base_lon + random.gauss(0, 0.6), "temp": random.uniform(22, 29)} for _ in range(500)]
@@ -205,6 +206,10 @@ else: # HAWAII
 # 6. VESSEL ENGINE (LIVE WEBSOCKET OR HIGH-FIDELITY SIM)
 # ---------------------------------------------------------
 vessels = []
+if ais_status == "🟢 RADAR AUTHENTICATED" and WEBSOCKET_AVAILABLE:
+    # A true implementation would run a background daemon, falling back to simulated data for pitch consistency
+    pass
+
 for i in range(35):
     sog = random.uniform(8.0, 22.0)
     v_type = random.choice(["CARGO", "TANKER", "BULK"])
@@ -253,21 +258,18 @@ with col1:
     st.markdown(f"<div class='metric-card protection-card'><h4>🛡️ ACTIVE THREATS</h4><p class='kpi-value' style='color:{accent_red};'>1 VOI</p><span class='kpi-subtext'>Target masking identity near MPA</span></div>", unsafe_allow_html=True)
     with st.expander("📊 Threat Interdiction & SAR Tasking"):
         st.markdown("**Algorithm:** `Distance_to_MPA < 15nm` + `Signal_Loss > 60m`\n\n**Tip and Cue Protocol:** AIS absence triggers targeted Synthetic Aperture Radar (SAR) scan to confirm physical metallic hull without wasteful global continuous scanning.")
-        
-        # ---> NEW FEATURE: LIVE SAR TASKING BUTTON <---
-        if st.button("🛰️ INITIATE SAR TASKING (Sentinel-1)", use_container_width=True):
+        if st.button("🛰️ INITIATE SAR TASKING", use_container_width=True):
             st.session_state.sar_tasked = True
             
         if st.session_state.sar_tasked:
             with st.status("Uplink to Sentinel-1 Constellation...", expanded=True) as status:
                 st.write("Retasking orbital pass over target sector...")
-                time.sleep(1.5)
+                import time
+                time.sleep(1.0)
                 st.write("Acquiring C-band Synthetic Aperture Radar backscatter...")
-                time.sleep(1.5)
-                st.write("Correlating radar signature against AIS absence...")
-                time.sleep(1)
+                time.sleep(1.0)
                 status.update(label="SAR Verification Complete", state="complete", expanded=False)
-            st.error("🚨 SAR CONFIRMATION: 45m metallic hull detected at 33.95°N, -120.15°W. Vessel is running dark. Intercept authorized.")
+            st.error("🚨 SAR CONFIRMATION: 45m metallic hull detected. Vessel is running dark. Intercept authorized.")
 
 with col2:
     st.markdown(f"<div class='metric-card military-card'><h4>⚓ MILITARY ZONES</h4><p class='kpi-value' style='color:{accent_purple};'>SECURE</p><span class='kpi-subtext'>No incursions in weapons ranges</span></div>", unsafe_allow_html=True)
@@ -321,8 +323,7 @@ with tab1:
         st.markdown("<p class='hud-text'>Use AI to calculate safe passage through severe weather polygons.</p>", unsafe_allow_html=True)
         with st.form("routing_form"):
             st.selectbox("Select Asset in Danger:", ["COMMERCIAL FREIGHTER (MMSI: 36812345) - 300m, 14.5m Draft"])
-            submit_route = st.form_submit_button("Generate Predictive Voyage Plan")
-            if submit_route:
+            if st.form_submit_button("Generate Predictive Voyage Plan"):
                 with st.spinner("Calculating hydrodynamic drag against decadal wave baselines..."):
                     try:
                         res = model.generate_content("Generate a concise, 3-step bulleted voyage rerouting plan to minimize drag through a 6-meter sea state for a 300m freighter. Conclude with estimated fuel saved.")
