@@ -64,7 +64,8 @@ except Exception as e: ee_status = "🔴 UPLINK SEVERED"
 try:
     if "GEMINI_API_KEY" in st.secrets:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # ---> BUG FIXED HERE: UPDATED TO gemini-3.8-flash <---
+        model = genai.GenerativeModel('gemini-3.8-flash')
         ai_status = "🟢 CORE ACTIVE"
     else: ai_status = "🔴 CORE OFFLINE"
 except Exception as e: ai_status = "🔴 CORE OFFLINE"
@@ -117,16 +118,13 @@ if sector_mode == "US West Coast (Channel Islands)":
     regional_ports = ["Port of Los Angeles", "Port of Long Beach", "Port Hueneme", "Port of Oakland", "Santa Barbara Anchorage"]
     
     if show_depth:
-        # Bathymetric Depth Contour (Simulating 5m-30m depth shelf for Kelp)
         depth_data = pd.DataFrame([{"polygon": [[[-119.7, 33.9], [-119.4, 33.9], [-119.4, 34.1], [-119.7, 34.1]]], "name": "Optimal Bathymetric Shelf", "analytics": "Copernicus Depth: -5m to -30m.", "source": "Copernicus Marine Bathymetry"}])
         layers.append(pdk.Layer("PolygonLayer", data=depth_data, get_polygon="polygon", get_fill_color="[45, 212, 191, 50]", get_line_color="[45, 212, 191, 200]", line_width_min_pixels=2, pickable=True))
         
     if show_iuu:
-        # MPA Jurisdictional Boundary
         mpa_data = pd.DataFrame([{"polygon": [[[-120.2, 33.8], [-119.2, 33.8], [-119.2, 34.2], [-120.2, 34.2]]], "name": "Channel Islands Marine Sanctuary (MPA)", "analytics": "Federally Protected Jurisdictional Boundary.", "source": "UNEP-WCMC WDPA"}])
         layers.append(pdk.Layer("PolygonLayer", data=mpa_data, get_polygon="polygon", get_fill_color="[56, 189, 248, 30]", get_line_color="[56, 189, 248, 200]", line_width_min_pixels=3, pickable=True))
         
-        # Kelp Pins
         kelp_df = pd.DataFrame([{"lat": 34.02, "lon": -119.55, "name": "Verified Carbon Sink", "analytics": "Depth 14m, SST 16.5°C.", "source": "Copernicus/GDM", "color": [16, 185, 129, 255]}])
         layers.append(pdk.Layer("ScatterplotLayer", data=kelp_df, get_position="[lon, lat]", get_fill_color="color", get_radius=4000, pickable=True))
         risk_level = "RED (High Compliance Risk)"
@@ -259,7 +257,7 @@ layers.append(pdk.Layer("PathLayer", data=vessels_df, get_path="heading_path", g
 # 6. MAIN DASHBOARD: THE EXECUTIVE HUD 
 # ---------------------------------------------------------
 st.markdown(f"<h2 style='color: {accent_blue};'>PROJECT BLUE 42: STRATEGIC INSIGHTS</h2>", unsafe_allow_html=True)
-st.markdown("<p class='hud-text' style='margin-bottom: 20px;'>Transforming Planetary Telemetry into Auditable Business Value & Operational Continuity.</p>", unsafe_allow_html=True)
+st.markdown("<p class='hud-text' style='margin-bottom: 20px;'>Transforming Planetary Telemetry into Auditable Business Value.</p>", unsafe_allow_html=True)
 
 alert_class = "alert-card" if "RED" in risk_level else ""
 ai_summary_text = "Multiple critical risk vectors detected in operational sector. Immediate review advised." if "RED" in risk_level else "All assets operating within nominal parameters."
@@ -274,17 +272,17 @@ st.markdown(f"""
 
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.markdown(f"<div class='metric-card protection-card'><h4>🛡️ ASSET PROTECTION</h4><p class='kpi-value' style='color:{accent_red};'>1 CRITICAL</p><span class='kpi-subtext'>10M Hectares Surveilled</span><span class='kpi-impact'>Strategic ROI: Mitigating $20B IUU Market</span></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-card protection-card'><h4>🛡️ ASSET PROTECTION</h4><p class='kpi-value' style='color:{accent_red};'>1 CRITICAL</p><span class='kpi-subtext'>10M Hectares Surveilled</span></div>", unsafe_allow_html=True)
 with col2:
-    st.markdown(f"<div class='metric-card'><h4>🌪️ RESILIENCE</h4><p class='kpi-value'>5 SHIPS</p><span class='kpi-subtext'>Dynamic Rerouting Active</span><span class='kpi-impact'>Strategic ROI: $450K Fuel Cost Avoided</span></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-card'><h4>🌪️ RESILIENCE</h4><p class='kpi-value'>5 SHIPS</p><span class='kpi-subtext'>Dynamic Rerouting Active</span></div>", unsafe_allow_html=True)
 with col3:
-    st.markdown(f"<div class='metric-card mitigation-card'><h4>🌱 MITIGATION</h4><p class='kpi-value'>14 HA</p><span class='kpi-subtext'>Blue Carbon Sites Verified</span><span class='kpi-impact'>Strategic ROI: 2,500 tCO2e Unlocked</span></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-card mitigation-card'><h4>🌱 MITIGATION</h4><p class='kpi-value'>14 HA</p><span class='kpi-subtext'>Blue Carbon Sites Verified</span></div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # 7. ASSEMBLE MAP & TOOLTIPS
 # ---------------------------------------------------------
 custom_tooltip = {
-    "html": f"""<div style='padding: 10px; line-height: 1.4;'><b style='color: {accent_blue}; font-size: 1.1em;'>{{name}}</b><br/><span style='color: #E0E0E0;'>Speed: {{sog}} kts | Heading: {{cog}}&deg;</span><hr style='border-color: #333; margin: 8px 0;'/><b style='color: {accent_green};'>AI Insight:</b> <span style='color: #ccc;'>{{analytics}}</span><br/><b style='color: {accent_blue};'>Data Lineage:</b> <span style='color: #ccc;'>{{source}}</span></div>""",
+    "html": f"""<div style='padding: 10px; line-height: 1.4;'><b style='color: {accent_blue}; font-size: 1.1em;'>{{name}}</b><br/><span style='color: #E0E0E0;'>Speed: {{sog}} kts | Heading: {{cog}}&deg;</span><hr style='border-color: #333; margin: 8px 0;'/><b style='color: {accent_green};'>AI Insight:</b> <span style='color: #ccc;'>{{analytics}}</span></div>""",
     "style": {"backgroundColor": "#1E293B", "border": f"1px solid {accent_blue}", "color": "#F8FAFC", "borderRadius": "8px"}
 }
 
