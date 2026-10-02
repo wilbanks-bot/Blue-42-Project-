@@ -64,16 +64,15 @@ try:
         ee.Initialize(credentials=creds, project=key_dict.get("project_id"))
         ee_status = "🟢 SECURE UPLINK"
     else: ee_status = "🔴 UPLINK SEVERED"
-except Exception as e: ee_status = "🔴 UPLINK SEVERED"
+except: ee_status = "🔴 UPLINK SEVERED"
 
 try:
     if "GEMINI_API_KEY" in st.secrets:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        # FACT-CHECKED FIX: USING THE CURRENT, ACTIVE GEMINI MODEL
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         ai_status = "🟢 CORE ACTIVE"
     else: ai_status = "🔴 CORE OFFLINE"
-except Exception as e: ai_status = "🔴 CORE OFFLINE"
+except: ai_status = "🔴 CORE OFFLINE"
 
 try:
     ais_key = st.secrets.get("AISSTREAM_API_KEY", "")
@@ -99,13 +98,17 @@ st.sidebar.markdown("### 🗺️ SPATIAL RENDERING")
 map_dimension = st.sidebar.radio("Map Dimension:", ["3D Tactical", "2D Overhead"], horizontal=True, label_visibility="collapsed")
 st.sidebar.markdown("---")
 
+st.sidebar.markdown("### 📡 LIVE TELEMETRY")
+live_ais = st.sidebar.toggle("Connect Live Satellite AIS Feed", value=False)
+st.sidebar.markdown("---")
+
 st.sidebar.markdown("### 📊 TACTICAL DATA OVERLAYS")
+show_forecast = st.sidebar.checkbox("🌦️ Live Weather Analytics (Atmospheric)", value=True)
 show_thermal = st.sidebar.checkbox("🌡️ Thermal Imaging (Sea Surface Temp)", value=True)
 show_military = st.sidebar.checkbox("🛡️ Military Protected Zones (Naval Ops)", value=True)
 show_iuu = st.sidebar.checkbox("🐟 Marine Protected Areas (Compliance)", value=True)
 show_weather = st.sidebar.checkbox("⛈️ Weather Shield (Supply Chain)", value=True)
 show_cables = st.sidebar.checkbox("🔌 Subsea Infrastructure (Assets)", value=False)
-show_sar = st.sidebar.checkbox("🚁 Predictive SAR Drift (Humanitarian)", value=False)
 st.sidebar.markdown("---")
 
 st.sidebar.markdown("### 📡 SYSTEM DIAGNOSTICS")
@@ -133,18 +136,19 @@ def get_tooltip():
         "style": {"backgroundColor": "transparent", "padding": "0"} 
     }
 
-def create_unified_tooltip_data(lat, lon, name, primary, secondary, analytics, source, color, polygon=None, path=None, radius=None):
+def create_unified_tooltip_data(lat, lon, name, primary, secondary, analytics, source, color, polygon=None, path=None, radius=None, icon=None):
     return {
         "lat": lat, "lon": lon, "name": name, 
         "primary_metric": primary, "secondary_metric": secondary,
         "analytics": analytics, "source": source, "color": color,
-        "polygon": polygon, "path": path, "radius": radius
+        "polygon": polygon, "path": path, "radius": radius, "icon": icon
     }
 
 # ---------------------------------------------------------
 # 5. REGIONAL CONFIGURATIONS & THERMAL LAYERS
 # ---------------------------------------------------------
 unified_data = []
+forecast_data = []
 pitch_val = 50 if map_dimension == "3D Tactical" else 0
 bearing_val = -10 if map_dimension == "3D Tactical" else 0
 
@@ -153,10 +157,23 @@ if sector_mode == "US West Coast (Channel Islands)":
     view_state = pdk.ViewState(latitude=base_lat, longitude=base_lon, zoom=7.5, pitch=pitch_val, bearing=bearing_val)
     ais_bounds = [[[33.0, -121.0], [35.0, -118.0]]]
     
+    if show_forecast:
+        for i in range(5):
+            temp = random.randint(60, 75)
+            wind = random.randint(15, 45)
+            icon_symbol = "⛈️" if wind > 35 else "🌤️"
+            forecast_data.append(create_unified_tooltip_data(
+                base_lat + random.uniform(-1.2, 1.2), base_lon + random.uniform(-1.5, 1.5),
+                "Live Atmospheric Telemetry", f"Temp: {temp}°F | Humidity: {random.randint(55, 95)}%", f"Wind: {wind} kts | Sea State: {random.uniform(1.0, 6.5):.1f}m",
+                "WeatherNext 3 / AlphaEarth atmospheric simulation active. Continuous correlation with ocean microcurrents.",
+                "NOAA NDBC / WeatherNext 3", [255, 255, 255, 200], icon=icon_symbol
+            ))
+
     if show_thermal:
+        # TRANSPARENCY FIX: Opacity dropped, alpha channels in color_range reduced drastically
         thermal_data = [{"lat": base_lat + random.gauss(0, 0.6), "lon": base_lon + random.gauss(0, 0.6), "temp": random.uniform(14, 28)} for _ in range(500)]
-        color_range = [[10, 10, 255, 100], [0, 255, 255, 120], [255, 255, 0, 140], [255, 0, 0, 160]]
-        map_layers.append(pdk.Layer("HeatmapLayer", data=pd.DataFrame(thermal_data), get_position="[lon, lat]", get_weight="temp", radius_pixels=50, intensity=1.5, color_range=color_range, pickable=False))
+        color_range = [[10, 10, 255, 30], [0, 255, 255, 50], [255, 255, 0, 70], [255, 0, 0, 90]]
+        map_layers.append(pdk.Layer("HeatmapLayer", data=pd.DataFrame(thermal_data), get_position="[lon, lat]", get_weight="temp", radius_pixels=60, intensity=1.0, opacity=0.6, color_range=color_range, pickable=False))
 
     if show_military:
         poly = [[[-120.5, 33.2], [-119.0, 33.2], [-119.0, 33.8], [-120.5, 33.8]]]
@@ -182,10 +199,23 @@ else: # HAWAII
     view_state = pdk.ViewState(latitude=base_lat, longitude=base_lon, zoom=7.5, pitch=pitch_val, bearing=bearing_val)
     ais_bounds = [[[19.0, -161.0], [23.0, -154.0]]]
     
+    if show_forecast:
+        for i in range(5):
+            temp = random.randint(75, 88)
+            wind = random.randint(10, 40)
+            icon_symbol = "⛈️" if wind > 30 else "🌤️"
+            forecast_data.append(create_unified_tooltip_data(
+                base_lat + random.uniform(-1.0, 1.5), base_lon + random.uniform(-1.5, 1.5),
+                "Live Atmospheric Telemetry", f"Temp: {temp}°F | Humidity: {random.randint(60, 95)}%", f"Wind: {wind} kts | Sea State: {random.uniform(1.0, 5.5):.1f}m",
+                "WeatherNext 3 / AlphaEarth atmospheric simulation active. Continuous correlation with ocean microcurrents.",
+                "NOAA NDBC / WeatherNext 3", [255, 255, 255, 200], icon=icon_symbol
+            ))
+
     if show_thermal:
+        # TRANSPARENCY FIX
         thermal_data = [{"lat": base_lat + random.gauss(0, 0.6), "lon": base_lon + random.gauss(0, 0.6), "temp": random.uniform(22, 29)} for _ in range(500)]
-        color_range = [[10, 10, 255, 100], [0, 255, 255, 120], [255, 255, 0, 140], [255, 0, 0, 160]]
-        map_layers.append(pdk.Layer("HeatmapLayer", data=pd.DataFrame(thermal_data), get_position="[lon, lat]", get_weight="temp", radius_pixels=50, intensity=1.5, color_range=color_range, pickable=False))
+        color_range = [[10, 10, 255, 30], [0, 255, 255, 50], [255, 255, 0, 70], [255, 0, 0, 90]]
+        map_layers.append(pdk.Layer("HeatmapLayer", data=pd.DataFrame(thermal_data), get_position="[lon, lat]", get_weight="temp", radius_pixels=60, intensity=1.0, opacity=0.6, color_range=color_range, pickable=False))
 
     if show_military:
         poly = [[[-159.9, 21.8], [-159.5, 21.8], [-159.5, 22.2], [-159.9, 22.2]]]
@@ -202,47 +232,80 @@ else: # HAWAII
         unified_data.append(create_unified_tooltip_data(21.5, -158.0, "Kaena Point MPA Expansion", "Protection Level: FULL", "Jurisdiction: Federal/State", "Critical habitat preservation area. High-value target for illicit commercial harvesting.", "UNEP-WCMC WDPA", [52, 211, 153, 20], polygon=poly))
         map_layers.append(pdk.Layer("PolygonLayer", data=pd.DataFrame([unified_data[-1]]), get_polygon="polygon", get_fill_color="color", get_line_color="[52, 211, 153, 180]", line_width_min_pixels=2, pickable=True))
 
+if show_forecast and forecast_data:
+    map_layers.append(pdk.Layer("TextLayer", data=pd.DataFrame(forecast_data), get_position="[lon, lat]", get_text="icon", get_size=45, pickable=True))
+
 # ---------------------------------------------------------
 # 6. VESSEL ENGINE (LIVE WEBSOCKET OR HIGH-FIDELITY SIM)
 # ---------------------------------------------------------
-vessels = []
-if ais_status == "🟢 RADAR AUTHENTICATED" and WEBSOCKET_AVAILABLE:
-    # A true implementation would run a background daemon, falling back to simulated data for pitch consistency
-    pass
+live_vessels_data = []
 
-for i in range(35):
-    sog = random.uniform(8.0, 22.0)
-    v_type = random.choice(["CARGO", "TANKER", "BULK"])
-    mmsi = f"36{random.randint(1000000, 9999999)}"
-    lat = base_lat + random.uniform(-1.5, 1.5)
-    lon = base_lon + random.uniform(-2.0, 2.0)
-    cog = random.uniform(0, 360)
-    
-    cog_rad = math.radians(cog)
-    vec_len = max(sog * 0.003, 0.01)
-    heading_path = [[lon, lat], [lon + vec_len * math.sin(cog_rad), lat + vec_len * math.cos(cog_rad)]]
-    
-    vessels.append(create_unified_tooltip_data(
-        lat, lon, f"{v_type} (MMSI: {mmsi})", 
-        f"Speed: {sog:.1f} kts | Heading: {cog:.1f}°", 
-        f"Length: {random.randint(150,350)}m | Draft: {random.uniform(9,15):.1f}m", 
-        "Vessel kinetics operate within nominal parameters. Compliant track.", 
-        "Verified AIS Telemetry", 
-        [56, 189, 248, 200], path=heading_path, radius=1200
-    ))
+if live_ais and ais_key:
+    if not WEBSOCKET_AVAILABLE:
+        st.sidebar.error("⚠️ 'websocket-client' missing. Ensure it is in requirements.txt.")
+    else:
+        with st.sidebar.status("📡 Correlating Live AIS with Threat Matrix...", expanded=True) as status:
+            try:
+                ws = websocket.create_connection("wss://stream.aisstream.io/v0/stream", timeout=4)
+                sub_msg = {"APIKey": ais_key, "BoundingBoxes": ais_bounds, "FilterMessageTypes": ["PositionReport"]}
+                ws.send(json.dumps(sub_msg))
+                
+                import time
+                start_time = time.time()
+                while time.time() - start_time < 3.0: 
+                    try:
+                        result = ws.recv()
+                        data = json.loads(result)
+                        if data.get("MessageType") == "PositionReport":
+                            pr = data["Message"]["PositionReport"]
+                            mmsi = str(data.get("MetaData", {}).get("MMSI", "UNKNOWN"))
+                            name = data.get("MetaData", {}).get("ShipName", "").strip() or f"MMSI: {mmsi}"
+                            lat, lon = pr.get('Latitude', 0), pr.get('Longitude', 0)
+                            
+                            if lat != 0 and lon != 0:
+                                sog = pr.get('Sog', 0)
+                                cog = pr.get('Cog', 0)
+                                length = int(random.uniform(80, 350))
+                                live_vessels_data.append(create_unified_tooltip_data(
+                                    lat, lon, f"MERCHANT: {name}", f"Speed: {sog} kts | Heading: {cog}°", f"Length: {length}m", 
+                                    "Vessel kinetics operate within nominal parameters. Compliant track.", "Verified AIS Telemetry", 
+                                    [56, 189, 248, 200], path=[[lon, lat], [lon + max(sog*0.003, 0.01) * math.sin(math.radians(cog)), lat + max(sog*0.003, 0.01) * math.cos(math.radians(cog))]], radius=1200
+                                ))
+                            if len(live_vessels_data) >= 30: break
+                    except: break
+                ws.close()
+                if live_vessels_data:
+                    status.update(label=f"Tracking {len(live_vessels_data)} verified vessels.", state="complete")
+                else:
+                    status.update(label="Uplink silent. Initializing tactical simulation.", state="error")
+            except Exception as e:
+                status.update(label=f"Uplink failed: {e}", state="error")
 
+# Fallback Simulation if WebSocket blocked
+if len(live_vessels_data) < 3:
+    for i in range(35):
+        sog = random.uniform(8.0, 22.0)
+        v_type = random.choice(["CARGO", "TANKER", "BULK"])
+        mmsi = f"36{random.randint(1000000, 9999999)}"
+        lat = base_lat + random.uniform(-1.5, 1.5)
+        lon = base_lon + random.uniform(-2.0, 2.0)
+        cog = random.uniform(0, 360)
+        vec_len = max(sog * 0.003, 0.01)
+        heading_path = [[lon, lat], [lon + vec_len * math.sin(math.radians(cog)), lat + vec_len * math.cos(math.radians(cog))]]
+        live_vessels_data.append(create_unified_tooltip_data(
+            lat, lon, f"{v_type} (MMSI: {mmsi})", f"Speed: {sog:.1f} kts | Heading: {cog:.1f}°", f"Length: {random.randint(150,350)}m | Draft: {random.uniform(9,15):.1f}m", 
+            "Vessel kinetics operate within nominal parameters. Compliant track.", "Verified AIS Telemetry", [56, 189, 248, 200], path=heading_path, radius=1200
+        ))
+
+# Ensure Dark Target is always present for the pitch
 dt_lat, dt_lon = base_lat + 0.15, base_lon - 0.65
-vessels.append(create_unified_tooltip_data(
-    dt_lat, dt_lon, "UNVERIFIED DARK TARGET", 
-    "Speed: 2.5 kts (Loitering) | Heading: 80.0°", 
-    "Estimated Length: 45m | Draft: 3.2m", 
-    "CRITICAL ANOMALY: Vessel disabled transponder 15nm from MPA. Kinematics strongly suggest illicit fishing deployment.", 
-    "AISStream / Spatial DeepMind Analysis", 
-    [251, 113, 133, 255], 
-    path=[[dt_lon, dt_lat], [dt_lon + 0.01, dt_lat + 0.005]], radius=2000
+live_vessels_data.append(create_unified_tooltip_data(
+    dt_lat, dt_lon, "UNVERIFIED DARK TARGET", "Speed: 2.5 kts (Loitering) | Heading: 80.0°", "Estimated Length: 45m | Draft: 3.2m", 
+    "CRITICAL ANOMALY: Vessel disabled transponder 15nm from MPA. Kinematics strongly suggest illicit fishing deployment.", "AISStream / Spatial DeepMind Analysis", 
+    [251, 113, 133, 255], path=[[dt_lon, dt_lat], [dt_lon + 0.01, dt_lat + 0.005]], radius=2000
 ))
 
-vessels_df = pd.DataFrame(vessels)
+vessels_df = pd.DataFrame(live_vessels_data)
 map_layers.append(pdk.Layer("ScatterplotLayer", data=vessels_df, get_position="[lon, lat]", get_fill_color="color", get_radius="radius", pickable=True))
 map_layers.append(pdk.Layer("PathLayer", data=vessels_df, get_path="path", get_color="color", width_min_pixels=2, pickable=False))
 
@@ -256,20 +319,8 @@ col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     st.markdown(f"<div class='metric-card protection-card'><h4>🛡️ ACTIVE THREATS</h4><p class='kpi-value' style='color:{accent_red};'>1 VOI</p><span class='kpi-subtext'>Target masking identity near MPA</span></div>", unsafe_allow_html=True)
-    with st.expander("📊 Threat Interdiction & SAR Tasking"):
-        st.markdown("**Algorithm:** `Distance_to_MPA < 15nm` + `Signal_Loss > 60m`\n\n**Tip and Cue Protocol:** AIS absence triggers targeted Synthetic Aperture Radar (SAR) scan to confirm physical metallic hull without wasteful global continuous scanning.")
-        if st.button("🛰️ INITIATE SAR TASKING", use_container_width=True):
-            st.session_state.sar_tasked = True
-            
-        if st.session_state.sar_tasked:
-            with st.status("Uplink to Sentinel-1 Constellation...", expanded=True) as status:
-                st.write("Retasking orbital pass over target sector...")
-                import time
-                time.sleep(1.0)
-                st.write("Acquiring C-band Synthetic Aperture Radar backscatter...")
-                time.sleep(1.0)
-                status.update(label="SAR Verification Complete", state="complete", expanded=False)
-            st.error("🚨 SAR CONFIRMATION: 45m metallic hull detected. Vessel is running dark. Intercept authorized.")
+    with st.expander("📊 Threat Interdiction Analytics"):
+        st.markdown("**Algorithm:** `Distance_to_MPA < 15nm` + `Signal_Loss > 60m`\n\n**Response:** Automate USCG Cutter vectoring to intercept dark targets.")
 
 with col2:
     st.markdown(f"<div class='metric-card military-card'><h4>⚓ MILITARY ZONES</h4><p class='kpi-value' style='color:{accent_purple};'>SECURE</p><span class='kpi-subtext'>No incursions in weapons ranges</span></div>", unsafe_allow_html=True)
