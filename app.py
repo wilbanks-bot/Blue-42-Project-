@@ -23,14 +23,15 @@ st.set_page_config(layout="wide", page_title="Blue 42 | Maritime Command", page_
 
 night_vision = st.sidebar.toggle("🌙 Tactical Night Vision", value=True)
 
+# FIXED: Removed paid Mapbox styles. Using free, native PyDeck styles.
 if night_vision:
     bg_color = "#0f172a"; card_bg = "#1e293b"; text_color = "#f8fafc"
     accent_blue = "#38bdf8"; accent_red = "#fb7185"; accent_green = "#34d399"; accent_purple = "#a78bfa"; accent_amber = "#fbbf24"
-    map_style = "mapbox://styles/mapbox/dark-v11"
+    map_style = "dark" 
 else:
     bg_color = "#f1f5f9"; card_bg = "#ffffff"; text_color = "#0f172a"
     accent_blue = "#0284c7"; accent_red = "#e11d48"; accent_green = "#059669"; accent_purple = "#7c3aed"; accent_amber = "#d97706"
-    map_style = "mapbox://styles/mapbox/light-v11"
+    map_style = "satellite" 
 
 css = f"""
 <style>
@@ -91,17 +92,19 @@ st.sidebar.markdown("### 🌍 REGIONAL DEPLOYMENT")
 sector_mode = st.sidebar.selectbox("Operational Theater:", ["US West Coast (Channel Islands)", "Pacific Operations (Hawaiian Islands)"], label_visibility="collapsed")
 st.sidebar.markdown("---")
 
-st.sidebar.markdown("### 📊 MULTI-DOMAIN OVERLAYS")
-show_iuu = st.sidebar.checkbox("🛡️ Marine Protected Areas (IUU)", value=True)
-show_whales = st.sidebar.checkbox("🐋 Dynamic Marine Mammal Zones", value=True)
-show_weather = st.sidebar.checkbox("⛈️ Weather Hazards (Waves/Wind)", value=True)
-show_currents = st.sidebar.checkbox("🌊 Microcurrents (Fuel Surfing)", value=True)
-show_spill = st.sidebar.checkbox("🛢️ Oil Spill Trajectory (Crisis)", value=False)
-show_cables = st.sidebar.checkbox("🔌 Subsea Infrastructure (Assets)", value=False)
+# NEW FEATURE: 2D vs 3D Map Toggle
+st.sidebar.markdown("### 🗺️ SPATIAL RENDERING")
+map_dimension = st.sidebar.radio("Map Dimension:", ["3D Tactical", "2D Overhead"], horizontal=True, label_visibility="collapsed")
 st.sidebar.markdown("---")
 
-st.sidebar.markdown("### 📡 SYSTEM DIAGNOSTICS")
-st.sidebar.caption(f"**Geospatial Engine:** {ee_status}\n\n**GenAI Reasoning:** {ai_status}\n\n**AIS Telemetry:** {ais_status}")
+st.sidebar.markdown("### 📊 TACTICAL DATA OVERLAYS")
+st.sidebar.caption("Toggle layers to analyze geospatial risk factors.")
+show_thermal = st.sidebar.checkbox("🌡️ Thermal Imaging (Sea Surface Temp)", value=True)
+show_military = st.sidebar.checkbox("🛡️ Military Protected Zones (Naval Ops)", value=True)
+show_iuu = st.sidebar.checkbox("🐟 Marine Protected Areas (Compliance)", value=True)
+show_weather = st.sidebar.checkbox("⛈️ Weather Shield (Supply Chain)", value=True)
+show_cables = st.sidebar.checkbox("🔌 Subsea Infrastructure (Assets)", value=False)
+st.sidebar.markdown("---")
 
 # ---------------------------------------------------------
 # 4. UNIFIED DATA SCHEMA FOR DEEP-DIVE TOOLTIPS
@@ -125,54 +128,78 @@ def get_tooltip():
         "style": {"backgroundColor": "transparent", "padding": "0"} 
     }
 
+def create_unified_tooltip_data(lat, lon, name, primary, secondary, analytics, source, color, polygon=None, path=None, radius=None):
+    return {
+        "lat": lat, "lon": lon, "name": name, 
+        "primary_metric": primary, "secondary_metric": secondary,
+        "analytics": analytics, "source": source, "color": color,
+        "polygon": polygon, "path": path, "radius": radius
+    }
+
+# ---------------------------------------------------------
+# 5. REGIONAL CONFIGURATIONS & THERMAL LAYERS
+# ---------------------------------------------------------
+unified_data = []
+pitch_val = 50 if map_dimension == "3D Tactical" else 0
+bearing_val = -10 if map_dimension == "3D Tactical" else 0
+
 if sector_mode == "US West Coast (Channel Islands)":
-    view_state = pdk.ViewState(latitude=33.9, longitude=-119.5, zoom=7.5, pitch=45, bearing=-10)
     base_lat, base_lon = 33.8, -119.5
+    view_state = pdk.ViewState(latitude=base_lat, longitude=base_lon, zoom=7.5, pitch=pitch_val, bearing=bearing_val)
     
-    if show_iuu:
-        poly_data = [{"polygon": [[[-120.2, 33.8], [-119.2, 33.8], [-119.2, 34.2], [-120.2, 34.2]]], "name": "Channel Islands Marine Sanctuary", "primary_metric": "Protection Level: FULL", "secondary_metric": "Jurisdiction: Federal MPA", "analytics": "Zero-take zone. Continuous AI surveillance active to detect 'dark fleet' incursions.", "source": "UNEP-WCMC WDPA", "color": [52, 211, 153, 30]}]
-        map_layers.append(pdk.Layer("PolygonLayer", data=pd.DataFrame(poly_data), get_polygon="polygon", get_fill_color="color", get_line_color="[52, 211, 153, 180]", line_width_min_pixels=2, pickable=True))
-        
-    if show_whales:
-        poly_data = [{"polygon": [[[-120.0, 33.5], [-119.5, 33.5], [-119.3, 34.0], [-119.8, 34.0]]], "name": "Dynamic Whale Pod Migration", "primary_metric": "Status: 10-Knot Speed Limit Active", "secondary_metric": "Species: Blue Whale (Endangered)", "analytics": "DeepMind SDM indicates high probability of plankton bloom. Dynamic speed reduction enforced to mitigate strike risk.", "source": "Google DeepMind", "color": [167, 139, 250, 40]}]
-        map_layers.append(pdk.Layer("PolygonLayer", data=pd.DataFrame(poly_data), get_polygon="polygon", get_fill_color="color", get_line_color="[167, 139, 250, 200]", line_width_min_pixels=2, pickable=True))
+    if show_thermal:
+        # Generate a live Thermal Heatmap layer (Blue = Cold, Red = Warm)
+        thermal_data = [{"lat": base_lat + random.gauss(0, 0.6), "lon": base_lon + random.gauss(0, 0.6), "temp": random.uniform(14, 28)} for _ in range(500)]
+        # Cool to Warm Gradient
+        color_range = [[10, 10, 255, 100], [0, 255, 255, 120], [255, 255, 0, 140], [255, 0, 0, 160]]
+        map_layers.append(pdk.Layer("HeatmapLayer", data=pd.DataFrame(thermal_data), get_position="[lon, lat]", get_weight="temp", radius_pixels=50, intensity=1.5, color_range=color_range, pickable=False))
+
+    if show_military:
+        poly = [[[-120.5, 33.2], [-119.0, 33.2], [-119.0, 33.8], [-120.5, 33.8]]]
+        unified_data.append(create_unified_tooltip_data(33.5, -119.7, "Point Mugu Sea Range", "Status: RESTRICTED", "Type: Naval Weapons Testing Area", "Vessel traffic strictly prohibited during active missile testing windows. High risk of kinetic interaction.", "US Navy / FAA", [167, 139, 250, 40], polygon=poly))
+        map_layers.append(pdk.Layer("PolygonLayer", data=pd.DataFrame([unified_data[-1]]), get_polygon="polygon", get_fill_color="color", get_line_color="[167, 139, 250, 200]", line_width_min_pixels=2, pickable=True))
 
     if show_weather:
-        poly_data = [{"polygon": [[[-119.5, 33.6], [-119.1, 33.6], [-119.1, 34.0], [-119.5, 34.0]]], "name": "Severe Gale Warning", "primary_metric": "Intensity: H_s > 6.1m (20ft)", "secondary_metric": "Wind: Sustained 45 knots", "analytics": "Extreme hydrodynamic drag detected. Routing through this zone increases fuel consumption by 12%.", "source": "WeatherNext 3", "color": [251, 113, 133, 40]}]
-        map_layers.append(pdk.Layer("PolygonLayer", data=pd.DataFrame(poly_data), get_polygon="polygon", get_fill_color="color", get_line_color="[251, 113, 133, 180]", line_width_min_pixels=2, pickable=True))
+        poly = [[[-119.5, 33.6], [-119.1, 33.6], [-119.1, 34.0], [-119.5, 34.0]]]
+        unified_data.append(create_unified_tooltip_data(33.8, -119.3, "Severe Gale Warning", "Intensity: H_s > 6.1m (20ft)", "Wind: Sustained 45 knots", "Extreme hydrodynamic drag detected. Routing through this zone increases fuel consumption by 12% and risks cargo loss.", "Copernicus & WeatherNext 3", [251, 113, 133, 40], polygon=poly))
+        map_layers.append(pdk.Layer("PolygonLayer", data=pd.DataFrame([unified_data[-1]]), get_polygon="polygon", get_fill_color="color", get_line_color="[251, 113, 133, 180]", line_width_min_pixels=2, pickable=True))
 
-    if show_currents:
-        path_data = [{"path": [[-120.5, 34.5], [-119.8, 33.8], [-119.2, 33.0]], "name": "California Microcurrent Stream", "primary_metric": "Velocity: 1.2 kts Southbound", "secondary_metric": "Status: Favorable Surf Zone", "analytics": "Surfing this current allows a 10% reduction in engine RPM while maintaining SOG, generating massive fuel savings.", "source": "Copernicus Ocean Physics", "color": [56, 189, 248, 200]}]
-        map_layers.append(pdk.Layer("PathLayer", data=pd.DataFrame(path_data), get_path="path", get_color="color", width_min_pixels=6, pickable=True))
-
-    if show_spill:
-        poly_data = [{"polygon": [[[-119.8, 33.9], [-119.6, 33.8], [-119.5, 33.9], [-119.7, 34.0]]], "name": "72-Hour Spill Trajectory", "primary_metric": "Contaminant: Heavy Fuel Oil", "secondary_metric": "Impact Risk: Critical", "analytics": "AlphaEarth leeway models project slick impacting Santa Cruz Island in 48 hours. Deploy containment booms immediately.", "source": "AlphaEarth & Sentinel-1 SAR", "color": [245, 158, 11, 70]}]
-        map_layers.append(pdk.Layer("PolygonLayer", data=pd.DataFrame(poly_data), get_polygon="polygon", get_fill_color="color", get_line_color="[245, 158, 11, 200]", line_width_min_pixels=2, pickable=True))
+    if show_iuu:
+        poly = [[[-120.2, 33.8], [-119.2, 33.8], [-119.2, 34.2], [-120.2, 34.2]]]
+        unified_data.append(create_unified_tooltip_data(34.0, -119.7, "Channel Islands Marine Sanctuary", "Protection Level: FULL", "Jurisdiction: Federal MPA", "Zero-take zone. Any commercial fishing activity here constitutes a severe regulatory breach.", "UNEP-WCMC WDPA", [52, 211, 153, 20], polygon=poly))
+        map_layers.append(pdk.Layer("PolygonLayer", data=pd.DataFrame([unified_data[-1]]), get_polygon="polygon", get_fill_color="color", get_line_color="[52, 211, 153, 180]", line_width_min_pixels=2, pickable=True))
 
     if show_cables:
         path_data = [{"path": [[-121.0, 33.5], [-119.0, 33.8], [-118.0, 34.2]], "name": "Tier-1 Subsea Data Cable", "primary_metric": "Asset: Transpacific Trunk", "secondary_metric": "Vulnerability: Exposed to anchor drag", "analytics": "Critical infrastructure carrying billions in daily financial transactions.", "source": "Submarine Cable Map", "color": [203, 213, 225, 200]}]
         map_layers.append(pdk.Layer("PathLayer", data=pd.DataFrame(path_data), get_path="path", get_color="color", width_min_pixels=4, pickable=True))
 
 else: # HAWAII
-    view_state = pdk.ViewState(latitude=21.4, longitude=-157.9, zoom=7.5, pitch=45, bearing=-10)
     base_lat, base_lon = 21.2, -158.0
+    view_state = pdk.ViewState(latitude=base_lat, longitude=base_lon, zoom=7.5, pitch=pitch_val, bearing=bearing_val)
     
-    if show_iuu:
-        poly_data = [{"polygon": [[[-158.3, 21.4], [-157.8, 21.4], [-157.8, 21.7], [-158.3, 21.7]]], "name": "Kaena Point MPA Expansion", "primary_metric": "Protection Level: FULL", "secondary_metric": "Jurisdiction: State/Federal", "analytics": "High-value target for illicit commercial harvesting. AI monitoring active.", "source": "UNEP-WCMC WDPA", "color": [52, 211, 153, 30]}]
-        map_layers.append(pdk.Layer("PolygonLayer", data=pd.DataFrame(poly_data), get_polygon="polygon", get_fill_color="color", get_line_color="[52, 211, 153, 180]", line_width_min_pixels=2, pickable=True))
+    if show_thermal:
+        thermal_data = [{"lat": base_lat + random.gauss(0, 0.6), "lon": base_lon + random.gauss(0, 0.6), "temp": random.uniform(22, 29)} for _ in range(500)]
+        color_range = [[10, 10, 255, 100], [0, 255, 255, 120], [255, 255, 0, 140], [255, 0, 0, 160]]
+        map_layers.append(pdk.Layer("HeatmapLayer", data=pd.DataFrame(thermal_data), get_position="[lon, lat]", get_weight="temp", radius_pixels=50, intensity=1.5, color_range=color_range, pickable=False))
 
-    if show_whales:
-        poly_data = [{"polygon": [[[-157.5, 20.5], [-156.8, 20.8], [-156.5, 21.2], [-157.2, 20.8]]], "name": "Humpback Winter Breeding Grounds", "primary_metric": "Status: 10-Knot Speed Limit Active", "secondary_metric": "Species: Humpback Whale", "analytics": "High density calving area detected. Automatic ESG compliance alerts routing to encroaching vessels.", "source": "Google DeepMind", "color": [167, 139, 250, 40]}]
-        map_layers.append(pdk.Layer("PolygonLayer", data=pd.DataFrame(poly_data), get_polygon="polygon", get_fill_color="color", get_line_color="[167, 139, 250, 200]", line_width_min_pixels=2, pickable=True))
+    if show_military:
+        poly = [[[-159.9, 21.8], [-159.5, 21.8], [-159.5, 22.2], [-159.9, 22.2]]]
+        unified_data.append(create_unified_tooltip_data(22.0, -159.7, "PMRF Barking Sands", "Status: RESTRICTED AIR/SEA", "Type: Pacific Missile Range Facility", "World's largest instrumented multi-environment military testing range. Civilian intrusion violates federal exclusion zone.", "US Navy / FAA", [167, 139, 250, 40], polygon=poly))
+        map_layers.append(pdk.Layer("PolygonLayer", data=pd.DataFrame([unified_data[-1]]), get_polygon="polygon", get_fill_color="color", get_line_color="[167, 139, 250, 200]", line_width_min_pixels=2, pickable=True))
 
     if show_weather:
-        poly_data = [{"polygon": [[[-158.2, 21.0], [-157.5, 21.0], [-157.5, 21.4], [-158.2, 21.4]]], "name": "Tropical Squall Hazard Zone", "primary_metric": "Intensity: H_s > 4.5m", "secondary_metric": "Wind: Gusts to 35 knots", "analytics": "Localized squall creating supply chain delays for Honolulu port approaches.", "source": "WeatherNext 3", "color": [251, 113, 133, 40]}]
-        map_layers.append(pdk.Layer("PolygonLayer", data=pd.DataFrame(poly_data), get_polygon="polygon", get_fill_color="color", get_line_color="[251, 113, 133, 180]", line_width_min_pixels=2, pickable=True))
+        poly = [[[-158.2, 21.0], [-157.5, 21.0], [-157.5, 21.4], [-158.2, 21.4]]]
+        unified_data.append(create_unified_tooltip_data(21.2, -157.8, "Tropical Squall Hazard Zone", "Intensity: H_s > 4.5m", "Wind: Gusts to 35 knots", "Localized squall creating supply chain delays for Honolulu port approaches.", "WeatherNext 3", [251, 113, 133, 40], polygon=poly))
+        map_layers.append(pdk.Layer("PolygonLayer", data=pd.DataFrame([unified_data[-1]]), get_polygon="polygon", get_fill_color="color", get_line_color="[251, 113, 133, 180]", line_width_min_pixels=2, pickable=True))
 
-    if show_currents:
-        path_data = [{"path": [[-156.0, 22.0], [-157.0, 21.5], [-158.5, 21.0]], "name": "North Equatorial Current", "primary_metric": "Velocity: 1.5 kts Westbound", "secondary_metric": "Status: Favorable Surf Zone", "analytics": "Surfing this current allows ships bound for Asia to throttle down, saving Scope 3 emissions.", "source": "Copernicus Ocean Physics", "color": [56, 189, 248, 200]}]
-        map_layers.append(pdk.Layer("PathLayer", data=pd.DataFrame(path_data), get_path="path", get_color="color", width_min_pixels=6, pickable=True))
+    if show_iuu:
+        poly = [[[-158.3, 21.4], [-157.8, 21.4], [-157.8, 21.7], [-158.3, 21.7]]]
+        unified_data.append(create_unified_tooltip_data(21.5, -158.0, "Kaena Point MPA Expansion", "Protection Level: FULL", "Jurisdiction: Federal/State", "Critical habitat preservation area. High-value target for illicit commercial harvesting.", "UNEP-WCMC WDPA", [52, 211, 153, 20], polygon=poly))
+        map_layers.append(pdk.Layer("PolygonLayer", data=pd.DataFrame([unified_data[-1]]), get_polygon="polygon", get_fill_color="color", get_line_color="[52, 211, 153, 180]", line_width_min_pixels=2, pickable=True))
 
+# ---------------------------------------------------------
+# 6. VESSEL ENGINE & ARPA KINEMATICS
+# ---------------------------------------------------------
 vessels = []
 for i in range(35):
     sog = random.uniform(8.0, 22.0)
@@ -186,67 +213,67 @@ for i in range(35):
     vec_len = max(sog * 0.003, 0.01)
     heading_path = [[lon, lat], [lon + vec_len * math.sin(cog_rad), lat + vec_len * math.cos(cog_rad)]]
     
-    vessels.append({
-        "lat": lat, "lon": lon, "name": f"{v_type} (MMSI: {mmsi})", 
-        "primary_metric": f"Speed: {sog:.1f} kts | Heading: {cog:.1f}°", 
-        "secondary_metric": f"Length: {random.randint(150,350)}m | Draft: {random.uniform(9,15):.1f}m", 
-        "analytics": "Vessel kinetics operate within nominal parameters. Compliant track.", 
-        "source": "Verified AIS Telemetry", 
-        "color": [56, 189, 248, 200], "path": heading_path, "radius": 1200
-    })
+    vessels.append(create_unified_tooltip_data(
+        lat, lon, f"{v_type} (MMSI: {mmsi})", 
+        f"Speed: {sog:.1f} kts | Heading: {cog:.1f}°", 
+        f"Length: {random.randint(150,350)}m | Draft: {random.uniform(9,15):.1f}m", 
+        "Vessel kinetics operate within nominal parameters. Compliant track.", 
+        "Verified AIS Telemetry", 
+        [56, 189, 248, 200], path=heading_path, radius=1200
+    ))
 
 dt_lat, dt_lon = base_lat + 0.15, base_lon - 0.65
-vessels.append({
-    "lat": dt_lat, "lon": dt_lon, "name": "UNVERIFIED DARK TARGET", 
-    "primary_metric": "Speed: 2.5 kts (Loitering) | Heading: 80.0°", 
-    "secondary_metric": "Estimated Length: 45m | Draft: 3.2m", 
-    "analytics": "CRITICAL ANOMALY: Vessel disabled transponder 15nm from MPA. Kinematics strongly suggest illicit fishing deployment.", 
-    "source": "AISStream / Spatial DeepMind Analysis", 
-    "color": [251, 113, 133, 255], 
-    "path": [[dt_lon, dt_lat], [dt_lon + 0.01, dt_lat + 0.005]], "radius": 2000
-})
+vessels.append(create_unified_tooltip_data(
+    dt_lat, dt_lon, "UNVERIFIED DARK TARGET", 
+    "Speed: 2.5 kts (Loitering) | Heading: 80.0°", 
+    "Estimated Length: 45m | Draft: 3.2m", 
+    "CRITICAL ANOMALY: Vessel disabled transponder 15nm from MPA. Kinematics strongly suggest illicit fishing deployment.", 
+    "AISStream / Spatial DeepMind Analysis", 
+    [251, 113, 133, 255], 
+    path=[[dt_lon, dt_lat], [dt_lon + 0.01, dt_lat + 0.005]], radius=2000
+))
 
 vessels_df = pd.DataFrame(vessels)
 map_layers.append(pdk.Layer("ScatterplotLayer", data=vessels_df, get_position="[lon, lat]", get_fill_color="color", get_radius="radius", pickable=True))
 map_layers.append(pdk.Layer("PathLayer", data=vessels_df, get_path="path", get_color="color", width_min_pixels=2, pickable=False))
 
 # ---------------------------------------------------------
-# 5. MAIN DASHBOARD: THE EXECUTIVE STORYBOARD
+# 7. MAIN DASHBOARD: THE EXECUTIVE STORYBOARD
 # ---------------------------------------------------------
-st.markdown(f"<h2 style='color: {text_color};'>Global Maritime Command Center</h2>", unsafe_allow_html=True)
+st.markdown(f"<h2 style='color: {text_color}; margin-bottom: 5px;'>Global Maritime Command Center</h2>", unsafe_allow_html=True)
 st.markdown("<p class='hud-text' style='margin-bottom: 25px;'>Synthesizing planetary telemetry into predictive intelligence and actionable ESG workflows.</p>", unsafe_allow_html=True)
 
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     st.markdown(f"<div class='metric-card protection-card'><h4>🛡️ ACTIVE THREATS</h4><p class='kpi-value' style='color:{accent_red};'>1 VOI</p><span class='kpi-subtext'>Target masking identity near MPA</span></div>", unsafe_allow_html=True)
-    with st.expander("📊 View Analytics & Recommendations"):
-        st.markdown("**📡 Data Analytics:**\nKinematic anomaly detected. Vessel MMSI 413000000 dropped AIS transmission 15nm from the MPA boundary. Speed reduced from 12 kts to 2.5 kts (loitering profile).\n\n**🧠 GenAI Recommendation:**\nDeploy autonomous surface vehicle (ASV) or nearest Coast Guard cutter for visual identification. Initiate satellite Synthetic Aperture Radar (SAR) tasking to verify physical presence.")
+    with st.expander("📊 Threat Interdiction Analytics"):
+        st.markdown("**Algorithm:** `Distance_to_MPA < 15nm` + `Signal_Loss > 60m` = `HIGH THREAT`\n\n**Response:** Automate USCG Cutter vectoring to intercept dark targets.")
 
 with col2:
     st.markdown(f"<div class='metric-card military-card'><h4>⚓ MILITARY ZONES</h4><p class='kpi-value' style='color:{accent_purple};'>SECURE</p><span class='kpi-subtext'>No incursions in weapons ranges</span></div>", unsafe_allow_html=True)
-    with st.expander("📊 View Analytics & Recommendations"):
-        st.markdown("**📡 Data Analytics:**\nGeospatial perimeter of active testing range remains clear of civilian AIS tracks. No kinetic intersection anomalies detected in the last 24 hours.\n\n**🧠 GenAI Recommendation:**\nMaintain current geofence monitoring. Routine baseline established. No immediate action required.")
+    with st.expander("📊 Area Defense Protocol"):
+        st.markdown("**Algorithm:** Geospatial perimeter geofence cross-referenced with civilian AIS.\n\n**Response:** Pre-emptive routing alerts issued to commercial assets approaching live-fire boundaries.")
 
 with col3:
     st.markdown(f"<div class='metric-card'><h4>🌪️ RESILIENCE</h4><p class='kpi-value' style='color:{accent_blue};'>5 REROUTED</p><span class='kpi-subtext'>Avoiding extreme wave heights</span></div>", unsafe_allow_html=True)
-    with st.expander("📊 View Analytics & Recommendations"):
-        st.markdown("**📡 Data Analytics:**\n5 commercial vessels successfully diverted from severe gale polygon ($H_s \ge 6.1$m). Hydrodynamic drag coefficient reduced by 42% on average across the fleet.\n\n**🧠 GenAI Recommendation:**\nLog 54 MT of Scope 3 Fuel Savings in the financial ledger. Alert port authorities of revised Estimated Time of Arrival (ETA) to manage Just-In-Time (JIT) anchorage and prevent port congestion.")
+    with st.expander("📊 Microcurrent & Weather Routing"):
+        st.markdown("**Algorithm:** GenAI correlates ship hull displacement against Sea Surface Temperature (SST) currents and WeatherNext waves.\n\n**Response:** Ships actively 'surf' favorable thermal currents to maximize fuel savings.")
 
 with col4:
     st.markdown(f"<div class='metric-card mitigation-card'><h4>🌱 BLUE CARBON</h4><p class='kpi-value' style='color:{accent_green};'>14.2 HA</p><span class='kpi-subtext'>Optimal restoration sites verified</span></div>", unsafe_allow_html=True)
-    with st.expander("📊 View Analytics & Recommendations"):
-        st.markdown("**📡 Data Analytics:**\nBathymetric depth (-5m to -30m) and Sea Surface Temperature (< 18°C) criteria met. 92% survival probability for *Macrocystis pyrifera* (Giant Kelp) against decadal heatwave trends.\n\n**🧠 GenAI Recommendation:**\nProceed with spatial asset minting. Package coordinates and telemetry data for Verra/Gold Standard registry validation to instantly unlock $187,500 in ESG capital financing.")
+    with st.expander("📊 Thermal Site Verification"):
+        st.markdown("**Algorithm:** DeepMind models evaluate bathymetric depth (-5m to -30m) against live Sea Surface Temperature (SST) mapping.\n\n**Response:** Pinpointing precise restoration coordinates to guarantee ESG asset survival against marine heatwaves.")
 
 # ---------------------------------------------------------
-# 6. RENDER 3D MAP
+# 8. RENDER 2D/3D MAP
 # ---------------------------------------------------------
 st.markdown("#### 🗺️ TACTICAL BATTLESPACE OVERVIEW", unsafe_allow_html=True)
 r = pdk.Deck(layers=map_layers, initial_view_state=view_state, map_style=map_style, tooltip=get_tooltip())
 st.pydeck_chart(r, use_container_width=True)
 
 # ---------------------------------------------------------
-# 7. ANALYTICS & GENAI DEEP DIVES
+# 9. ANALYTICS & GENAI DEEP DIVES
 # ---------------------------------------------------------
 st.write("---")
 tab1, tab2 = st.tabs(["🧠 Strategic Advisory AI (GenAI)", "📈 Enterprise Data Ledger"])
@@ -275,7 +302,8 @@ with tab1:
         st.markdown("<p class='hud-text'>Use AI to calculate safe passage through severe weather polygons.</p>", unsafe_allow_html=True)
         with st.form("routing_form"):
             st.selectbox("Select Asset in Danger:", ["COMMERCIAL FREIGHTER (MMSI: 36812345) - 300m, 14.5m Draft"])
-            if st.form_submit_button("Generate Predictive Voyage Plan"):
+            submit_route = st.form_submit_button("Generate Predictive Voyage Plan")
+            if submit_route:
                 with st.spinner("Calculating hydrodynamic drag against decadal wave baselines..."):
                     try:
                         res = model.generate_content("Generate a concise, 3-step bulleted voyage rerouting plan to minimize drag through a 6-meter sea state for a 300m freighter. Conclude with estimated fuel saved.")
