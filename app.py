@@ -11,7 +11,7 @@ import google.generativeai as genai
 # ---------------------------------------------------------
 st.set_page_config(layout="wide", page_title="Blue 42 Command", page_icon="⚓", initial_sidebar_state="expanded")
 
-# Cyberpunk / Military HUD CSS with glowing animations
+# Cyberpunk / Global Intelligence HUD CSS with glowing animations
 css = """
 <style>
     /* Main Background */
@@ -75,12 +75,11 @@ except:
 # ---------------------------------------------------------
 # 3. SIDEBAR: HUD LOGO, MISSION SELECTOR & SIGINT
 # ---------------------------------------------------------
-# FIXED BROKEN IMAGE: Replaced with a native CSS glowing HUD icon
 st.sidebar.markdown("""
 <div style="text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #0ea5e9;">
     <div style="font-size: 65px; color: #38bdf8; text-shadow: 0 0 20px #38bdf8; line-height: 1;">⚓</div>
     <div style="font-family: 'Trebuchet MS', sans-serif; font-weight: bold; color: #f8fafc; font-size: 1.5rem; letter-spacing: 4px; margin-top: 5px; text-shadow: 0 0 10px rgba(255,255,255,0.5);">BLUE 42</div>
-    <div style="font-family: 'Courier New', monospace; color: #22c55e; font-size: 0.8rem; letter-spacing: 2px;">USCG SECTOR COMMAND</div>
+    <div style="font-family: 'Courier New', monospace; color: #22c55e; font-size: 0.8rem; letter-spacing: 2px;">GLOBAL MARITIME COMMAND</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -96,5 +95,16 @@ st.sidebar.markdown("---")
 
 st.sidebar.markdown("### 📻 SIGINT TERMINAL")
 if mission_mode == "Ecological Protection (IUU / Kelp)":
-    radio_feed = "[14:02Z VHF-16] 'USCG, this is F/V Horizon. Trawler running dark, hauling nets 3nm off Santa Cruz Is.'\n> ACOUSTIC MATCH: MMSI 413000000."
-    gar_score = "RED (High Risk)"
+    radio_feed = "[14:02Z VHF-16] 'MARITIME COMM, this is F/V Horizon. Trawler running dark, hauling nets 3nm off Santa Cruz Is.'\n> ACOUSTIC MATCH: MMSI 413000000."
+    risk_score = "RED (High Risk)"
+    ai_summary = "Target masking identity in protected biosphere. Matrix indicates High Severity to marine biomass, High Probability of ecocide. Recommend immediate intercept."
+elif mission_mode == "Economic Security (Subsea Cables)":
+    radio_feed = "[14:15Z NAVTEX] 'SECURITE. UNIDENTIFIED VESSEL LOITERING IN RESTRICTED CABLE CORRIDOR. HYDROPHONE DETECTS ANCHOR DROP.'\n> MATCH: Transpacific Trunk."
+    risk_score = "RED (Critical Risk)"
+    ai_summary = "Vessel anchoring over Tier-1 fiber optic trunk. Critical Severity (Global Economic Disruption). Exposure: High. Dispatching interdiction assets."
+else:
+    radio_feed = "[14:22Z VHF-16] 'MAYDAY MAYDAY. S/V Orion. Taking water. Engines dead. Lat 33.7, Lon -119.8. 4 POB.'\n> MATCH: Generating SAR Drift Grid."
+    risk_score = "AMBER (Elevated Risk)"
+    ai_summary = "Vessel adrift. WeatherNext indicates deteriorating sea state. Amber status: Time-sensitive exposure for 4 souls on board. Drift vector initialized."
+
+st.sidebar.markdown(f
