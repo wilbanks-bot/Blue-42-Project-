@@ -1,3 +1,5 @@
 streamlit
 pydeck
 pandas
+earthengine-api
+google-auth
