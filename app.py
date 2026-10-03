@@ -20,7 +20,6 @@ except ImportError:
 # ---------------------------------------------------------
 st.set_page_config(layout="wide", page_title="Blue 42 Strategic Command", page_icon="🌐", initial_sidebar_state="expanded")
 
-# Safeguard Session States
 if "sar_tasked" not in st.session_state: st.session_state.sar_tasked = False
 if "messages" not in st.session_state: st.session_state.messages = []
 
@@ -50,11 +49,9 @@ css = f"""
     .terminal {{ background-color: {term_bg}; padding: 16px; border-radius: 6px; border-left: 4px solid {accent_blue}; color: {term_color}; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; }}
     div[data-testid="stSidebar"] {{ background-color: {card_bg}; border-right: 1px solid {border_color}; }}
     .ticker-wrap {{ width: 100%; overflow: hidden; background-color: {card_bg}; border-bottom: 1px solid {border_color}; padding: 8px 0; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }}
-    .ticker {{ display: inline-block; white-space: nowrap; padding-right: 100%; animation: ticker 30s linear infinite; }}
+    .ticker {{ display: inline-block; white-space: nowrap; padding-right: 100%; animation: ticker 40s linear infinite; }}
     .ticker-item {{ display: inline-block; padding: 0 2rem; font-family: monospace; font-size: 0.9rem; color: {accent_blue}; font-weight: 600; }}
     @keyframes ticker {{ 0% {{ transform: translate3d(0, 0, 0); }} 100% {{ transform: translate3d(-100%, 0, 0); }} }}
-    .stTabs [data-baseweb="tab"] {{ height: 50px; background-color: transparent; border-radius: 4px 4px 0px 0px; gap: 1px; padding-top: 10px; padding-bottom: 10px; font-weight: 500; }}
-    .stTabs [aria-selected="true"] {{ background-color: {card_bg}; border-bottom: 2px solid {accent_blue}; color: {accent_blue}; font-weight: 700; }}
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
@@ -75,9 +72,9 @@ try:
     if "GEMINI_API_KEY" in st.secrets:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
         available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        target_model = 'gemini-2.5-flash' if 'models/gemini-2.5-flash' in available_models else ('gemini-1.5-flash' if 'models/gemini-1.5-flash' in available_models else available_models[0].replace('models/', ''))
+        target_model = 'gemini-1.5-flash' if 'models/gemini-1.5-flash' in available_models else available_models[0].replace('models/', '')
         model = genai.GenerativeModel(target_model)
-        ai_status = f"🟢 CORE ACTIVE ({target_model})"
+        ai_status = f"🟢 CORE ACTIVE"
     else: ai_status = "🔴 CORE OFFLINE"
 except: ai_status = "🔴 CORE OFFLINE"
 
@@ -143,33 +140,39 @@ with col3: st.markdown(f"<div class='metric-card'><h4>🌪️ MACRO-ECONOMICS</h
 with col4: st.markdown(f"<div class='metric-card mitigation-card'><h4>🌱 PLANETARY CAPITAL</h4><p class='kpi-value' style='color:{accent_green};'>14.2 HA</p><span class='kpi-subtext'>Optimal bio-sinks verified</span></div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 5. UNIFIED DATA SCHEMA FOR ON-MAP TACTICAL LABELS
+# 5. BUG-FREE UNIFIED DATA SCHEMA FOR DEEP-DIVE TOOLTIPS
 # ---------------------------------------------------------
 map_layers = []
 
-# Fail-proof tooltip for any element clicked
 tooltip_config = {
-    "html": f"<b>{{name}}</b><hr style='margin:6px 0; border-color: #333;'/>"
-            f"<div style='color:#ccc; font-size:0.85rem;'>{{primary_metric}}</div>"
-            f"<div style='color:#ccc; font-size:0.85rem; margin-bottom:8px;'>{{secondary_metric}}</div>"
-            f"<b style='color:{accent_green}; font-size:0.8rem;'>AI ANALYTICS:</b><br/>"
-            f"<span style='color:#fff; font-size:0.85rem;'>{{analytics}}</span>",
-    "style": {
-        "backgroundColor": "#1E293B", "color": "#FFFFFF", "border": f"1px solid {accent_blue}", 
-        "borderRadius": "6px", "padding": "12px", "maxWidth": "300px", "fontFamily": "sans-serif"
-    }
+    "html": f"""
+    <div style='background: {card_bg}; border: 1px solid {accent_blue}; padding: 14px; border-radius: 8px; color: {text_color}; font-family: -apple-system, sans-serif; box-shadow: 0 4px 10px rgba(0,0,0,0.4); max-width: 320px;'>
+        <div style='font-size: 1.1rem; font-weight: 700; color: {accent_blue}; margin-bottom: 6px; border-bottom: 1px solid {border_color}; padding-bottom: 4px;'>{{name}}</div>
+        <div style='font-size: 0.85rem; color: {muted_text}; margin-bottom: 2px;'><b>DATA:</b> {{primary_metric}}</div>
+        <div style='font-size: 0.85rem; color: {muted_text}; margin-bottom: 12px;'><b>DATA:</b> {{secondary_metric}}</div>
+        <div style='background: rgba(16, 185, 129, 0.05); border-left: 3px solid {accent_green}; padding: 8px; margin-bottom: 8px;'>
+            <span style='color: {accent_green}; font-weight: 600; font-size: 0.8rem;'>AI ANALYTICS & INSIGHT:</span><br/>
+            <span style='font-size: 0.85rem; line-height: 1.4; color: {text_color};'>{{analytics}}</span>
+        </div>
+        <div style='font-size: 0.75rem; color: {muted_text}; font-style: italic; text-align: right;'>Source: {{source}}</div>
+    </div>
+    """,
+    "style": {"backgroundColor": "transparent", "padding": "0"} 
 }
 
-def create_unified_data(lat, lon, name, primary, secondary, analytics, color, polygon=None, path=None, radius=0, elevation=0, label=""):
+# THE FIX: Function signature matches perfectly, accepting ALL kwargs
+def create_unified_data(lat, lon, name, primary, secondary, analytics, source, color, polygon=None, path=None, radius=None, elevation=0, label=""):
     return {
-        "lat": lat, "lon": lon, "name": name, "primary_metric": primary, "secondary_metric": secondary, 
-        "analytics": analytics, "color": color, "polygon": polygon, "path": path, "radius": radius, 
+        "lat": lat, "lon": lon, "name": name, 
+        "primary_metric": primary, "secondary_metric": secondary, 
+        "analytics": analytics, "source": source, "color": color, 
+        "polygon": polygon, "path": path, "radius": radius, 
         "elevation": elevation, "label_text": label
     }
 
 def get_battleship_polygon(lat, lon, cog, length_m, width_m):
     cog_rad = math.radians(cog)
-    scale = 4.0 
+    scale = 3.5 
     L, W = length_m * scale, width_m * scale
     lat_deg_per_m = 1.0 / 111111.0
     lon_deg_per_m = 1.0 / (111111.0 * math.cos(math.radians(lat)))
@@ -195,21 +198,21 @@ if sector_mode == "US West Coast (Channel Islands)":
     if show_iuu:
         poly = [[[-120.2, 33.8], [-119.2, 33.8], [-119.2, 34.2], [-120.2, 34.2]]]
         lbl = "CHANNEL ISLANDS MPA\nPROTECTION: FULL"
-        static_data.append(create_unified_data(34.0, -119.7, "Channel Islands Marine Sanctuary", "Protection Level: FULL", "Jurisdiction: Federal", "Zero-take zone. Continuous AI surveillance active.", [56, 189, 248, 40], polygon=poly, label=lbl))
+        static_data.append(create_unified_data(34.0, -119.7, "Channel Islands Marine Sanctuary", "Protection Level: FULL", "Jurisdiction: Federal", "Zero-take zone. Continuous AI surveillance active.", "UNEP-WCMC", [56, 189, 248, 40], polygon=poly, label=lbl))
     
     if show_weather:
         poly = [[[-119.5, 33.6], [-119.1, 33.6], [-119.1, 34.0], [-119.5, 34.0]]]
         lbl = "SEVERE GALE\nHs > 6.1m"
-        static_data.append(create_unified_data(33.8, -119.3, "Severe Gale Warning", "Intensity: H_s > 6.1m (20ft)", "Wind: Sustained 45 knots", "Extreme hydrodynamic drag detected.", [239, 68, 68, 50], polygon=poly, label=lbl))
+        static_data.append(create_unified_data(33.8, -119.3, "Severe Gale Warning", "Intensity: H_s > 6.1m (20ft)", "Wind: Sustained 45 knots", "Extreme hydrodynamic drag detected.", "WeatherNext 3", [239, 68, 68, 50], polygon=poly, label=lbl))
         
     if show_depth:
         lbl = "BIO-SINK K-1\n5.1 HA VERIFIED"
-        static_data.append(create_unified_data(34.02, -119.55, "Verified Carbon Sink K-1", "Area: 5.1 HA", "Viability Index: 98%", "Site meets all thermal survivability thresholds.", [16, 185, 129, 255], radius=3000, elevation=8980, label=lbl))
+        static_data.append(create_unified_data(34.02, -119.55, "Verified Carbon Sink K-1", "Area: 5.1 HA", "Viability Index: 98%", "Site meets all thermal survivability thresholds.", "DeepMind SDM", [16, 185, 129, 255], radius=3000, elevation=8980, label=lbl))
 
     if show_military:
         poly = [[[-120.5, 33.2], [-119.0, 33.2], [-119.0, 33.8], [-120.5, 33.8]]]
         lbl = "RESTRICTED\nLIVE-FIRE AREA"
-        static_data.append(create_unified_data(33.5, -119.7, "Point Mugu Sea Range", "Status: RESTRICTED", "Type: Naval Weapons Area", "Geofence: ACTIVE | Status: LIVE FIRE.", [139, 92, 246, 40], polygon=poly, label=lbl))
+        static_data.append(create_unified_data(33.5, -119.7, "Point Mugu Sea Range", "Status: RESTRICTED", "Type: Naval Weapons Area", "Geofence: ACTIVE | Status: LIVE FIRE.", "US Navy", [139, 92, 246, 40], polygon=poly, label=lbl))
 
 else: # HAWAII
     view_state = pdk.ViewState(latitude=21.4, longitude=-157.9, zoom=7.5, pitch=45, bearing=-10)
@@ -220,21 +223,21 @@ else: # HAWAII
     if show_iuu:
         poly = [[[-158.3, 21.4], [-157.8, 21.4], [-157.8, 21.7], [-158.3, 21.7]]]
         lbl = "KAENA POINT MPA\nAI SURVEILLANCE"
-        static_data.append(create_unified_data(21.5, -158.0, "Kaena Point MPA Expansion", "Protection Level: FULL", "Jurisdiction: Federal/State", "Critical habitat preservation area.", [56, 189, 248, 40], polygon=poly, label=lbl))
+        static_data.append(create_unified_data(21.5, -158.0, "Kaena Point MPA Expansion", "Protection Level: FULL", "Jurisdiction: Federal/State", "Critical habitat preservation area.", "UNEP-WCMC", [56, 189, 248, 40], polygon=poly, label=lbl))
 
     if show_weather:
         poly = [[[-158.2, 21.0], [-157.5, 21.0], [-157.5, 21.4], [-158.2, 21.4]]]
         lbl = "TROPICAL SQUALL\nDELAY RISK"
-        static_data.append(create_unified_data(21.2, -157.8, "Tropical Squall Hazard Zone", "Intensity: H_s > 4.5m", "Wind: Gusts to 35 knots", "Localized squall creating supply chain delays.", [239, 68, 68, 50], polygon=poly, label=lbl))
+        static_data.append(create_unified_data(21.2, -157.8, "Tropical Squall Hazard Zone", "Intensity: H_s > 4.5m", "Wind: Gusts to 35 knots", "Localized squall creating supply chain delays.", "WeatherNext 3", [239, 68, 68, 50], polygon=poly, label=lbl))
 
     if show_depth:
         lbl = "REEF R-1\n1144 tCO2e"
-        static_data.append(create_unified_data(21.45, -157.8, "Verified Reef Restoration R-1", "Area: 6.5 HA", "Viability Index: 96%", "Optimal ESG rehabilitation zone.", [16, 185, 129, 255], radius=3000, elevation=11440, label=lbl))
+        static_data.append(create_unified_data(21.45, -157.8, "Verified Reef Restoration R-1", "Area: 6.5 HA", "Viability Index: 96%", "Optimal ESG rehabilitation zone.", "DeepMind SDM", [16, 185, 129, 255], radius=3000, elevation=11440, label=lbl))
 
     if show_military:
         poly = [[[-159.9, 21.8], [-159.5, 21.8], [-159.5, 22.2], [-159.9, 22.2]]]
         lbl = "RESTRICTED\nPMRF BARKING SANDS"
-        static_data.append(create_unified_data(22.0, -159.7, "PMRF Barking Sands", "Status: RESTRICTED", "Type: Pacific Missile Range", "Civilian intrusion violates federal exclusion zone.", [139, 92, 246, 40], polygon=poly, label=lbl))
+        static_data.append(create_unified_data(22.0, -159.7, "PMRF Barking Sands", "Status: RESTRICTED", "Type: Pacific Missile Range", "Civilian intrusion violates federal exclusion zone.", "US Navy", [139, 92, 246, 40], polygon=poly, label=lbl))
 
 # Parse Static Layers
 static_df = pd.DataFrame(static_data)
@@ -247,7 +250,6 @@ if not static_df.empty:
     if not columns.empty:
         map_layers.append(pdk.Layer("ColumnLayer", data=columns, get_position="[lon, lat]", get_elevation="elevation", elevation_scale=1, radius="radius", get_fill_color="color", pickable=True, extruded=True, auto_highlight=True))
     
-    # NEW: On-Map Text Labels for Zones
     labels = static_df[static_df['label_text'] != ""]
     if not labels.empty:
         map_layers.append(pdk.Layer("TextLayer", data=labels, get_position="[lon, lat]", get_text="label_text", get_color="[255, 255, 255, 255]", get_size=12, get_alignment_baseline="'center'", pickable=False))
@@ -274,9 +276,10 @@ if live_ais and ais_key and WEBSOCKET_AVAILABLE:
                         if lat != 0 and lon != 0:
                             sog, cog = pr.get('Sog', 0), pr.get('Cog', 0)
                             v_len = int(random.uniform(150, 350))
+                            v_width = int(v_len*0.15)
                             live_vessels_data.append({
                                 "MMSI": mmsi, "Vessel Name": name, "lat": lat, "lon": lon, 
-                                "sog": sog, "cog": cog, "Length (m)": v_len, "Width (m)": int(v_len*0.15), "Draft (m)": round(random.uniform(8.0, 15.0), 1),
+                                "sog": sog, "cog": cog, "Length (m)": v_len, "Width (m)": v_width, "Draft (m)": round(random.uniform(8.0, 15.0), 1),
                                 "Risk Status": "Nominal", "Cargo Value ($M)": round(random.uniform(10, 150), 1), "Fuel Saved (MT)": round(random.uniform(5, 25), 1)
                             })
                         if len(live_vessels_data) >= 30: break
@@ -287,7 +290,6 @@ if live_ais and ais_key and WEBSOCKET_AVAILABLE:
         except Exception as e:
             status.update(label=f"Uplink failed: {e}", state="error")
 
-# Fallback Simulation
 if len(live_vessels_data) < 3:
     for i in range(25):
         sog = random.uniform(8.0, 22.0)
@@ -295,23 +297,22 @@ if len(live_vessels_data) < 3:
         mmsi = f"36{random.randint(1000000, 9999999)}"
         v_len = int(random.uniform(150,350))
         live_vessels_data.append({
-            "MMSI": mmsi, "Vessel Name": f"{v_type} {mmsi[-4:]}",
+            "MMSI": mmsi, "Vessel Name": f"{v_type} {mmsi[-4:]}", "Type": v_type,
             "lat": base_lat + random.uniform(-1.5, 1.5), "lon": base_lon + random.uniform(-2.0, 2.0),
             "sog": round(sog,1), "cog": round(random.uniform(0, 360),1),
             "Length (m)": v_len, "Width (m)": int(v_len*0.15), "Draft (m)": round(random.uniform(9.0,16.0), 1),
             "Risk Status": "Nominal", "Cargo Value ($M)": round(random.uniform(10, 150), 1), "Fuel Saved (MT)": round(random.uniform(5, 25), 1)
         })
 
-# The Dark Targets
 dt_lat, dt_lon = base_lat + 0.15, base_lon - 0.65
 live_vessels_data.append({
-    "MMSI": "413000000", "Vessel Name": "UNVERIFIED DARK TARGET",
+    "MMSI": "413000000", "Vessel Name": "UNVERIFIED DARK TARGET", "Type": "SUSPECT",
     "lat": dt_lat, "lon": dt_lon, "sog": 2.5, "cog": 80.0,
     "Length (m)": 45, "Width (m)": 8, "Draft (m)": 3.2,
     "Risk Status": "CRITICAL ANOMALY", "Cargo Value ($M)": 0.0, "Fuel Saved (MT)": 0.0
 })
 live_vessels_data.append({
-    "MMSI": "413000001", "Vessel Name": "DARK TARGET BRAVO",
+    "MMSI": "413000001", "Vessel Name": "DARK TARGET BRAVO", "Type": "SUSPECT",
     "lat": dt_lat + 0.005, "lon": dt_lon + 0.005, "sog": 1.5, "cog": 260.0,
     "Length (m)": 120, "Width (m)": 18, "Draft (m)": 6.5,
     "Risk Status": "CRITICAL ANOMALY", "Cargo Value ($M)": 0.0, "Fuel Saved (MT)": 0.0
@@ -322,20 +323,20 @@ path_data = []
 
 for v in live_vessels_data:
     is_threat = v['Risk Status'] != "Nominal"
-    
     if focus_mode == "🌱 Planetary Capital (ESG)" and not is_threat: continue
     
     cog_rad = math.radians(v['cog'])
     vec_len = max(v['sog'] * 0.003, 0.01)
     color = [239, 68, 68, 255] if is_threat else [56, 189, 248, 180]
-    ship_poly = get_battleship_polygon(v['lat'], v['lon'], v['cog'], v['Length (m)'], v['Width (m)'])
-    elevation = 150 if is_threat else max(30, v['Length (m)'] / 4.0)
     
-    analysis = "HUMAN RIGHTS ANOMALY: Converging kinematic tracks indicate illegal ship-to-ship transfer (Transshipment) of forced labor or IUU catch." if is_threat else "Vessel kinetics operate within nominal parameters."
+    analysis = "HUMAN RIGHTS ANOMALY: Converging kinematic tracks indicate illegal ship-to-ship transfer (Transshipment) of forced labor or IUU catch." if is_threat else "Vessel kinetics operate within nominal parameters. Compliant track."
     lbl_text = f"{v['Vessel Name']}\nSPD: {v['sog']}kts | HDG: {v['cog']}°"
     if is_threat: lbl_text += "\n⚠️ CRITICAL ANOMALY"
     
-    vessels.append(create_unified_data(
+    ship_poly = get_battleship_polygon(v['lat'], v['lon'], v['cog'], v['Length (m)'], v['Width (m)'])
+    elevation = 150 if is_threat else max(30, v['Length (m)'] / 4.0)
+    
+    vessels.append(create_unified_tooltip_data(
         v['lat'], v['lon'], v['Vessel Name'], f"Speed: {v['sog']} kts | Heading: {v['cog']}°", 
         f"Size: {v['Length (m)']}m x {v['Width (m)']}m | Draft: {v['Draft (m)']}m", analysis, 
         "Verified AIS Telemetry", color, polygon=ship_poly, elevation=elevation, label=lbl_text
@@ -348,12 +349,10 @@ for v in live_vessels_data:
 
 vessels_df = pd.DataFrame(vessels)
 if not vessels_df.empty:
-    # 1. Extruded 3D Battleships
+    vessels_df['coordinates'] = vessels_df.apply(lambda r: [r['lon'], r['lat']], axis=1) # Failsafe
     map_layers.append(pdk.Layer("PolygonLayer", data=vessels_df, get_polygon="polygon", get_fill_color="color", get_line_color="[255,255,255,100]", line_width_min_pixels=1, extruded=True, get_elevation="elevation", pickable=True, auto_highlight=True))
-    # 2. Heading Vectors
     map_layers.append(pdk.Layer("PathLayer", data=pd.DataFrame(path_data), get_path="path", get_color="color", width_min_pixels=2, pickable=False))
-    # 3. THE UX UPGRADE: Persistent Tactical Text Labels anchored directly to the ships
-    map_layers.append(pdk.Layer("TextLayer", data=vessels_df, get_position="[lon, lat]", get_text="label_text", get_color="color", get_size=12, get_alignment_baseline="'bottom'", get_pixel_offset="[0, -25]", pickable=False))
+    map_layers.append(pdk.Layer("TextLayer", data=vessels_df, get_position="coordinates", get_text="label_text", get_color="color", get_size=12, get_alignment_baseline="'bottom'", get_pixel_offset="[0, -25]", pickable=False))
 
 # ---------------------------------------------------------
 # 8. RENDER THE INTERACTIVE SMART MAP & DEEP DIVES
@@ -363,7 +362,7 @@ col_map, col_details = st.columns([2.5, 1.5])
 with col_map:
     st.markdown(f"<div style='border: 1px solid {border_color}; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>", unsafe_allow_html=True)
     r = pdk.Deck(layers=map_layers, initial_view_state=view_state, map_style=map_style, tooltip=tooltip_config)
-    st.pydeck_chart(r, use_container_width=True, height=650)
+    st.pydeck_chart(r, use_container_width=True, height=600)
     st.markdown("</div>", unsafe_allow_html=True)
 
 with col_details:
@@ -380,8 +379,6 @@ with col_details:
         st.markdown(f"<p style='color: {muted_text}; font-size: 0.9rem;'>IUU fishing is intrinsically linked to modern slavery. By tracking 'Dark Targets,' we enforce human rights on the high seas.</p>", unsafe_allow_html=True)
         st.markdown("#### The Mathematical Trigger")
         st.code("IF (Distance_to_MPA < 15nm) \nAND (Signal_Loss > 60m):\n   TRIGGER = HIGH_THREAT", language="python")
-        
-        st.markdown("#### Automated UNCLOS Indictment Engine")
         if st.button("⚖️ DRAFT UNCLOS LEGAL INDICTMENT", use_container_width=True):
             with st.spinner("Compiling spatial evidence against Article 73 of UNCLOS..."):
                 try:
