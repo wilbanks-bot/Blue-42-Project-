@@ -1,8 +1,10 @@
 streamlit
 pydeck
 pandas
+numpy
 earthengine-api
-google-auth
 google-generativeai
+google-auth
+fpdf
 websocket-client
-pip install streamlit pydeck pandas fpdf
+
