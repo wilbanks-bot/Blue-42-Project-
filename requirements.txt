@@ -5,4 +5,4 @@ earthengine-api
 google-auth
 google-generativeai
 websocket-client
-
+pip install streamlit pydeck pandas fpdf
