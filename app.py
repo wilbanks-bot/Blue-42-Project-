@@ -345,9 +345,9 @@ with col_ops:
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=months, y=growth, mode='lines+markers', name='Canopy Biomass (%)', line=dict(color="#10B981", width=3, shape='spline')))
             
-            # Add vertical lines for harvest months
+            # FIXED: Removed annotation_text to safely bypass the Plotly categorical x-axis bug
             for harvest_mo in ['Mar', 'Jun', 'Sep', 'Dec']:
-                fig.add_vline(x=harvest_mo, line_width=2, line_dash="dash", line_color="#EF4444", annotation_text="Harvest")
+                fig.add_vline(x=harvest_mo, line_width=2, line_dash="dash", line_color="#EF4444")
                 
             fig.update_layout(
                 plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", 
