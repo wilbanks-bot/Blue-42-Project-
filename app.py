@@ -161,15 +161,15 @@ def make_flip_card(title, value, sub, math_html):
     """
 
 # =========================================================
-# 2. BIOLOGICALLY ACCURATE CSS KELP ANIMATION
+# 2. CUSTOM KELP ANIMATION (CONSTRAINED TO MAP AREA)
 # =========================================================
 def kelp_animation():
-    """Generates a procedural, scientifically stylized CSS kelp forest."""
+    """Injects a custom CSS animation constrained so it does not block the analytics tables."""
     kelp_html = """
     <style>
         .ocean-animation-container {
             position: fixed; bottom: 0; left: 0; width: 100vw; height: 100vh;
-            pointer-events: none; z-index: 999999; overflow: hidden;
+            pointer-events: none; z-index: 999; overflow: hidden;
         }
         .kelp-stalk {
             position: absolute; bottom: 0; width: 60px;
@@ -188,7 +188,6 @@ def kelp_animation():
             width: 45px; transform: translateX(-25px) rotate(-20deg); background: linear-gradient(to left, #5a6b25, #7a8b35); border-radius: 10% 50% 10% 50%;
         }
         .kelp-frond-right { width: 45px; transform: translateX(25px) rotate(20deg); }
-        /* Pneumatocysts (Gas Bladders) */
         .kelp-frond-left::after {
             content: ''; position: absolute; right: -4px; top: -2px; width: 12px; height: 16px; 
             background: #8b7d22; border-radius: 50%; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3);
@@ -208,8 +207,10 @@ def kelp_animation():
     </style>
     <div class="ocean-animation-container">
     """
+    
+    # CONSTRAINED TO THE LEFT 55% OF THE SCREEN (Over the map only!)
     for _ in range(15):
-        left = random.randint(2, 98)
+        left = random.randint(2, 55) 
         delay = random.uniform(0.1, 1.5)
         duration = random.uniform(3.5, 5.5)
         sway_dir = random.choice(["swayKelp1", "swayKelp2"])
@@ -227,7 +228,7 @@ def kelp_animation():
         kelp_html += '</div></div>'
         
     for _ in range(25):
-        left = random.randint(1, 99)
+        left = random.randint(1, 55)
         delay = random.uniform(0, 4)
         size = random.uniform(0.5, 1.5)
         kelp_html += f'<div class="bubble" style="left: {left}%; animation-delay: {delay}s; font-size: {size}rem;">🫧</div>'
@@ -405,7 +406,7 @@ def run_mcda_deconfliction(sites, vessels_df, mammals_df, weather_data, restrict
     R = 6371 
     processed = []
     for site in sites:
-        site['status'], site['color'] = "CLEARED: Optimal", [16, 185, 129, 230] 
+        site['status'], site['color'] = "CLEARED: Optimal for Kelp", [16, 185, 129, 230] 
         
         for r_zone in restricted_data:
             poly = r_zone.get('polygon', [])
@@ -428,7 +429,7 @@ def run_mcda_deconfliction(sites, vessels_df, mammals_df, weather_data, restrict
             for _, ship in vessels_df.iterrows():
                 a = math.sin(math.radians(ship.get('lat', 0) - site.get('lat', 0))/2)**2 + math.cos(math.radians(site.get('lat', 0))) * math.cos(math.radians(ship.get('lat', 0))) * math.sin(math.radians(ship.get('lon', 0) - site.get('lon', 0))/2)**2
                 if R * (2 * math.atan2(math.sqrt(a), math.sqrt(1-a))) < 2.5:
-                    site['status'], site['color'] = "HAZARD: Shipping Lane", [245, 158, 11, 230]
+                    site['status'], site['color'] = "HAZARD: Shipping Traffic", [245, 158, 11, 230]
                     break
                     
         if site['status'].startswith("CLEARED"):
@@ -513,8 +514,7 @@ with col_map:
     tt_html = "<div style='font-family:Space Grotesk; background:rgba(15,23,42,0.9); padding:10px; border-radius:8px; border:1px solid #06b6d4;'><b>{id}</b><br/>Pareto Score: {pareto_score}<br/>Area: {area_ha} HA<br/><span style='color:#10B981;'>Status: <b>{status}</b></span><br/>NPP: {biomass_tons} MT</div>"
     view_state = pdk.ViewState(latitude=33.95 if sector_key == "Channel Islands" else 21.3, longitude=-119.8 if sector_key == "Channel Islands" else -157.9, zoom=8.5, pitch=45, bearing=15)
     
-    # Safe Streamlit map without Mapbox
-    st.pydeck_chart(pdk.Deck(layers=layers, initial_view_state=view_state, map_style=None, tooltip={"html": tt_html}), use_container_width=True, height=600)
+    st.pydeck_chart(pdk.Deck(map_provider="carto", map_style="dark", layers=layers, initial_view_state=view_state, tooltip={"html": tt_html}), use_container_width=True, height=600)
 
 with col_ops:
     sel_site, site_data = None, None
@@ -562,9 +562,14 @@ with col_ops:
         st.caption("**Value Stacking:** Combines Premium Blue Carbon ($150/MT), Bioplastic-Grade Harvest ($300/MT), and Resilience Subsidies ($1,500/HA).")
         
         if site_data is not None and "CLEARED" in site_data.get('status', ''):
+            st.markdown("###### 🔬 Micro-Economics: Selected Site")
             capex = site_data.get('area_ha', 0) * 10000  
             opex_yr = site_data.get('area_ha', 0) * 1500 
-            rev_yr = (site_data.get('co2_tons', 0) * 150) + (site_data.get('biomass_tons', 0) * 300) + (site_data.get('area_ha', 0) * 1500)
+            
+            carbon_rev = site_data.get('co2_tons', 0) * 150     
+            harvest_rev = site_data.get('biomass_tons', 0) * 300 
+            subsidy_rev = site_data.get('area_ha', 0) * 1500      
+            rev_yr = carbon_rev + harvest_rev + subsidy_rev 
             
             years = np.arange(0, 11)
             costs = capex + (opex_yr * years)
@@ -584,6 +589,7 @@ with col_ops:
                 
             st.divider()
             st.markdown("###### 🌍 Macro-Economics: Planetary Scale-Up")
+            
             target_scale_ha = st.slider("Target Deployment Area (Hectares)", min_value=10000, max_value=50000000, value=1000000, step=10000, label_visibility="collapsed")
             
             macro_capex = target_scale_ha * 10000
@@ -598,9 +604,12 @@ with col_ops:
             mc1.metric("Gigaton Potential", f"{macro_co2 / 1e6:.2f} GT/yr")
             mc2.metric("CAPEX Required", f"${macro_capex / 1e9:.2f} Billion")
             mc3.metric("10-Yr Portfolio Value", f"${(macro_net_yr * 10) / 1e9:.2f} Billion")
+            
+            if macro_net_yr > 1e10:
+                st.success(f"🚀 **Trillion-Dollar Market Unlocked:** Estimated 10-year net value of **${(macro_net_yr * 10) / 1e12:.2f} Trillion**, directly mobilizing sidelined climate capital.")
 
         else:
-            st.error("Site contains HAZARDS. Financial modeling suspended.")
+            st.error("Site contains HAZARDS or RESTRICTIONS. Financial modeling suspended.")
 
     with t_mrv:
         st.markdown("<br>", unsafe_allow_html=True)
@@ -619,10 +628,10 @@ with col_ops:
             if st.button("Cryptographically Sign & Mint Credits", use_container_width=True):
                 kelp_animation()
                 tx_hash = hashlib.sha256(str(time.time()).encode()).hexdigest()
-                st.success(f"✅ Verified via satellite. {site_data.get('co2_tons', 0)} MT CO2e minted.")
+                st.success(f"✅ Biomass verified via satellite. {site_data.get('co2_tons', 0)} MT CO2e minted.")
                 st.markdown(f"<div class='crypto-box'>TX_HASH: {tx_hash}</div>", unsafe_allow_html=True)
         else:
-            st.error("MRV disabled for hazardous sites.")
+            st.error("MRV disabled for hazardous/restricted sites.")
 
     with t3:
         st.markdown("<br>", unsafe_allow_html=True)
