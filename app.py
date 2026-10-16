@@ -88,6 +88,9 @@ try:
         creds = service_account.Credentials.from_service_account_info(json.loads(st.secrets["EARTHENGINE_TOKEN"])).with_scopes(['https://www.googleapis.com/auth/earthengine'])
         ee.Initialize(credentials=creds)
         ee_connected = True
+    else:
+        ee.Initialize()
+        ee_connected = True
 except: pass
 
 try:
@@ -127,6 +130,7 @@ def get_scientific_kelp_data(sector):
             sites = []
             for i, f in enumerate(features):
                 p = f['properties']
+                # Adaptation & Economic Resilience Math
                 wave_energy = round(random.uniform(15.0, 45.0), 1)
                 averted_damage = round((wave_energy * p['area_ha'] * 0.12), 2)
                 
@@ -140,9 +144,9 @@ def get_scientific_kelp_data(sector):
                     "biodiversity_score": random.randint(80, 99)
                 })
             if sites: return sites
-        except Exception as e: print(e)
+        except Exception as e: print(f"EE Warn: {e}")
 
-    # FALLBACK MOCK DATA (Mathematically rigorous)
+    # FALLBACK MOCK DATA (Mathematically rigorous fallback)
     base_lat, base_lon = (34.0, -119.8) if sector == "Channel Islands" else (21.3, -157.9)
     mock = []
     for i in range(8):
@@ -237,7 +241,9 @@ c3.metric("Modeled NPP Yield", f"{safe_df['biomass_tons'].sum():.1f} MT", "Macro
 # ADAPTATION PILLAR: Averted Damage
 total_averted_damage = safe_df['averted_damage_millions'].sum()
 c4.metric("Averted Coastal Damage", f"${total_averted_damage:.1f}M", "Via Wave Attenuation")
-c5.metric("Ecological ROI", f"${safe_df['co2_tons'].sum() * 85:,.0f}", "$85/MT Carbon Credit")
+
+# Value Stacking applied to KPI
+c5.metric("Ecological ROI", f"${(safe_df['co2_tons'].sum() * 85) + (safe_df['biomass_tons'].sum() * 120):,.0f}", "Stacked: Carbon + Harvest")
 
 st.write("---")
 
@@ -252,10 +258,9 @@ with col_map:
     ship_layer = pdk.Layer("ScatterplotLayer", data=vessels_df, get_position="[lon, lat]", get_color="[148, 163, 184, 150]", get_radius=800, pickable=False)
     mammal_layer = pdk.Layer("ScatterplotLayer", data=mammals_df, get_position="[lon, lat]", get_color="[56, 189, 248, 200]", get_radius=4000, pickable=False)
     
-    # Enhanced Tooltip showing Pareto optimization
     tt_html = "<b>{id}</b><br/>Pareto Score: {pareto_score}<br/>Area: {area_ha} HA<br/>Status: <b>{status}</b><br/>Averted Damage: ${averted_damage_millions}M<br/>NPP: {biomass_tons} MT"
     
-    # FIX: Using PyDeck's built-in "dark" style ensures 100% reliability with no white screens.
+    # Safe fallback native map style
     view_state = pdk.ViewState(latitude=33.95 if sector_key == "Channel Islands" else 21.3, longitude=-119.8 if sector_key == "Channel Islands" else -157.9, zoom=8.5, pitch=35)
     st.pydeck_chart(pdk.Deck(layers=[ship_layer, mammal_layer, kelp_layer], initial_view_state=view_state, map_style="dark", tooltip={"html": tt_html}), use_container_width=True, height=550)
 
@@ -305,12 +310,18 @@ with col_ops:
             
     with t2:
         st.markdown("##### 10-Year Techno-Economic Assessment")
-        st.info("**Why this matters:** Institutional capital requires verifiable returns. This TEA models capital expenditure (CAPEX) against verified sequestration revenue ($85/MT CO2e).")
+        st.info("**Why this matters:** Institutional capital requires verifiable returns. This TEA uses 'Value Stacking'—combining Carbon Credits, Commercial Biomass Harvesting, and Resilience Subsidies to ensure profitability.")
         
         if not safe_df.empty:
             capex = site_data['area_ha'] * 15000  
             opex_yr = site_data['area_ha'] * 2000 
-            rev_yr = site_data['co2_tons'] * 85   
+            
+            # Value Stacking Revenue
+            carbon_rev = site_data['co2_tons'] * 85     
+            harvest_rev = site_data['biomass_tons'] * 120 
+            subsidy_rev = site_data['area_ha'] * 800      
+            
+            rev_yr = carbon_rev + harvest_rev + subsidy_rev 
             
             years = np.arange(0, 11)
             costs = capex + (opex_yr * years)
@@ -325,8 +336,13 @@ with col_ops:
                 margin=dict(l=0, r=0, t=10, b=0), height=250
             )
             st.plotly_chart(fig2, use_container_width=True)
-            break_even = capex / (rev_yr - opex_yr) if rev_yr > opex_yr else 0
-            st.caption(f"**Projected Break-Even:** Year {break_even:.1f} | **10-Yr Net Profit:** ${net_cash[-1]:,.2f}")
+            
+            annual_profit = rev_yr - opex_yr
+            if annual_profit > 0:
+                break_even = capex / annual_profit
+                st.success(f"**Projected Break-Even:** Year {break_even:.1f} | **10-Yr Net Profit:** ${net_cash[-1]:,.2f}")
+            else:
+                st.error("Project is not financially viable. OPEX exceeds stacked revenue.")
 
     with t_mrv:
         st.markdown("##### Post-Deployment Measurement, Reporting, & Verification (MRV)")
@@ -335,7 +351,6 @@ with col_ops:
         if not safe_df.empty:
             st.write(f"**Target Analyzed:** {sel_site}")
             
-            # Simulate 5 years of Sentinel-2 canopy growth tracking
             years_mrv = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"]
             canopy_density = [12, 35, 68, 85, 92] 
             
@@ -353,7 +368,7 @@ with col_ops:
 
     with t3:
         st.markdown("##### Responsible AI Compliance Audit")
-        st.info("**Why this matters:** Responsible AI must declare its uncertainties. The Gemini AI assesses ecological viability but is explicitly prompted to generate a Confidence Score and list 'Known Unknowns' (e.g., localized turbidity or bottom friction).")
+        st.info("**Why this matters:** Responsible AI must declare its uncertainties. The Gemini model explicitly flags data uncertainties for investor review before generating the cryptographic PDF.")
         
         if st.button("Execute Compliance Audit", use_container_width=True) and not safe_df.empty:
             with st.spinner("Executing..."):
@@ -377,6 +392,7 @@ with col_ops:
                     st.session_state.library.append({"id": sel_site, "pdf": pdf, "time": pd.Timestamp.now().strftime('%H:%M:%SZ')})
                     st.success("Audit Generated Successfully.")
                 except Exception as e: 
+                    # GRACEFUL DEGRADATION: Handles Quota/Limit issues dynamically
                     error_msg = str(e)
                     if "429" in error_msg or "Quota" in error_msg or "404" in error_msg:
                         st.warning("⚠️ API Quota or Model Limit Reached. Generating offline deterministic audit.")
