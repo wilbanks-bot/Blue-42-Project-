@@ -441,7 +441,7 @@ with col_ops:
                             st.session_state.messages.append({"role": "assistant", "content": "AI is offline. Please check API key."})
                         st.rerun()
                     except Exception as e:
-                        st.error("AI Comms Offline.")
+                        st.error(f"AI Comms Offline. Details: {e}")
 
             if st.button("Generate Official TEA Audit (PDF)", use_container_width=True) and "HAZARD" not in site_data.get('status', 'HAZARD'):
                 with st.spinner("Executing Compliance Audit..."):
