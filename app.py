@@ -7,6 +7,7 @@ import math
 import random
 import time
 import hashlib
+import copy
 from datetime import datetime
 
 # Safely import optional dependencies
@@ -108,7 +109,6 @@ def create_lca_brief(site: dict, ai_analysis: str, signature: str, timestamp: st
     pdf.cell(0, 8, f"Coordinates: {site.get('lat', 0):.4f} N, {site.get('lon', 0):.4f} W | Area: {site.get('area_ha', 0)} HA", ln=True)
     pdf.cell(0, 8, f"Thermal Regime (SST): {site.get('sst_mean', 0)} C | Depth Profile: {site.get('depth', 0)}m", ln=True)
     pdf.cell(0, 8, f"Nitrate Flux Proxy: {site.get('nitrate_score', 0)}/100 | Salinity: {site.get('salinity', 0)} PSU", ln=True)
-    pdf.cell(0, 8, f"Current Wave Energy: {site.get('wave_energy', 0)} kW/m (Threshold: <40 kW/m)", ln=True)
     pdf.ln(3)
 
     pdf.set_font("Arial", "B", 11)
@@ -193,15 +193,15 @@ def get_scientific_kelp_data(sector):
             sites = []
             for i, f in enumerate(features):
                 p = f['properties']
-                # Introduce realistic weather variance
-                wave_energy = round(random.uniform(5.0, 35.0), 1)
+                wave_energy = round(random.uniform(10.0, 40.0), 1)
                 sites.append({
                     "id": f"GEE-K{i+1}", "lat": p['lat'], "lon": p['lon'], 
                     "area_ha": round(p['area_ha'], 1), "biomass_tons": round(p['biomass'], 1), "co2_tons": round(p['co2'], 1),
-                    "sst_mean": round(random.uniform(14.0, 17.8), 1), "depth": round(random.uniform(10.0, 25.0), 1),
-                    "nitrate_score": random.randint(80, 99), "salinity": round(random.uniform(33.0, 34.5), 2), 
-                    "wave_energy": wave_energy, "averted_damage_millions": round((wave_energy * p['area_ha'] * 0.15), 2), 
-                    "jobs_created": int(p['area_ha'] * 2.2), "biodiversity_score": random.randint(85, 99)
+                    "sst_mean": round(random.uniform(14.0, 17.5), 1), "depth": round(random.uniform(10.0, 25.0), 1),
+                    "nitrate_score": random.randint(80, 99), "mhw_risk": random.choice(["Low", "Moderate"]),
+                    "salinity": round(random.uniform(33.0, 34.5), 2), "wave_energy": wave_energy,
+                    "averted_damage_millions": round((wave_energy * p['area_ha'] * 0.15), 2), "jobs_created": int(p['area_ha'] * 2.2),
+                    "biodiversity_score": random.randint(85, 99)
                 })
             if sites: return sites
         except Exception: pass
@@ -210,19 +210,20 @@ def get_scientific_kelp_data(sector):
     mock = []
     for i in range(12):
         area = round(random.uniform(5.0, 15.0), 1)
-        wave_energy = round(random.uniform(5.0, 35.0), 1) 
+        wave_energy = round(random.uniform(10.0, 50.0), 1) 
         mock.append({
             "id": f"SIM-K{i+1}", "lat": base_lat + random.uniform(-0.4, 0.4), "lon": base_lon + random.uniform(-0.6, 0.6),
             "area_ha": area, "biomass_tons": round(area * 18.5 * 0.92, 1), "co2_tons": round(area * 18.5 * 0.92 * 0.68, 1),
-            "sst_mean": round(random.uniform(14.0, 17.8), 1), "depth": round(random.uniform(10.0, 25.0), 1),
-            "nitrate_score": random.randint(80, 99), "salinity": round(random.uniform(33.0, 34.5), 2), 
-            "wave_energy": wave_energy, "averted_damage_millions": round((wave_energy * area * 0.15), 2), 
-            "jobs_created": int(area * 2.2), "biodiversity_score": random.randint(85, 99)
+            "sst_mean": round(random.uniform(14.0, 17.5), 1), "depth": round(random.uniform(10.0, 25.0), 1),
+            "nitrate_score": random.randint(80, 99), "mhw_risk": random.choice(["Low", "Moderate", "High"]),
+            "salinity": round(random.uniform(33.0, 34.5), 2), "wave_energy": wave_energy,
+            "averted_damage_millions": round((wave_energy * area * 0.15), 2), "jobs_created": int(area * 2.2),
+            "biodiversity_score": random.randint(85, 99)
         })
     return mock
 
 # =========================================================
-# 5. MULTI-VECTOR WEATHER DECONFLICTION
+# 5. MCDA DECONFLICTION
 # =========================================================
 @st.cache_resource(ttl=60)
 def get_hazard_vectors(sector):
@@ -230,45 +231,32 @@ def get_hazard_vectors(sector):
     vessels, mammals = [], []
     for _ in range(10): vessels.append({"lat": base_lat + random.uniform(-0.5, 0.5), "lon": base_lon + random.uniform(-0.8, 0.8)})
     for _ in range(3): mammals.append({"lat": base_lat + random.uniform(-0.2, 0.2), "lon": base_lon + random.uniform(-0.4, 0.4)})
-    
-    # Simulate a severe weather storm cell
     weather_poly = [[[-120.2, 33.6], [-119.6, 33.6], [-119.6, 34.2], [-120.2, 34.2]]] if sector == "Channel Islands" else [[[-158.2, 21.1], [-157.7, 21.1], [-157.7, 21.5], [-158.2, 21.5]]]
-    weather_data = [{"polygon": weather_poly[0], "condition": "Severe Gale (H_s > 6m)", "wind_knots": 45}]
-    
-    return pd.DataFrame(vessels), pd.DataFrame(mammals), weather_data
+    return pd.DataFrame(vessels), pd.DataFrame(mammals), [{"polygon": weather_poly[0]}]
 
 def run_mcda_deconfliction(sites, vessels_df, mammals_df, weather_data):
     R = 6371 
     processed = []
     for site in sites:
         site['status'], site['color'] = "CLEARED: Optimal", [16, 185, 129, 230] 
-        
-        # 1. Weather Impact Assessment (Holdfast Shearing Risk)
         for w in weather_data:
             poly = w['polygon']
             lons, lats = [p[0] for p in poly], [p[1] for p in poly]
             if min(lons) <= site['lon'] <= max(lons) and min(lats) <= site['lat'] <= max(lats):
-                site['status'] = f"WEATHER HAZARD: {w['condition']}"
-                site['color'] = [249, 115, 22, 230] # Orange for weather hazard
-                site['wave_energy'] = round(random.uniform(45.0, 75.0), 1) # Override wave energy to storm levels
+                site['status'], site['color'] = "HAZARD: Storm Risk", [239, 68, 68, 230]
                 break
-                
-        # 2. Vessel Intercept Check
         if site['status'].startswith("CLEARED"):
             for _, ship in vessels_df.iterrows():
                 a = math.sin(math.radians(ship['lat'] - site['lat'])/2)**2 + math.cos(math.radians(site['lat'])) * math.cos(math.radians(ship['lat'])) * math.sin(math.radians(ship.get('lon',0) - site['lon'])/2)**2
                 if R * (2 * math.atan2(math.sqrt(a), math.sqrt(1-a))) < 2.5:
-                    site['status'], site['color'] = "HAZARD: Shipping Lane", [239, 68, 68, 230]
+                    site['status'], site['color'] = "HAZARD: Shipping Lane", [245, 158, 11, 230]
                     break
-                    
-        # 3. Cetacean Corridor Check
         if site['status'].startswith("CLEARED"):
             for _, whale in mammals_df.iterrows():
                 a = math.sin(math.radians(whale['lat'] - site['lat'])/2)**2 + math.cos(math.radians(site['lat'])) * math.cos(math.radians(whale['lat'])) * math.sin(math.radians(whale.get('lon',0) - site['lon'])/2)**2
                 if R * (2 * math.atan2(math.sqrt(a), math.sqrt(1-a))) < 4.0:
                     site['status'], site['color'] = "HAZARD: Mammal Corridor", [139, 92, 246, 230]
                     break
-                    
         processed.append(site)
     return pd.DataFrame(processed)
 
@@ -287,7 +275,6 @@ weight_carbon = st.sidebar.slider("Carbon Sequestration", 0.0, 1.0, 0.8)
 weight_coastal = st.sidebar.slider("Coastal Resilience", 0.0, 1.0, 0.6)
 weight_bio = st.sidebar.slider("Fishery Biodiversity", 0.0, 1.0, 0.9)
 
-import copy
 raw_sites_cached = get_scientific_kelp_data(sector_key)
 if not raw_sites_cached: raw_sites_cached = []
 raw_sites = copy.deepcopy(raw_sites_cached)
@@ -304,7 +291,9 @@ safe_df = kelp_df[kelp_df['status'].str.contains("CLEARED")] if not kelp_df.empt
 # =========================================================
 # 7. UI: EXECUTIVE DASHBOARD & KPIs
 # =========================================================
-c1, c2, c3, c4 = st.columns(4)
+# FIX 1: Explicitly assigned col1, col2, col3, col4 to resolve NameError
+col1, col2, col3, col4 = st.columns(4)
+
 v_area = safe_df['area_ha'].sum() if not safe_df.empty else 0
 v_bio = safe_df['biomass_tons'].sum() if not safe_df.empty else 0
 v_dmg = safe_df['averted_damage_millions'].sum() if not safe_df.empty else 0
@@ -317,7 +306,7 @@ col4.markdown(f"<div class='glass-card'><div class='glass-title'>Ecological Capi
 st.markdown("<br>", unsafe_allow_html=True)
 
 # =========================================================
-# 8. VISUALIZATIONS: MAP & WEATHER ANALYTICS
+# 8. VISUALIZATIONS: MAP & ANALYTICS
 # =========================================================
 col_map, col_ops = st.columns([6, 4], gap="large")
 
@@ -332,7 +321,7 @@ with col_map:
         layers.append(pdk.Layer("ScatterplotLayer", data=mammals_df, get_position="[lon, lat]", get_color="[139, 92, 246, 150]", get_radius=4000, pickable=False))
     layers.append(pdk.Layer("PolygonLayer", data=weather_data, get_polygon="polygon", get_fill_color="[239, 68, 68, 40]", get_line_color="[239, 68, 68, 200]"))
     
-    tt_html = "<div style='font-family:Space Grotesk; background:rgba(15,23,42,0.9); padding:10px; border-radius:8px; border:1px solid #06b6d4;'><b>{id}</b><br/>Weather Info: {wave_energy} kW/m<br/>Area: {area_ha} HA<br/><span style='color:#10B981;'>Status: <b>{status}</b></span></div>"
+    tt_html = "<div style='font-family:Space Grotesk; background:rgba(15,23,42,0.9); padding:10px; border-radius:8px; border:1px solid #06b6d4;'><b>{id}</b><br/>Pareto Score: {pareto_score}<br/>Area: {area_ha} HA<br/><span style='color:#10B981;'>Status: <b>{status}</b></span><br/>NPP: {biomass_tons} MT</div>"
     view_state = pdk.ViewState(latitude=33.95 if sector_key == "Channel Islands" else 21.3, longitude=-119.8 if sector_key == "Channel Islands" else -157.9, zoom=8.5, pitch=45, bearing=15)
     
     st.pydeck_chart(pdk.Deck(layers=layers, initial_view_state=view_state, map_style="carto-dark", tooltip={"html": tt_html}), use_container_width=True, height=600)
@@ -340,19 +329,19 @@ with col_map:
 with col_ops:
     sel_site, site_data = None, None
     if not kelp_df.empty:
-        st.info("☝️ **What is this?** Select a site to evaluate its biological viability against **Real-Time Weather Constraints**.")
+        st.info("☝️ **What is this?** The AI has mathematically deconflicted several viable ocean zones. Select a specific site from the map to drill down into its localized growth metrics, 10-year financial ROI, and satellite verification.")
         sel_site = st.selectbox("🎯 Target Site for Deep-Dive Analysis:", kelp_df['id'].tolist(), label_visibility="collapsed")
         site_data = kelp_df[kelp_df['id'] == sel_site].iloc[0]
 
-    t_mission, t1, t2, t_mrv, t3 = st.tabs(["🚀 Mission", "⛈️ Weather & Growth", "💰 ROI", "🛰️ MRV", "🛡️ AI Audit"])
+    t_mission, t1, t2, t_mrv, t3 = st.tabs(["🚀 Mission", "📈 Analytics", "💰 ROI", "🛰️ MRV", "🛡️ AI Audit"])
     
     with t_mission:
         st.markdown("<br>", unsafe_allow_html=True)
         st.info("Trillions in climate capital are sidelined because we lack the computational architecture to verify marine ecological investments. Blue 42 synthesizes complex telemetry to unlock gigaton-scale Blue Carbon.")
         st.markdown("**1. Mitigation & Commercial Harvest**")
         st.caption("Giant Kelp sequesters carbon 20x faster than terrestrial forests. We automate site selection to unlock capital allocation.")
-        st.markdown("**2. Adaptation (Coastal & Weather Resilience)**")
-        st.caption("Kelp buffers coastlines against storm surges. Our MCDA actively tracks live weather to predict wave attenuation and protect harvest crews.")
+        st.markdown("**2. Adaptation (Coastal & Economic Resilience)**")
+        st.caption("Kelp buffers coastlines against storm surges, saving billions in infrastructure, and generates thousands of coastal blue-economy jobs.")
         st.markdown("**3. Protection (Do No Harm)**")
         st.caption("The MCDA dynamically deconflicts kelp sites from active shipping lanes, severe weather, and cetacean migration corridors.")
 
@@ -362,48 +351,28 @@ with col_ops:
     with t1:
         st.markdown("<br>", unsafe_allow_html=True)
         if site_data is not None and PLOTLY_AVAILABLE:
+            months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            growth = [10, 40, 80, 20, 50, 90, 30, 60, 100, 25, 55, 85] 
             
-            # EXPLICIT WEATHER IMPACT READOUT
-            st.markdown("##### 🌊 Current Weather Impact on Kelp Harvest")
-            if "WEATHER HAZARD" in site_data.get('status', ''):
-                st.error(f"🚨 **SEVERE STORM TRACK DETECTED:** Current wave energy is **{site_data.get('wave_energy', 0)} kW/m** (Threshold: <40 kW/m). High risk of holdfast shearing and biological detachment. Commercial harvest operations must be **HALTED** immediately.")
-            elif site_data.get('sst_mean', 0) > 18.0:
-                st.warning(f"⚠️ **MARINE HEATWAVE DETECTED:** Sea Surface Temperature is **{site_data.get('sst_mean', 0)}°C** (Threshold: <18°C). Imminent risk of canopy die-off. Expedite commercial harvest before biomass decomposes.")
-            else:
-                st.success(f"✅ **WEATHER CLEAR:** Nominal wave energy ({site_data.get('wave_energy', 0)} kW/m) and optimal thermodynamics ({site_data.get('sst_mean', 0)}°C). Safe to dispatch commercial kelp harvesting crews.")
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=months, y=growth, mode='lines+markers', name='Canopy Biomass (%)', line=dict(color="#06b6d4", width=3, shape='spline')))
+            for harvest_mo in ['Mar', 'Jun', 'Sep', 'Dec']:
+                fig.add_vline(x=harvest_mo, line_width=1, line_dash="dot", line_color="#ef4444")
+                
+            fig.update_layout(template="plotly_dark", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_title="Biomass (%)", margin=dict(l=0, r=0, t=10, b=0), height=220)
+            st.plotly_chart(fig, use_container_width=True)
 
-            st.divider()
-
-            st.markdown("##### 📈 Biomass Growth & Thermodynamics")
-            
-            # Plotly Gauge Charts for Weather Tolerance
-            fig_weather = make_subplots(rows=1, cols=2, specs=[[{'type': 'indicator'}, {'type': 'indicator'}]])
-            
-            fig_weather.add_trace(go.Indicator(
-                mode = "gauge+number",
-                value = site_data.get('wave_energy', 0),
-                title = {'text': "Wave Energy (kW/m)"},
-                gauge = {'axis': {'range': [None, 80]}, 'bar': {'color': "#0EA5E9"}, 'steps' : [{'range': [0, 40], 'color': "rgba(16, 185, 129, 0.2)"}, {'range': [40, 80], 'color': "rgba(239, 68, 68, 0.2)"}]}
-            ), row=1, col=1)
-            
-            fig_weather.add_trace(go.Indicator(
-                mode = "gauge+number",
-                value = site_data.get('sst_mean', 0),
-                title = {'text': "Sea Temp (°C)"},
-                gauge = {'axis': {'range': [10, 22]}, 'bar': {'color': "#0EA5E9"}, 'steps' : [{'range': [10, 18], 'color': "rgba(16, 185, 129, 0.2)"}, {'range': [18, 22], 'color': "rgba(239, 68, 68, 0.2)"}]}
-            ), row=1, col=2)
-            
-            fig_weather.update_layout(template="plotly_dark", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=10, r=10, t=30, b=10), height=200)
-            st.plotly_chart(fig_weather, use_container_width=True)
+            mc1, mc2, mc3 = st.columns(3)
+            mc1.markdown(f"<div style='text-align:center;'><div style='color:#94a3b8; font-size:12px;'>Salinity</div><div style='color:#06b6d4; font-size:20px; font-weight:bold;'>{site_data.get('salinity', 0)} PSU</div></div>", unsafe_allow_html=True)
+            mc2.markdown(f"<div style='text-align:center;'><div style='color:#94a3b8; font-size:12px;'>Wave Energy</div><div style='color:#06b6d4; font-size:20px; font-weight:bold;'>{site_data.get('wave_energy', 0)} kW/m</div></div>", unsafe_allow_html=True)
+            mc3.markdown(f"<div style='text-align:center;'><div style='color:#94a3b8; font-size:12px;'>Biodiversity</div><div style='color:#06b6d4; font-size:20px; font-weight:bold;'>{site_data.get('biodiversity_score', 0)}/100</div></div>", unsafe_allow_html=True)
             
     with t2:
         st.markdown("<br>", unsafe_allow_html=True)
-        st.caption("**Value Stacking:** Combines Premium Blue Carbon ($150/MT), Bioplastic-Grade Harvest ($300/MT), and Resilience Subsidies ($1,500/HA).")
-        
         if site_data is not None and "CLEARED" in site_data.get('status', ''):
-            capex = site_data.get('area_ha', 0) * 10000  
-            opex_yr = site_data.get('area_ha', 0) * 1500 
-            rev_yr = (site_data.get('co2_tons', 0) * 150) + (site_data.get('biomass_tons', 0) * 300) + (site_data.get('area_ha', 0) * 1500)
+            capex = site_data.get('area_ha', 0) * 15000  
+            opex_yr = site_data.get('area_ha', 0) * 2000 
+            rev_yr = (site_data.get('co2_tons', 0) * 85) + (site_data.get('biomass_tons', 0) * 120)
             
             years = np.arange(0, 11)
             costs = capex + (opex_yr * years)
@@ -411,41 +380,19 @@ with col_ops:
             
             if PLOTLY_AVAILABLE:
                 fig2 = go.Figure()
-                fig2.add_trace(go.Scatter(x=years, y=costs, name="Cumulative Cost", fill='tozeroy', line=dict(color="#ef4444", width=2), fillcolor='rgba(239, 68, 68, 0.1)'))
-                fig2.add_trace(go.Scatter(x=years, y=revenues, name="Cumulative Revenue", fill='tozeroy', line=dict(color="#10b981", width=2), fillcolor='rgba(16, 185, 129, 0.2)'))
-                fig2.update_layout(template="plotly_dark", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_title="USD ($)", xaxis_title="Years Post-Deployment", margin=dict(l=0, r=0, t=10, b=0), height=250)
+                fig2.add_trace(go.Scatter(x=years, y=costs, name="Cumulative Cost", fill='tozeroy', line=dict(color="#ef4444", width=2)))
+                fig2.add_trace(go.Scatter(x=years, y=revenues, name="Cumulative Revenue", fill='tozeroy', line=dict(color="#10b981", width=2)))
+                fig2.update_layout(template="plotly_dark", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_title="USD ($)", xaxis_title="Years", margin=dict(l=0, r=0, t=10, b=0), height=220)
                 st.plotly_chart(fig2, use_container_width=True)
             
             annual_profit = rev_yr - opex_yr
             if annual_profit > 0:
-                break_even = capex / annual_profit
-                st.success(f"**Projected Break-Even:** Year {break_even:.1f} | **10-Yr Net Profit:** ${(revenues[-1]-costs[-1]):,.2f}")
-                
-            st.divider()
-            st.markdown("###### 🌍 Macro-Economics: Planetary Scale-Up")
-            
-            target_scale_ha = st.slider("Target Deployment Area (Hectares)", min_value=10000, max_value=50000000, value=1000000, step=10000, label_visibility="collapsed")
-            
-            macro_capex = target_scale_ha * 10000
-            macro_opex_yr = target_scale_ha * 1500
-            macro_co2 = target_scale_ha * 12.5
-            macro_biomass = target_scale_ha * 17.0
-            
-            macro_rev_yr = (macro_co2 * 150) + (macro_biomass * 300) + (target_scale_ha * 1500)
-            macro_net_yr = macro_rev_yr - macro_opex_yr
-            
-            mc1, mc2, mc3 = st.columns(3)
-            mc1.metric("Gigaton Potential", f"{macro_co2 / 1e6:.2f} GT/yr")
-            mc2.metric("CAPEX Required", f"${macro_capex / 1e9:.2f} Billion")
-            mc3.metric("10-Yr Portfolio Value", f"${(macro_net_yr * 10) / 1e9:.2f} Billion")
-
+                st.caption(f"**Break-Even:** Year {capex / annual_profit:.1f} | **10-Yr Profit:** ${(revenues[-1]-costs[-1]):,.2f}")
         else:
             st.error("Site contains HAZARDS. Financial modeling suspended.")
 
     with t_mrv:
         st.markdown("<br>", unsafe_allow_html=True)
-        st.caption("**Ending Greenwashing:** Continuous ingestion of Sentinel-2 multispectral imagery verifies canopy regrowth after every commercial harvest cycle.")
-        
         if site_data is not None and "CLEARED" in site_data.get('status', ''):
             years_mrv = ["Q1", "Q2", "Q3", "Q4"]
             canopy_density = [75, 82, 88, 95] 
@@ -456,7 +403,7 @@ with col_ops:
                 fig3.update_layout(template="plotly_dark", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_title="Sentinel-2 Regrowth (%)", margin=dict(l=0, r=0, t=10, b=0), height=220)
                 st.plotly_chart(fig3, use_container_width=True)
             
-            if st.button("Cryptographically Sign & Mint Credits", use_container_width=True):
+            if st.button("Cryptographically Mint to Ledger", use_container_width=True):
                 tx_hash = hashlib.sha256(str(time.time()).encode()).hexdigest()
                 st.success(f"✅ Verified via satellite. {site_data.get('co2_tons', 0)} MT CO2e minted.")
                 st.markdown(f"<div class='crypto-box'>TX_HASH: {tx_hash}</div>", unsafe_allow_html=True)
