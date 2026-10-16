@@ -81,7 +81,7 @@ st.markdown("""
     }
 
     .block-container { padding-top: 1rem; padding-bottom: 2rem; max-width: 98%; }
-    .stMarkdown, .stMarkdown div, .element-container { overflow: visible !important; position: relative; z-index: 99 !important; }
+    .stMarkdown, .element-container { overflow: visible !important; }
 
     /* Signature Google 4-Color Top Accent Bar */
     .google-accent-bar {
@@ -98,71 +98,84 @@ st.markdown("""
         margin-bottom: 14px;
     }
 
-    /* Custom CSS for Leaf Tooltips - Decoupled from Card Flip */
+    /* Custom CSS for Leaf Tooltips - NO CLIPPING & SHRUNK FONT */
     .leaf-tooltip {
-        position: relative; display: inline-block; cursor: help; font-size: 1.05rem; margin-left: 6px; transition: transform 0.2s ease;
+        position: relative !important; display: inline-block; cursor: help; font-size: 1.05rem; margin-left: 6px; transition: transform 0.2s ease; z-index: 999999 !important;
     }
     .leaf-tooltip:hover { transform: scale(1.2); }
     .leaf-tooltip .tooltiptext {
         visibility: hidden; width: 230px; background: rgba(30, 31, 32, 0.98);
         backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: var(--g-text); text-align: left; 
-        border: 1px solid var(--g-blue); border-radius: 8px; padding: 10px 12px; position: absolute; z-index: 9999999 !important; 
+        border: 1px solid var(--g-blue); border-radius: 8px; padding: 10px 12px; position: absolute !important; z-index: 9999999 !important; 
         bottom: 135%; left: 50%; margin-left: -115px; transform: translateY(10px); opacity: 0; transition: opacity 0.25s, transform 0.25s; 
         font-size: 0.7rem; font-family: 'Google Sans', 'Plus Jakarta Sans', sans-serif; box-shadow: 0 10px 30px rgba(0,0,0,0.75);
         line-height: 1.45; font-weight: 500; pointer-events: none; white-space: normal; word-wrap: break-word;
     }
     .leaf-tooltip .tooltiptext::after {
-        content: ""; position: absolute; top: 100%; left: 50%; margin-left: -6px; border-width: 6px; border-style: solid; border-color: var(--g-blue) transparent transparent transparent;
+        content: ""; position: absolute !important; top: 100%; left: 50%; margin-left: -6px; border-width: 6px; border-style: solid; border-color: var(--g-blue) transparent transparent transparent;
     }
     .leaf-tooltip:hover .tooltiptext { visibility: visible; opacity: 1; transform: translateY(0); }
 
-    /* KPI Card Wrapper - Separates Header/Tooltip from 3D Flip Body so Tooltips Never Flip Away */
-    .kpi-wrapper {
-        background: var(--g-surface);
-        border: 1px solid var(--g-border);
-        border-radius: 14px;
-        padding: 12px 16px 14px 16px;
-        margin-bottom: 15px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    /* 3D Flip Card Container - STRICT IN-PLACE OVERLAY */
+    .flip-card {
+        background-color: transparent !important;
+        width: 100% !important;
+        height: 210px !important;
+        perspective: 1000px !important;
+        margin-bottom: 15px !important;
+        position: relative !important;
     }
-    .kpi-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        font-size: clamp(0.72rem, 0.95vw, 0.85rem);
-        color: var(--g-text-sub);
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        font-weight: 600;
-        margin-bottom: 6px;
-        z-index: 20;
-    }
-
-    /* 3D Flip Card Container */
-    .flip-card { background-color: transparent; height: 155px; perspective: 1000px; }
     .flip-card-inner { 
-        position: relative; width: 100%; height: 100%; text-align: center; 
-        transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1); 
-        transform-style: preserve-3d; transform-origin: 50% 50%; 
+        position: relative !important;
+        width: 100% !important;
+        height: 100% !important;
+        text-align: center !important;
+        transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1) !important;
+        transform-style: preserve-3d !important;
+        -webkit-transform-style: preserve-3d !important;
+        transform-origin: 50% 50% !important;
     }
-    .flip-card:hover .flip-card-inner { transform: rotateY(180deg); }
+    .flip-card:hover .flip-card-inner {
+        transform: rotateY(180deg) !important;
+    }
     .flip-card-front, .flip-card-back {
-        position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
-        -webkit-backface-visibility: hidden; backface-visibility: hidden;
-        border-radius: 10px; box-sizing: border-box; background: var(--g-surface-elevated); 
-        border: 1px solid rgba(255, 255, 255, 0.06); 
-        padding: 12px 15px;
-        display: flex; flex-direction: column; justify-content: center;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        -webkit-backface-visibility: hidden !important;
+        backface-visibility: hidden !important;
+        border-radius: 12px !important;
+        box-sizing: border-box !important;
+        background: var(--g-surface) !important;
+        border: 1px solid var(--g-border) !important;
+        padding: 15px !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+    }
+    .flip-card-front {
+        transform: rotateY(0deg) !important;
+        z-index: 2 !important;
     }
     .flip-card-back { 
-        transform: rotateY(180deg);
-        background: #17181A; text-align: left; align-items: flex-start; padding-left: 18px; 
+        transform: rotateY(180deg) !important;
+        border-left: 4px solid var(--g-green) !important;
+        background: var(--g-surface-elevated) !important;
+        text-align: left !important;
+        align-items: flex-start !important;
+        padding-left: 20px !important;
+        z-index: 1 !important;
     }
 
-    /* Responsive Font Sizing */
+    /* Responsive Font Sizing to Ensure Fit */
+    .glass-title { font-size: clamp(0.7rem, 1vw, 0.85rem); color: var(--g-text-sub); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 600; line-height: 1.2; }
     .glass-value { font-size: clamp(1.6rem, 2.1vw, 2.25rem); font-weight: 700; margin: 0; line-height: 1.15; }
     .glass-sub { font-size: clamp(0.72rem, 0.95vw, 0.82rem); color: var(--g-green-light); margin-top: 8px; font-weight: 600; }
-    .flip-hint { font-size: 0.65rem; color: var(--g-text-sub); margin-top: 6px; opacity: 0.75; }
     
     .math-text { font-family: 'Roboto Mono', monospace; font-size: clamp(0.62rem, 0.8vw, 0.72rem); color: var(--g-text); line-height: 1.35; width: 100%; display: flex; flex-direction: column; justify-content: center; }
     .math-hl { color: var(--g-green-light); font-weight: 700; font-size: clamp(0.68rem, 0.9vw, 0.80rem); }
@@ -190,28 +203,22 @@ st.markdown("""
 def leaf_info(text):
     return f"""<div class="leaf-tooltip">🌿<span class="tooltiptext">{text}</span></div>"""
 
-def make_flip_card(title, tooltip_html, value, sub, math_html, accent_color="#4285F4", value_color="#8AB4F8"):
-    return f"""
-    <div class="kpi-wrapper" style="border-top: 3px solid {accent_color};">
-      <div class="kpi-header">
-        <span>{title}</span>
-        {tooltip_html}
-      </div>
-      <div class="flip-card">
-        <div class="flip-card-inner">
-          <div class="flip-card-front" style="border-left: 4px solid {accent_color};">
-            <div class="glass-value" style="color: {value_color};">{value}</div>
-            <div class="glass-sub">{sub}</div>
-            <div class="flip-hint">↻ Hover card for formula</div>
-          </div>
-          <div class="flip-card-back" style="border-left: 4px solid #34A853;">
-            <div style="margin-bottom:4px; color:#8AB4F8; font-size:0.7rem; font-weight:700; letter-spacing:0.6px;">ALGORITHMIC PROVENANCE</div>
-            <div class="math-text">{math_html}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    """
+def make_flip_card(title, value, sub, math_html, accent_color="#4285F4", value_color="#8AB4F8"):
+    return (
+        f'<div class="flip-card">'
+        f'<div class="flip-card-inner">'
+        f'<div class="flip-card-front" style="border-left: 4px solid {accent_color} !important;">'
+        f'<div class="glass-title">{title}</div>'
+        f'<div class="glass-value" style="color: {value_color};">{value}</div>'
+        f'<div class="glass-sub">{sub}</div>'
+        f'</div>'
+        f'<div class="flip-card-back">'
+        f'<div class="glass-title" style="margin-bottom:6px; color:#8AB4F8; font-size:0.75rem;">ALGORITHMIC PROVENANCE</div>'
+        f'<div class="math-text">{math_html}</div>'
+        f'</div>'
+        f'</div>'
+        f'</div>'
+    )
 
 # =========================================================
 # 2. CUSTOM ANIMATIONS (KELP & HANDSHAKE)
@@ -298,7 +305,6 @@ if "selected_site_id" not in st.session_state:
 def safe_encode(text):
     if not isinstance(text, str):
         text = str(text)
-    # Strip markdown bold/heading markers so FPDF text is clean
     cleaned = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
     cleaned = re.sub(r'^#+\s*', '', cleaned, flags=re.MULTILINE)
     return cleaned.encode('latin-1', 'replace').decode('latin-1')
@@ -527,7 +533,6 @@ def get_scientific_kelp_data(sector: str, live_gee: bool = False):
         wave_energy = round(rng.uniform(12.0, 48.0), 1)
         biomass_tons = round(area * 18.5 * 0.92, 1)
         abyssal_dist_km = round(rng.uniform(15.0, 75.0), 1)
-        # Distance-adjusted sinking cost matching PDF provenance formula
         sinking_cost = round((area * 120.0) + (biomass_tons * abyssal_dist_km * 0.45), 2)
 
         sites.append({
@@ -553,7 +558,6 @@ def get_scientific_kelp_data(sector: str, live_gee: bool = False):
             "equity_score": rng.randint(62, 99),
         })
 
-    # Optional Live Earth Engine Telemetry Enrichment when GEE is connected
     if live_gee and EE_AVAILABLE:
         try:
             bathy_img = ee.Image("NOAA/NGDC/ETOPO1").select("bedrock")
@@ -646,14 +650,12 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 def run_mcda_deconfliction(sites, vessels_df, mammals_df, weather_data, restricted_data, allowed_data):
     processed = []
     for site in sites:
-        # Google Green (#34A853) for Optimal Cleared sites
         site['status'], site['color'] = "CLEARED: Optimal", [52, 168, 83, 230]
         lon, lat = site.get('lon', 0), site.get('lat', 0)
 
         for r_zone in restricted_data:
             poly = r_zone.get('polygon', [])
             if poly and point_in_polygon(lon, lat, poly):
-                # Google Red (#EA4335) for Restricted No-Take Zone
                 site['status'], site['color'] = "HAZARD: Restricted No-Take Zone", [234, 67, 53, 230]
                 break
 
@@ -670,14 +672,12 @@ def run_mcda_deconfliction(sites, vessels_df, mammals_df, weather_data, restrict
         if site['status'].startswith("CLEARED"):
             for _, ship in vessels_df.iterrows():
                 if haversine_km(lat, lon, ship.get('lat', 0), ship.get('lon', 0)) < 2.5:
-                    # Google Yellow (#FBBC04) for Shipping Lane conflict
                     site['status'], site['color'] = "HAZARD: Shipping Lane", [251, 188, 4, 230]
                     break
 
         if site['status'].startswith("CLEARED"):
             for _, whale in mammals_df.iterrows():
                 if haversine_km(lat, lon, whale.get('lat', 0), whale.get('lon', 0)) < 4.0:
-                    # Google Blue (#4285F4) for Protected Mammal Corridor
                     site['status'], site['color'] = "HAZARD: Mammal Corridor", [66, 133, 244, 230]
                     break
 
@@ -811,7 +811,6 @@ raw_sites = sorted(raw_sites, key=lambda x: x.get('pareto_score', 0), reverse=Tr
 kelp_df = run_mcda_deconfliction(raw_sites, vessels_df, mammals_df, weather_data, restricted_data, allowed_data)
 safe_df = kelp_df[kelp_df['status'].str.contains("CLEARED")] if not kelp_df.empty else pd.DataFrame()
 
-# Synchronize active site selection
 if not kelp_df.empty:
     valid_ids = kelp_df['id'].tolist()
     if st.session_state.selected_site_id not in valid_ids:
@@ -834,8 +833,7 @@ math3 = "Σ [ Area (HA)<br><span class='math-op'>×</span> <span class='math-var
 math4 = "(CO2e MT × \\$150)<br><span class='math-op'>+</span> <span class='math-var'>(Biomass MT × \\$300)</span><br><span class='math-op'>+</span> <span class='math-var'>(Nitrogen MT × \\$2000)</span><br><div class='math-divider'>━━━━━━━━━</div><span class='math-hl'>Stacked Annual ROI</span>"
 
 col1.markdown(make_flip_card(
-    "Net Viable Kelp Area",
-    leaf_info("The gross geospatial area mathematically cleared of all shipping, severe weather, and cetacean migration hazards."),
+    f"Net Viable Kelp Area {leaf_info('The gross geospatial area mathematically cleared of all shipping, severe weather, and cetacean migration hazards.')}",
     f"{v_area:.1f} HA",
     f"{len(safe_df)}/{len(kelp_df)} Sites Cleared",
     math1,
@@ -844,8 +842,7 @@ col1.markdown(make_flip_card(
 ), unsafe_allow_html=True)
 
 col2.markdown(make_flip_card(
-    "Net Harvestable Yield",
-    leaf_info("Dynamic Biomass Yield after calculating the site-specific 4D Environmental Stress Test."),
+    f"Net Harvestable Yield {leaf_info('Dynamic Biomass Yield after calculating the site-specific 4D Environmental Stress Test.')}",
     f"{v_bio:.1f} MT",
     f"{stress_scenario} ({avg_retention:.0f}% Ret.)",
     math2,
@@ -854,8 +851,7 @@ col2.markdown(make_flip_card(
 ), unsafe_allow_html=True)
 
 col3.markdown(make_flip_card(
-    "Averted Coastal Damage",
-    leaf_info("Quantifies infrastructural savings achieved by utilizing kelp canopies to attenuate destructive hydrodynamic wave energy."),
+    f"Averted Coastal Damage {leaf_info('Quantifies infrastructural savings achieved by utilizing kelp canopies to attenuate destructive hydrodynamic wave energy.')}",
     f"${v_dmg:.1f}M",
     "Via Wave Attenuation",
     math3,
@@ -864,8 +860,7 @@ col3.markdown(make_flip_card(
 ), unsafe_allow_html=True)
 
 col4.markdown(make_flip_card(
-    "Ecological Capital ROI",
-    leaf_info("Stacked annual revenue generated by monetizing verified carbon sequestration, commercial biomass off-take, and nitrogen credits."),
+    f"Ecological Capital ROI {leaf_info('Stacked annual revenue generated by monetizing verified carbon sequestration, commercial biomass off-take, and nitrogen credits.')}",
     f"${v_roi:,.0f}",
     "Stacked Value / Yr",
     math4,
