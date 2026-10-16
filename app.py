@@ -73,25 +73,35 @@ st.markdown("""
     }
     .leaf-tooltip:hover .tooltiptext { visibility: visible; opacity: 1; transform: translateY(0); }
 
-    /* 3D Flip Card Container - IN PLACE FIX */
+    /* 3D Flip Card Container - STRICT IN-PLACE FIX & FONT SCALING */
     .flip-card { background-color: transparent; height: 210px; perspective: 1000px; margin-bottom: 15px; }
-    .flip-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1); transform-style: preserve-3d; transform-origin: center center; }
+    .flip-card-inner { 
+        position: relative; width: 100%; height: 100%; text-align: center; 
+        transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1); 
+        transform-style: preserve-3d; transform-origin: 50% 50%; 
+    }
     .flip-card:hover .flip-card-inner { transform: rotateY(180deg); }
     .flip-card-front, .flip-card-back {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden;
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
+        -webkit-backface-visibility: hidden; backface-visibility: hidden;
         border-radius: 12px; box-sizing: border-box; background: rgba(15, 23, 42, 0.6); 
         backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(6, 182, 212, 0.2); 
-        padding: 20px 15px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; justify-content: center;
+        padding: 15px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); 
+        display: flex; flex-direction: column; justify-content: center;
     }
     .flip-card-front { border-left: 4px solid #0D9488; }
-    .flip-card-back { transform: rotateY(180deg); border-left: 4px solid #10B981; background: rgba(30, 41, 59, 0.95); text-align: left; align-items: flex-start; padding-left: 25px; }
+    .flip-card-back { 
+        transform: rotateY(180deg); border-left: 4px solid #10B981; 
+        background: rgba(30, 41, 59, 0.95); text-align: left; align-items: flex-start; padding-left: 20px; 
+    }
 
-    .glass-title { font-size: 0.85rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 600;}
-    .glass-value { font-size: 2.2rem; font-weight: 700; background: -webkit-linear-gradient(45deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; line-height: 1.1; }
-    .glass-sub { font-size: 0.8rem; color: #10B981; margin-top: 8px; font-weight: 600; }
+    /* Responsive Font Sizing to Ensure Fit */
+    .glass-title { font-size: clamp(0.7rem, 1vw, 0.85rem); color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 600; line-height: 1.2;}
+    .glass-value { font-size: clamp(1.6rem, 2vw, 2.2rem); font-weight: 700; background: -webkit-linear-gradient(45deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; line-height: 1.1; }
+    .glass-sub { font-size: clamp(0.7rem, 1vw, 0.8rem); color: #10B981; margin-top: 8px; font-weight: 600; }
     
-    .math-text { font-family: 'JetBrains Mono', monospace; font-size: 0.70rem; color: #F8FAFC; line-height: 1.4; width: 100%; display: flex; flex-direction: column; justify-content: center; }
-    .math-hl { color: #10B981; font-weight: 700; font-size: 0.80rem; }
+    .math-text { font-family: 'JetBrains Mono', monospace; font-size: clamp(0.6rem, 0.8vw, 0.70rem); color: #F8FAFC; line-height: 1.3; width: 100%; display: flex; flex-direction: column; justify-content: center; }
+    .math-hl { color: #10B981; font-weight: 700; font-size: clamp(0.65rem, 0.9vw, 0.80rem); }
     .math-var { color: #94A3B8; }
     .math-op { color: #0EA5E9; font-weight: 700; padding-right: 6px; display: inline-block; width: 12px; }
 
@@ -126,7 +136,7 @@ def make_flip_card(title, value, sub, math_html):
           <div class="glass-sub">{sub}</div>
         </div>
         <div class="flip-card-back">
-          <div class="glass-title" style="margin-bottom:8px; color:#38BDF8; font-size:0.75rem;">ALGORITHMIC PROVENANCE</div>
+          <div class="glass-title" style="margin-bottom:6px; color:#38BDF8; font-size:0.75rem;">ALGORITHMIC PROVENANCE</div>
           <div class="math-text">{math_html}</div>
         </div>
       </div>
