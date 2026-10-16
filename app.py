@@ -36,7 +36,6 @@ st.markdown(f"""
     .stButton>button {{ border-radius: 4px; font-weight: 600; background-color: {card_bg}; border: 1px solid {accent_teal}; color: white; }}
     .stButton>button:hover {{ border-color: {accent_green}; color: {accent_green}; }}
     h1, h2, h3, h4, h5 {{ font-family: 'Inter', sans-serif; font-weight: 300; tracking: wide; }}
-    /* Hide Streamlit Branding */
     #MainMenu {{visibility: hidden;}} footer {{visibility: hidden;}}
 </style>
 """, unsafe_allow_html=True)
@@ -68,7 +67,7 @@ def create_lca_brief(site: dict, ai_analysis: str) -> bytes:
     pdf.set_font("Arial", size=10)
     pdf.cell(0, 8, f"Net Primary Productivity (NPP) Yield: {site['biomass_tons']} Wet MT/yr", ln=True)
     pdf.cell(0, 8, f"Verified Sequestration Rate: {site['co2_tons']} MT CO2e/yr", ln=True)
-    pdf.cell(0, 8, f"Biodiversity Co-Benefit Score: {site['biodiversity_score']}/100 (Fishery Restoration Potential)", ln=True)
+    pdf.cell(0, 8, f"Biodiversity Co-Benefit Score: {site['biodiversity_score']}/100", ln=True)
     pdf.ln(3)
 
     pdf.set_font("Arial", "B", 11)
@@ -171,14 +170,12 @@ def run_mcda_deconfliction(sites, vessels_df, mammals_df):
         site['status'] = "CLEARED: Optimal"
         site['color'] = [16, 185, 129, 200]
         
-        # Shipping Conflict
         for _, ship in vessels_df.iterrows():
             a = math.sin(math.radians(ship['lat'] - site['lat'])/2)**2 + math.cos(math.radians(site['lat'])) * math.cos(math.radians(ship['lat'])) * math.sin(math.radians(ship['lon'] - site['lon'])/2)**2
             if R * (2 * math.atan2(math.sqrt(a), math.sqrt(1-a))) < 2.5:
                 site['status'], site['color'] = "HAZARD: Shipping Traffic", [239, 68, 68, 200]
                 break
                 
-        # Mammal Conflict
         if site['status'] == "CLEARED: Optimal":
             for _, whale in mammals_df.iterrows():
                 a = math.sin(math.radians(whale['lat'] - site['lat'])/2)**2 + math.cos(math.radians(site['lat'])) * math.cos(math.radians(whale['lat'])) * math.sin(math.radians(whale['lon'] - site['lon'])/2)**2
@@ -197,19 +194,18 @@ st.caption("Multi-Criteria Decision Analysis integrating Earth Engine telemetry 
 sector = st.selectbox("Select Target Bioregion:", ["Channel Islands, CA", "Hawaiian Archipelago, HI"], label_visibility="collapsed")
 sector_key = "Channel Islands" if "Channel" in sector else "Hawaii"
 
-# Run Physics & Data Engines
 raw_sites = get_scientific_kelp_data(sector_key)
 vessels_df, mammals_df = get_hazard_vectors(sector_key)
 kelp_df = run_mcda_deconfliction(raw_sites, vessels_df, mammals_df)
 safe_df = kelp_df[kelp_df['status'] == "CLEARED: Optimal"]
 
-# KPIs
 c1, c2, c3, c4, c5 = st.columns(5)
 c1.metric("Gross Analyzed Area", f"{kelp_df['area_ha'].sum():.1f} HA", "Initial EE Mask")
 c2.metric("Net Viable Area", f"{safe_df['area_ha'].sum():.1f} HA", f"-{kelp_df['area_ha'].sum() - safe_df['area_ha'].sum():.1f} HA Deconflicted", delta_color="inverse")
 c3.metric("Modeled NPP Yield", f"{safe_df['biomass_tons'].sum():.1f} MT", "Macrocystis Wet Biomass")
 c4.metric("Abyssal Sequestration", f"{safe_df['co2_tons'].sum():.1f} MT CO2e", "Verified Drawdown")
 c5.metric("Ecological ROI", f"${safe_df['co2_tons'].sum() * 85:,.0f}", "$85/MT Carbon Credit")
+
 st.write("---")
 
 # =========================================================
@@ -230,11 +226,10 @@ with col_map:
     st.pydeck_chart(pdk.Deck(layers=[ship_layer, mammal_layer, kelp_layer], initial_view_state=view_state, map_style=map_url, tooltip={"html": tt_html}), use_container_width=True, height=550)
 
 with col_ops:
-    # NEW TAB: The Strategic Imperative explains the "Why"
-    t_mission, t1, t2, t3 = st.tabs(["🎯 Strategic Imperative", "📊 Site Analytics", "💰 Financial ROI", "🛡️ AI Audit"])
+    t_mission, t1, t2, t3 = st.tabs(["🎯 Mission", "📊 Site Analytics", "💰 Financial ROI", "🛡️ AI Audit"])
     
     with t_mission:
-        st.markdown("#### The Blue 42 Mission")
+        st.markdown("#### The Blue 42 Strategic Imperative")
         st.write("The global ocean regulates climate and supply chains, but monitoring remains passive. Project Blue 42 transitions observation into **agentic intervention**.")
         
         st.markdown("##### 1. Mitigation (Blue Carbon)")
@@ -245,22 +240,22 @@ with col_ops:
         
         st.markdown("##### 3. Adaptation (Community Resilience)")
         st.caption("Re-establishing kelp forests buffers coastlines against extreme storm surges and restores collapsed local fisheries, driving biodiversity co-benefits to coastal economies.")
-        
-        st.info("💡 **How to use this tool:** Review the Spatial Deconfliction map. Safe zones are green; shipping/mammal hazards are red/amber. Navigate to 'Site Analytics' to review biogeochemical metrics, then generate a verified 'AI Audit'.")
 
     with t1:
         st.markdown("##### Biogeochemical Profiling")
+        
+        # EXPLANATION BLOCK
+        st.info("**Why this matters:** Giant Kelp relies on cold, nutrient-rich upwelling. The depth profile chart below plots the thermocline (falling temperatures) against the nutricline (rising nitrate proxy). If these intersect favorably within the 5m-25m depth range, the site is highly viable for kelp sporophyte attachment and growth.")
+        
         if not safe_df.empty:
             sel_site = st.selectbox("Select Cleared Site:", safe_df['id'].tolist(), label_visibility="collapsed")
             site_data = safe_df[safe_df['id'] == sel_site].iloc[0]
             
-            # Display new metrics cleanly
             m1, m2, m3 = st.columns(3)
             m1.metric("Salinity", f"{site_data['salinity']} PSU", "Optimal: 33-35")
             m2.metric("Wave Energy", f"{site_data['wave_energy']} kW/m", "Hydrodynamic Safe")
             m3.metric("Biodiversity", f"{site_data['biodiversity_score']}/100", "Co-benefit Score")
 
-            # Depth Profile Chart
             depths = np.linspace(0, site_data['depth'], 20)
             temps = site_data['sst_mean'] - (depths * 0.15) 
             nitrates = 2.0 + (depths * 0.8) * (site_data['nitrate_score']/100) 
@@ -279,6 +274,10 @@ with col_ops:
             
     with t2:
         st.markdown("##### 10-Year Techno-Economic Assessment")
+        
+        # EXPLANATION BLOCK
+        st.info("**Why this matters:** Institutional capital requires verifiable returns. This TEA models the initial capital expenditure (CAPEX) for seeding/anchors against ongoing operational costs (OPEX). Revenue is calculated by multiplying verified sequestration tonnage by standard voluntary carbon market pricing (e.g., $85/MT CO2e).")
+        
         if not safe_df.empty:
             capex = site_data['area_ha'] * 15000  
             opex_yr = site_data['area_ha'] * 2000 
@@ -294,7 +293,7 @@ with col_ops:
             fig2.add_trace(go.Scatter(x=years, y=revenues, name="Cumulative Revenue", fill='tozeroy', line=dict(color="#10B981")))
             fig2.update_layout(
                 plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_title="USD ($)", xaxis_title="Years Post-Deployment",
-                margin=dict(l=0, r=0, t=10, b=0), height=300
+                margin=dict(l=0, r=0, t=10, b=0), height=250
             )
             st.plotly_chart(fig2, use_container_width=True)
             break_even = capex / (rev_yr - opex_yr) if rev_yr > opex_yr else 0
@@ -302,7 +301,9 @@ with col_ops:
 
     with t3:
         st.markdown("##### Responsible AI Compliance Audit")
-        st.info("System enforces strict constraint modeling and explicitly flags data uncertainties for investor review.")
+        
+        # EXPLANATION BLOCK
+        st.info("**Why this matters:** Responsible AI must declare its uncertainties. The Gemini 4 Argon model assesses ecological viability but is explicitly prompted to generate a Confidence Score and list 'Known Unknowns' (e.g., localized turbidity or bottom friction). This prevents blind reliance on LLMs and mandates human-in-the-loop validation.")
         
         if st.button("Execute Argon Compliance Audit", use_container_width=True) and not safe_df.empty:
             with st.spinner("Executing..."):
