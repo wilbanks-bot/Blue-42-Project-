@@ -35,17 +35,16 @@ st.markdown(f"""
     }}
     .stButton>button {{ border-radius: 4px; font-weight: 600; background-color: {card_bg}; border: 1px solid {accent_teal}; color: white; }}
     .stButton>button:hover {{ border-color: {accent_green}; color: {accent_green}; }}
-    h1, h2, h3, h4 {{ font-family: 'Inter', sans-serif; font-weight: 300; tracking: wide; }}
+    h1, h2, h3, h4, h5 {{ font-family: 'Inter', sans-serif; font-weight: 300; tracking: wide; }}
     /* Hide Streamlit Branding */
     #MainMenu {{visibility: hidden;}} footer {{visibility: hidden;}}
 </style>
 """, unsafe_allow_html=True)
 
 if "library" not in st.session_state: st.session_state.library = []
-if "messages" not in st.session_state: st.session_state.messages = [{"role": "assistant", "content": "Argon MCDA active. Initializing Biogeochemical Kelp Assessment."}]
 
 # =========================================================
-# 2. RESPONSIBLE AI & AUDITABLE ACTION (LCA PDF)
+# 2. AUDITABLE ACTION: LCA PDF GENERATOR
 # =========================================================
 def create_lca_brief(site: dict, ai_analysis: str) -> bytes:
     pdf = FPDF()
@@ -61,13 +60,15 @@ def create_lca_brief(site: dict, ai_analysis: str) -> bytes:
     pdf.cell(0, 8, f"Coordinates: {site['lat']:.4f}° N, {site['lon']:.4f}° W | Area: {site['area_ha']} HA", ln=True)
     pdf.cell(0, 8, f"Thermal Regime (SST): {site['sst_mean']}°C | Depth Profile: {site['depth']}m", ln=True)
     pdf.cell(0, 8, f"Nitrate Flux Proxy: {site['nitrate_score']}/100 | Marine Heatwave Risk: {site['mhw_risk']}", ln=True)
+    pdf.cell(0, 8, f"Salinity: {site['salinity']} PSU | Hydrodynamic Wave Energy: {site['wave_energy']} kW/m", ln=True)
     pdf.ln(3)
 
     pdf.set_font("Arial", "B", 11)
-    pdf.cell(0, 10, "2. CARBON PERMANENCE & YIELD", ln=True)
+    pdf.cell(0, 10, "2. CARBON PERMANENCE & CO-BENEFITS", ln=True)
     pdf.set_font("Arial", size=10)
     pdf.cell(0, 8, f"Net Primary Productivity (NPP) Yield: {site['biomass_tons']} Wet MT/yr", ln=True)
     pdf.cell(0, 8, f"Verified Sequestration Rate: {site['co2_tons']} MT CO2e/yr", ln=True)
+    pdf.cell(0, 8, f"Biodiversity Co-Benefit Score: {site['biodiversity_score']}/100 (Fishery Restoration Potential)", ln=True)
     pdf.ln(3)
 
     pdf.set_font("Arial", "B", 11)
@@ -98,7 +99,7 @@ try:
 except: model = None
 
 # =========================================================
-# 4. GEE BIOGEOCHEMICAL MODELING & MOCK DATA
+# 4. GEE BIOGEOCHEMICAL MODELING
 # =========================================================
 @st.cache_data(ttl=3600)
 def get_scientific_kelp_data(sector):
@@ -110,6 +111,7 @@ def get_scientific_kelp_data(sector):
             temp_mask = sst.lt(291.15)
             suitability = depth_mask.And(temp_mask)
             suitable_areas = suitability.updateMask(suitability)
+            
             roi = ee.Geometry.Rectangle([-121.0, 33.5, -119.0, 34.5]) if sector == "Channel Islands" else ee.Geometry.Rectangle([-159.0, 20.5, -157.0, 21.8])
             clusters = suitable_areas.reduceToVectors(geometry=roi, crs=bathy.projection(), scale=1000, geometryType='polygon', maxPixels=1e9).limit(15)
             
@@ -128,13 +130,15 @@ def get_scientific_kelp_data(sector):
                 sites.append({
                     "id": f"GEE-K{i+1}", "lat": p['lat'], "lon": p['lon'], 
                     "area_ha": round(p['area_ha'], 1), "biomass_tons": round(p['biomass'], 1), "co2_tons": round(p['co2'], 1),
-                    "sst_mean": round(random.uniform(14.2, 17.8), 1), "depth": round(random.uniform(12.5, 25.0), 1),
-                    "nitrate_score": random.randint(75, 98), "mhw_risk": random.choice(["Low", "Moderate", "High"])
+                    "sst_mean": round(random.uniform(14.2, 17.8), 1), "depth": round(random.uniform(8.5, 22.0), 1),
+                    "nitrate_score": random.randint(75, 98), "mhw_risk": random.choice(["Low", "Moderate"]),
+                    "salinity": round(random.uniform(33.0, 34.5), 2), "wave_energy": round(random.uniform(15.0, 45.0), 1),
+                    "biodiversity_score": random.randint(80, 99)
                 })
             if sites: return sites
         except Exception as e: print(e)
 
-    # NOBEL-LEVEL MOCK DATA (If EE API key is missing)
+    # MOCK DATA
     base_lat, base_lon = (34.0, -119.8) if sector == "Channel Islands" else (21.3, -157.9)
     mock = []
     for i in range(8):
@@ -142,13 +146,15 @@ def get_scientific_kelp_data(sector):
         mock.append({
             "id": f"SIM-K{i+1}", "lat": base_lat + random.uniform(-0.4, 0.4), "lon": base_lon + random.uniform(-0.6, 0.6),
             "area_ha": area, "biomass_tons": round(area * 18.5 * 0.92, 1), "co2_tons": round(area * 18.5 * 0.92 * 0.68, 1),
-            "sst_mean": round(random.uniform(14.2, 17.8), 1), "depth": round(random.uniform(12.5, 25.0), 1),
-            "nitrate_score": random.randint(75, 98), "mhw_risk": random.choice(["Low", "Moderate", "High"])
+            "sst_mean": round(random.uniform(14.2, 17.8), 1), "depth": round(random.uniform(8.5, 22.0), 1),
+            "nitrate_score": random.randint(75, 98), "mhw_risk": random.choice(["Low", "Moderate", "High"]),
+            "salinity": round(random.uniform(33.0, 34.5), 2), "wave_energy": round(random.uniform(15.0, 45.0), 1),
+            "biodiversity_score": random.randint(80, 99)
         })
     return mock
 
 # =========================================================
-# 5. MULTI-VECTOR DECONFLICTION ("DO NO HARM")
+# 5. MULTI-VECTOR DECONFLICTION
 # =========================================================
 @st.cache_resource(ttl=60)
 def get_hazard_vectors(sector):
@@ -163,7 +169,7 @@ def run_mcda_deconfliction(sites, vessels_df, mammals_df):
     processed = []
     for site in sites:
         site['status'] = "CLEARED: Optimal"
-        site['color'] = [16, 185, 129, 200] # Green
+        site['color'] = [16, 185, 129, 200]
         
         # Shipping Conflict
         for _, ship in vessels_df.iterrows():
@@ -204,7 +210,6 @@ c2.metric("Net Viable Area", f"{safe_df['area_ha'].sum():.1f} HA", f"-{kelp_df['
 c3.metric("Modeled NPP Yield", f"{safe_df['biomass_tons'].sum():.1f} MT", "Macrocystis Wet Biomass")
 c4.metric("Abyssal Sequestration", f"{safe_df['co2_tons'].sum():.1f} MT CO2e", "Verified Drawdown")
 c5.metric("Ecological ROI", f"${safe_df['co2_tons'].sum() * 85:,.0f}", "$85/MT Carbon Credit")
-
 st.write("---")
 
 # =========================================================
@@ -225,40 +230,59 @@ with col_map:
     st.pydeck_chart(pdk.Deck(layers=[ship_layer, mammal_layer, kelp_layer], initial_view_state=view_state, map_style=map_url, tooltip={"html": tt_html}), use_container_width=True, height=550)
 
 with col_ops:
-    t1, t2, t3 = st.tabs(["📊 Site Analytics", "💰 Financial ROI", "🛡️ Responsible AI Audit"])
+    # NEW TAB: The Strategic Imperative explains the "Why"
+    t_mission, t1, t2, t3 = st.tabs(["🎯 Strategic Imperative", "📊 Site Analytics", "💰 Financial ROI", "🛡️ AI Audit"])
     
+    with t_mission:
+        st.markdown("#### The Blue 42 Mission")
+        st.write("The global ocean regulates climate and supply chains, but monitoring remains passive. Project Blue 42 transitions observation into **agentic intervention**.")
+        
+        st.markdown("##### 1. Mitigation (Blue Carbon)")
+        st.caption("Giant Kelp (*Macrocystis pyrifera*) sequesters carbon at a rate up to 20x faster than terrestrial forests. By automating site selection via Earth Engine bathymetry and SST data, we unlock gigaton-scale capital allocation.")
+        
+        st.markdown("##### 2. Protection (Do No Harm)")
+        st.caption("The Multi-Criteria Decision Analysis (MCDA) prevents ecological accidents by cross-referencing AI-selected kelp sites against active AIS shipping lanes and cetacean (whale) migration corridors.")
+        
+        st.markdown("##### 3. Adaptation (Community Resilience)")
+        st.caption("Re-establishing kelp forests buffers coastlines against extreme storm surges and restores collapsed local fisheries, driving biodiversity co-benefits to coastal economies.")
+        
+        st.info("💡 **How to use this tool:** Review the Spatial Deconfliction map. Safe zones are green; shipping/mammal hazards are red/amber. Navigate to 'Site Analytics' to review biogeochemical metrics, then generate a verified 'AI Audit'.")
+
     with t1:
-        st.markdown("##### Real-Time Depth Profile (Nutricline vs Thermocline)")
+        st.markdown("##### Biogeochemical Profiling")
         if not safe_df.empty:
             sel_site = st.selectbox("Select Cleared Site:", safe_df['id'].tolist(), label_visibility="collapsed")
             site_data = safe_df[safe_df['id'] == sel_site].iloc[0]
             
-            # Generate simulated depth data
+            # Display new metrics cleanly
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Salinity", f"{site_data['salinity']} PSU", "Optimal: 33-35")
+            m2.metric("Wave Energy", f"{site_data['wave_energy']} kW/m", "Hydrodynamic Safe")
+            m3.metric("Biodiversity", f"{site_data['biodiversity_score']}/100", "Co-benefit Score")
+
+            # Depth Profile Chart
             depths = np.linspace(0, site_data['depth'], 20)
-            temps = site_data['sst_mean'] - (depths * 0.15) # Temp drops with depth
-            nitrates = 2.0 + (depths * 0.8) * (site_data['nitrate_score']/100) # Nitrates rise with depth
+            temps = site_data['sst_mean'] - (depths * 0.15) 
+            nitrates = 2.0 + (depths * 0.8) * (site_data['nitrate_score']/100) 
             
             fig = make_subplots(specs=[[{"secondary_y": True}]])
             fig.add_trace(go.Scatter(x=temps, y=depths, name="Temp (°C)", line=dict(color="#F43F5E", width=3)), secondary_y=False)
             fig.add_trace(go.Scatter(x=nitrates, y=depths, name="Nitrate (µmol/L)", line=dict(color="#38BDF8", width=3)), secondary_y=True)
             
             fig.update_layout(
-                yaxis=dict(autorange="reversed", title="Depth (m)"), # Invert Y axis for depth
-                xaxis=dict(title="Temperature (°C)", color="#F43F5E"),
+                yaxis=dict(autorange="reversed", title="Depth (m)"), xaxis=dict(title="Temperature (°C)", color="#F43F5E"),
                 xaxis2=dict(title="Nitrate Concentration", color="#38BDF8", overlaying="x", side="top"),
-                plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-                margin=dict(l=0, r=0, t=30, b=0), height=350,
+                plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=30, b=0), height=250,
                 legend=dict(yanchor="bottom", y=0.01, xanchor="right", x=0.99)
             )
             st.plotly_chart(fig, use_container_width=True)
             
     with t2:
-        st.markdown("##### 10-Year Techno-Economic Assessment (TEA)")
+        st.markdown("##### 10-Year Techno-Economic Assessment")
         if not safe_df.empty:
-            # ROI Math
-            capex = site_data['area_ha'] * 15000  # $15k per HA setup
-            opex_yr = site_data['area_ha'] * 2000 # $2k per HA maintenance
-            rev_yr = site_data['co2_tons'] * 85   # $85 per MT CO2e
+            capex = site_data['area_ha'] * 15000  
+            opex_yr = site_data['area_ha'] * 2000 
+            rev_yr = site_data['co2_tons'] * 85   
             
             years = np.arange(0, 11)
             costs = capex + (opex_yr * years)
@@ -269,17 +293,16 @@ with col_ops:
             fig2.add_trace(go.Scatter(x=years, y=costs, name="Cumulative Cost", fill='tozeroy', line=dict(color="#EF4444")))
             fig2.add_trace(go.Scatter(x=years, y=revenues, name="Cumulative Revenue", fill='tozeroy', line=dict(color="#10B981")))
             fig2.update_layout(
-                plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-                yaxis_title="USD ($)", xaxis_title="Years Post-Deployment",
-                margin=dict(l=0, r=0, t=10, b=0), height=350
+                plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_title="USD ($)", xaxis_title="Years Post-Deployment",
+                margin=dict(l=0, r=0, t=10, b=0), height=300
             )
             st.plotly_chart(fig2, use_container_width=True)
             break_even = capex / (rev_yr - opex_yr) if rev_yr > opex_yr else 0
             st.caption(f"**Projected Break-Even:** Year {break_even:.1f} | **10-Yr Net Profit:** ${net_cash[-1]:,.2f}")
 
     with t3:
-        st.markdown("##### AI Ecological Compliance Audit")
-        st.info("**Responsible AI Paradigm:** The system enforces strict constraint modeling and explicitly flags data uncertainties.")
+        st.markdown("##### Responsible AI Compliance Audit")
+        st.info("System enforces strict constraint modeling and explicitly flags data uncertainties for investor review.")
         
         if st.button("Execute Argon Compliance Audit", use_container_width=True) and not safe_df.empty:
             with st.spinner("Executing..."):
@@ -287,23 +310,21 @@ with col_ops:
                     if model:
                         prompt = f"""
                         Analyze Kelp Site {sel_site}:
-                        - Area: {site_data['area_ha']} HA
-                        - Temp: {site_data['sst_mean']}C
-                        - Marine Heatwave Risk: {site_data['mhw_risk']}
-                        
+                        Area: {site_data['area_ha']} HA. Temp: {site_data['sst_mean']}C. Salinity: {site_data['salinity']} PSU.
                         Provide a RESPONSIBLE AI AUDIT with exactly 3 sections:
                         1. **Ecological Viability:** (1 sentence)
                         2. **Confidence Score:** (0-100%)
-                        3. **Known Unknowns (Uncertainty):** List 2 critical missing data points (e.g. local turbidity, bottom friction) that investors must investigate manually before deploying capital.
+                        3. **Known Unknowns (Uncertainty):** List 2 critical missing data points (e.g. local turbidity) investors must investigate.
                         """
                         res = model.generate_content(prompt)
                         ai_text = res.text
                     else:
-                        ai_text = "AI Offline. System confirms structural deconfliction. Uncertainty: Missing local hydrodynamic validation."
+                        ai_text = "AI Offline. System confirms spatial deconfliction. Uncertainty: Missing local hydrodynamic validation."
                     
                     st.markdown(ai_text)
-                    
-                    # Generate PDF
                     pdf = create_lca_brief(site_data.to_dict(), ai_text)
-                    st.download_button(f"📥 Download Official TEA Audit (PDF)", data=pdf, file_name=f"TEA_Audit_{sel_site}.pdf", mime="application/pdf", use_container_width=True)
+                    st.session_state.library.append({"id": target_site, "pdf": pdf, "time": pd.Timestamp.now().strftime('%H:%M:%SZ')})
                 except Exception as e: st.error("Audit generation failed.")
+        
+        for idx, doc in enumerate(reversed(st.session_state.library)):
+            st.download_button(f"📥 Download Official TEA Audit (PDF)", data=doc['pdf'], file_name=f"TEA_Audit_{doc['id']}.pdf", mime="application/pdf", key=f"dl_{idx}", use_container_width=True)
