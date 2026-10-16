@@ -40,20 +40,25 @@ except ImportError:
 # =========================================================
 # 1. UX SETUP & "CYBERNETIC OCEAN" DESIGN SYSTEM
 # =========================================================
-st.set_page_config(layout="wide", page_title="Blue 42 | Planetary Capital OS", page_icon="🌊", initial_sidebar_state="collapsed")
+st.set_page_config(layout="wide", page_title="Blue 42 | Planetary Capital OS", page_icon="🌊", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap');
 
     html, body, [class*="css"] {
         font-family: 'Space Grotesk', sans-serif !important;
         background-color: #020617; color: #F8FAFC;
     }
+    
+    /* Maximize space and ensure containers allow popups to overflow visibly */
     .block-container { padding-top: 1rem; padding-bottom: 2rem; max-width: 98%; }
+    .stMarkdown, .stMarkdown div, div[data-testid="stVerticalBlock"], div[data-testid="stHorizontalBlock"] { 
+        overflow: visible !important; 
+    }
 
-    /* Custom CSS for Leaf Tooltips - RESPONSIVE FIX */
+    /* Custom CSS for Leaf Tooltips - EXPERT UX FIX */
     .leaf-tooltip {
         position: relative;
         display: inline-block;
@@ -65,23 +70,29 @@ st.markdown("""
     .leaf-tooltip:hover { transform: scale(1.2); }
     .leaf-tooltip .tooltiptext {
         visibility: hidden; 
-        width: 250px; /* Reduced width to prevent sidebar clipping */
+        width: 260px; /* Responsive width */
         background: rgba(15, 23, 42, 0.98);
         backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
         color: #E2E8F0; text-align: left; border: 1px solid #10B981;
-        border-radius: 8px; padding: 12px; position: absolute; 
-        z-index: 999999 !important; /* Force tooltip above all containers */
-        top: 150%; left: 50%; transform: translateX(-50%); /* Popping below the icon prevents top-edge clipping */
-        opacity: 0; transition: opacity 0.3s; font-size: 0.75rem;
+        border-radius: 8px; padding: 12px; 
+        position: absolute; 
+        z-index: 999999 !important; 
+        top: 150%; 
+        right: 0; /* Anchors to the right so it flows inward, NEVER off-screen */
+        left: auto; 
+        opacity: 0; transition: opacity 0.3s, transform 0.3s; 
+        transform: translateY(-10px);
+        font-size: 0.8rem;
         font-family: 'Space Grotesk', sans-serif; box-shadow: 0 10px 30px rgba(0,0,0,0.9);
-        line-height: 1.4; font-weight: 400; pointer-events: none;
-        white-space: normal; word-wrap: break-word; /* Ensure text wraps perfectly */
+        line-height: 1.5; font-weight: 400; pointer-events: none;
+        white-space: normal; word-wrap: break-word;
     }
+    /* Move the little triangle pointer to align with the right anchor */
     .leaf-tooltip .tooltiptext::after {
-        content: ""; position: absolute; bottom: 100%; left: 50%; margin-left: -6px;
+        content: ""; position: absolute; bottom: 100%; right: 10px; 
         border-width: 6px; border-style: solid; border-color: transparent transparent #10B981 transparent;
     }
-    .leaf-tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+    .leaf-tooltip:hover .tooltiptext { visibility: visible; opacity: 1; transform: translateY(0); }
 
     /* 3D Flip Card Container */
     .flip-card { background-color: transparent; height: 190px; perspective: 1000px; margin-bottom: 15px; }
@@ -89,7 +100,7 @@ st.markdown("""
     .flip-card:hover .flip-card-inner { transform: rotateY(180deg); }
     .flip-card-front, .flip-card-back {
         position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden;
-        border-radius: 12px; box-sizing: border-box; overflow: hidden; background: rgba(15, 23, 42, 0.6); 
+        border-radius: 12px; box-sizing: border-box; background: rgba(15, 23, 42, 0.6); 
         backdrop-filter: blur(12px); border: 1px solid rgba(6, 182, 212, 0.2); padding: 20px 15px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); 
         display: flex; flex-direction: column; justify-content: center;
     }
@@ -99,7 +110,6 @@ st.markdown("""
     .glass-title { font-size: 0.85rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;}
     .glass-value { font-size: 2.2rem; font-weight: 700; background: -webkit-linear-gradient(45deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
     .glass-sub { font-size: 0.8rem; color: #10B981; margin-top: 8px; font-weight: 600; }
-    
     .math-text { font-family: 'JetBrains Mono', monospace; font-size: 0.70rem; color: #94A3B8; line-height: 1.4; width: 100%; display: flex; flex-direction: column; justify-content: center; }
     .math-hl { color: #10B981; font-weight: 600; font-size: 0.75rem; }
     .math-var { color: #E2E8F0; }
@@ -110,13 +120,17 @@ st.markdown("""
     .stButton > button { background: rgba(15, 23, 42, 0.8); color: #06b6d4; border: 1px solid #06b6d4; border-radius: 8px; font-weight: 600; transition: all 0.3s ease; }
     .stButton > button:hover { background: #06b6d4; color: #020617; box-shadow: 0 0 15px rgba(6, 182, 212, 0.6); }
 
-    #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
+    /* EXPERT UX FIX: Keep header transparent to preserve the Sidebar toggle button */
+    header { background-color: transparent !important; }
+    #MainMenu {visibility: hidden;} footer {visibility: hidden;} 
+    
     .blinking { animation: blinker 1.5s linear infinite; color: #10B981; font-weight: bold; }
     @keyframes blinker { 50% { opacity: 0; } }
 </style>
 """, unsafe_allow_html=True)
 
 def leaf_info(text):
+    """Generates a perfectly positioned HTML tooltip."""
     return f"""<div class="leaf-tooltip">🌿<span class="tooltiptext">{text}</span></div>"""
 
 def make_flip_card(title, value, sub, math_html):
@@ -282,7 +296,7 @@ def get_scientific_kelp_data(sector):
     return mock
 
 # =========================================================
-# 5. MCDA DECONFLICTION
+# 5. MCDA DECONFLICTION (WITH ZONING)
 # =========================================================
 @st.cache_resource(ttl=60)
 def get_hazard_vectors(sector):
@@ -417,6 +431,7 @@ with col_map:
     tt_html = "<div style='font-family:Space Grotesk; background:rgba(15,23,42,0.9); padding:10px; border-radius:8px; border:1px solid #06b6d4;'><b>{id}</b><br/>Pareto Score: {pareto_score}<br/>Area: {area_ha} HA<br/><span style='color:#10B981;'>Status: <b>{status}</b></span><br/>NPP: {biomass_tons} MT</div>"
     view_state = pdk.ViewState(latitude=33.95 if sector_key == "Channel Islands" else 21.3, longitude=-119.8 if sector_key == "Channel Islands" else -157.9, zoom=8.5, pitch=45, bearing=15)
     
+    # Safe Streamlit map without Mapbox
     st.pydeck_chart(pdk.Deck(layers=layers, initial_view_state=view_state, map_style=None, tooltip={"html": tt_html}), use_container_width=True, height=600)
 
 with col_ops:
@@ -457,10 +472,10 @@ with col_ops:
             fig.update_layout(template="plotly_dark", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_title="Biomass (%)", margin=dict(l=0, r=0, t=10, b=0), height=220)
             st.plotly_chart(fig, use_container_width=True)
 
-            c1, c2, c3 = st.columns(3)
-            c1.markdown(f"<div style='text-align:center;'><div style='color:#94a3b8; font-size:12px;'>Salinity</div><div style='color:#06b6d4; font-size:20px; font-weight:bold;'>{site_data.get('salinity', 0)} PSU</div></div>", unsafe_allow_html=True)
-            c2.markdown(f"<div style='text-align:center;'><div style='color:#94a3b8; font-size:12px;'>Wave Energy</div><div style='color:#06b6d4; font-size:20px; font-weight:bold;'>{site_data.get('wave_energy', 0)} kW/m</div></div>", unsafe_allow_html=True)
-            c3.markdown(f"<div style='text-align:center;'><div style='color:#94a3b8; font-size:12px;'>Biodiversity</div><div style='color:#06b6d4; font-size:20px; font-weight:bold;'>{site_data.get('biodiversity_score', 0)}/100</div></div>", unsafe_allow_html=True)
+            mc1, mc2, mc3 = st.columns(3)
+            mc1.markdown(f"<div style='text-align:center;'><div style='color:#94a3b8; font-size:12px;'>Salinity</div><div style='color:#06b6d4; font-size:20px; font-weight:bold;'>{site_data.get('salinity', 0)} PSU</div></div>", unsafe_allow_html=True)
+            mc2.markdown(f"<div style='text-align:center;'><div style='color:#94a3b8; font-size:12px;'>Wave Energy</div><div style='color:#06b6d4; font-size:20px; font-weight:bold;'>{site_data.get('wave_energy', 0)} kW/m</div></div>", unsafe_allow_html=True)
+            mc3.markdown(f"<div style='text-align:center;'><div style='color:#94a3b8; font-size:12px;'>Biodiversity</div><div style='color:#06b6d4; font-size:20px; font-weight:bold;'>{site_data.get('biodiversity_score', 0)}/100</div></div>", unsafe_allow_html=True)
             
     with t2:
         st.markdown("<br>", unsafe_allow_html=True)
