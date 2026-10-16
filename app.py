@@ -45,7 +45,7 @@ st.set_page_config(layout="wide", page_title="Blue 42 | Planetary Capital OS", p
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap');
 
     html, body, [class*="css"] {
         font-family: 'Space Grotesk', sans-serif !important;
@@ -53,88 +53,82 @@ st.markdown("""
     }
     .block-container { padding-top: 1rem; padding-bottom: 2rem; max-width: 98%; }
 
-    /* 3D Flip Card Container - RESPONSIVE FIX */
-    .flip-card {
-        background-color: transparent;
-        height: 240px; /* Increased height to prevent overflow on small screens */
-        perspective: 1000px;
-        margin-bottom: 15px;
-    }
-    .flip-card-inner {
+    /* Custom CSS for Leaf Tooltips */
+    .leaf-tooltip {
         position: relative;
-        width: 100%;
-        height: 100%;
-        text-align: center;
-        transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
-        transform-style: preserve-3d;
+        display: inline-block;
+        cursor: help;
+        font-size: 1.1rem;
+        margin-left: 8px;
+        transition: transform 0.2s ease;
     }
-    .flip-card:hover .flip-card-inner {
-        transform: rotateY(180deg);
+    .leaf-tooltip:hover {
+        transform: scale(1.2);
     }
-    
-    .flip-card-front, .flip-card-back {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        -webkit-backface-visibility: hidden;
-        backface-visibility: hidden;
-        border-radius: 12px;
-        box-sizing: border-box; 
-        overflow: hidden; /* Hard clip for any overflow */
-        background: rgba(15, 23, 42, 0.6); 
-        backdrop-filter: blur(12px); 
+    .leaf-tooltip .tooltiptext {
+        visibility: hidden;
+        width: 320px;
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(6, 182, 212, 0.2); 
-        padding: 15px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); 
-        display: flex;
-        flex-direction: column;
-        justify-content: center; /* Centers content vertically */
-    }
-    
-    .flip-card-front {
-        border-left: 4px solid #0D9488;
-        align-items: center;
-    }
-    .flip-card-front:hover {
-        border: 1px solid rgba(6, 182, 212, 0.8);
-        box-shadow: 0 8px 32px 0 rgba(6, 182, 212, 0.3);
-    }
-    
-    .flip-card-back {
-        transform: rotateY(180deg);
-        border-left: 4px solid #10B981;
-        background: rgba(15, 23, 42, 0.95); 
+        color: #E2E8F0;
         text-align: left;
-        align-items: flex-start;
+        border: 1px solid #10B981;
+        border-radius: 8px;
         padding: 15px;
+        position: absolute;
+        z-index: 999999;
+        bottom: 150%;
+        left: 50%;
+        transform: translateX(-50%) translateY(10px);
+        opacity: 0;
+        transition: opacity 0.3s, transform 0.3s;
+        font-size: 0.8rem;
+        font-family: 'Space Grotesk', sans-serif;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        line-height: 1.5;
+        font-weight: 400;
+        pointer-events: none;
+    }
+    .leaf-tooltip .tooltiptext::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -6px;
+        border-width: 6px;
+        border-style: solid;
+        border-color: #10B981 transparent transparent transparent;
+    }
+    .leaf-tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
     }
 
-    .glass-title { font-size: 0.80rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;}
-    .glass-value { font-size: 1.8rem; font-weight: 700; background: -webkit-linear-gradient(45deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; line-height: 1.2; }
-    .glass-sub { font-size: 0.75rem; color: #10B981; margin-top: 8px; font-weight: 600; }
-
-    /* Math Terminal Text - SCALED FOR FITTING */
-    .math-text { 
-        font-family: 'JetBrains Mono', monospace; 
-        font-size: 0.65rem; 
-        color: #94A3B8; 
-        line-height: 1.3; 
-        width: 100%; 
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
+    /* 3D Flip Card Container */
+    .flip-card { background-color: transparent; height: 190px; perspective: 1000px; margin-bottom: 15px; }
+    .flip-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1); transform-style: preserve-3d; }
+    .flip-card:hover .flip-card-inner { transform: rotateY(180deg); }
+    .flip-card-front, .flip-card-back {
+        position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden;
+        border-radius: 12px; box-sizing: border-box; overflow: hidden; background: rgba(15, 23, 42, 0.6); 
+        backdrop-filter: blur(12px); border: 1px solid rgba(6, 182, 212, 0.2); padding: 20px 15px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); 
+        display: flex; flex-direction: column; justify-content: center;
     }
-    .math-hl { color: #10B981; font-weight: 600; font-size: 0.70rem; }
+    .flip-card-front { border-left: 4px solid #0D9488; }
+    .flip-card-back { transform: rotateY(180deg); border-left: 4px solid #10B981; background: rgba(15, 23, 42, 0.95); text-align: left; align-items: flex-start; padding-left: 25px; }
+
+    .glass-title { font-size: 0.85rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;}
+    .glass-value { font-size: 2.2rem; font-weight: 700; background: -webkit-linear-gradient(45deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
+    .glass-sub { font-size: 0.8rem; color: #10B981; margin-top: 8px; font-weight: 600; }
+    .math-text { font-family: 'JetBrains Mono', monospace; font-size: 0.70rem; color: #94A3B8; line-height: 1.4; width: 100%; display: flex; flex-direction: column; justify-content: center; }
+    .math-hl { color: #10B981; font-weight: 600; font-size: 0.75rem; }
     .math-var { color: #E2E8F0; }
-    .math-op { color: #EF4444; font-weight: 600; padding-right: 4px; display: inline-block; width: 10px; }
-    .math-divider { color: #334155; letter-spacing: -1px; margin: 4px 0; overflow: hidden; white-space: nowrap; }
+    .math-op { color: #EF4444; font-weight: 600; padding-right: 6px; display: inline-block; width: 12px; }
+    .math-divider { color: #334155; letter-spacing: -1px; margin: 2px 0; overflow: hidden; white-space: nowrap; }
 
-    .crypto-box {
-        background-color: rgba(0,0,0,0.5); border: 1px solid #10B981; border-radius: 6px; padding: 10px;
-        font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #10B981; word-wrap: break-word;
-    }
-
+    .crypto-box { background-color: rgba(0,0,0,0.5); border: 1px solid #10B981; border-radius: 6px; padding: 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #10B981; word-wrap: break-word; }
     .stButton > button { background: rgba(15, 23, 42, 0.8); color: #06b6d4; border: 1px solid #06b6d4; border-radius: 8px; font-weight: 600; transition: all 0.3s ease; }
     .stButton > button:hover { background: #06b6d4; color: #020617; box-shadow: 0 0 15px rgba(6, 182, 212, 0.6); }
 
@@ -143,6 +137,10 @@ st.markdown("""
     @keyframes blinker { 50% { opacity: 0; } }
 </style>
 """, unsafe_allow_html=True)
+
+# Helper function for generating the Leaf Info Tooltips
+def leaf_info(text):
+    return f"""<div class="leaf-tooltip">🌿<span class="tooltiptext">{text}</span></div>"""
 
 def make_flip_card(title, value, sub, math_html):
     return f"""
@@ -154,87 +152,12 @@ def make_flip_card(title, value, sub, math_html):
           <div class="glass-sub">{sub}</div>
         </div>
         <div class="flip-card-back">
-          <div class="glass-title" style="margin-bottom:6px; color:#38BDF8; font-size:0.70rem;">ALGORITHMIC PROVENANCE</div>
+          <div class="glass-title" style="margin-bottom:8px; color:#38BDF8; font-size:0.75rem;">ALGORITHMIC PROVENANCE</div>
           <div class="math-text">{math_html}</div>
         </div>
       </div>
     </div>
     """
-
-# =========================================================
-# 2. CUSTOM KELP ANIMATION
-# =========================================================
-def kelp_animation():
-    """Injects a custom CSS animation constrained so it does not block the analytics tables."""
-    kelp_html = """
-    <style>
-        .ocean-animation-container {
-            position: fixed; bottom: 0; left: 0; width: 100vw; height: 100vh;
-            pointer-events: none; z-index: 999; overflow: hidden;
-        }
-        .kelp-stalk {
-            position: absolute; bottom: 0; width: 60px;
-            transform-origin: bottom center; transform: scaleY(0); opacity: 0;
-            display: flex; flex-direction: column; justify-content: space-evenly; align-items: center;
-        }
-        .kelp-stem {
-            position: absolute; bottom: 0; width: 6px; height: 100%;
-            background: linear-gradient(to top, #364219, #6b7a2d, #8f9c3e); border-radius: 4px; z-index: 1;
-        }
-        .kelp-frond-left, .kelp-frond-right {
-            position: relative; height: 12px; background: linear-gradient(to right, #5a6b25, #7a8b35);
-            border-radius: 50% 10% 50% 10%; z-index: 2; margin: 15px 0;
-        }
-        .kelp-frond-left {
-            width: 45px; transform: translateX(-25px) rotate(-20deg); background: linear-gradient(to left, #5a6b25, #7a8b35); border-radius: 10% 50% 10% 50%;
-        }
-        .kelp-frond-right { width: 45px; transform: translateX(25px) rotate(20deg); }
-        .kelp-frond-left::after {
-            content: ''; position: absolute; right: -4px; top: -2px; width: 12px; height: 16px; 
-            background: #8b7d22; border-radius: 50%; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3);
-        }
-        .kelp-frond-right::after {
-            content: ''; position: absolute; left: -4px; top: -2px; width: 12px; height: 16px; 
-            background: #8b7d22; border-radius: 50%; box-shadow: inset 2px -2px 4px rgba(0,0,0,0.3);
-        }
-        .bubble {
-            position: absolute; bottom: -50px; font-size: 1.5rem; opacity: 0.4;
-            animation: floatUp 4s ease-in infinite; color: #e0f2fe; text-shadow: 0 0 5px #38bdf8;
-        }
-        @keyframes growKelp { 0% { transform: scaleY(0); opacity: 0; } 20% { opacity: 0.9; } 100% { transform: scaleY(1); opacity: 0.9; } }
-        @keyframes swayKelp1 { 0% { margin-left: -20px; transform: rotate(-2deg); } 100% { margin-left: 20px; transform: rotate(2deg); } }
-        @keyframes swayKelp2 { 0% { margin-left: 20px; transform: rotate(3deg); } 100% { margin-left: -20px; transform: rotate(-3deg); } }
-        @keyframes floatUp { 0% { bottom: -50px; transform: translateX(0px); opacity: 0; } 20% { opacity: 0.6; } 50% { transform: translateX(-20px); } 100% { bottom: 110vh; transform: translateX(20px); opacity: 0; } }
-    </style>
-    <div class="ocean-animation-container">
-    """
-    
-    for _ in range(15):
-        left = random.randint(2, 55) 
-        delay = random.uniform(0.1, 1.5)
-        duration = random.uniform(3.5, 5.5)
-        sway_dir = random.choice(["swayKelp1", "swayKelp2"])
-        sway_dur = random.uniform(3.0, 6.0)
-        height = random.uniform(60, 110) 
-        
-        kelp_html += f'<div style="position:absolute; bottom:0; left:{left}%; height:{height}vh; animation: {sway_dir} {sway_dur}s ease-in-out infinite alternate;">'
-        kelp_html += f'<div class="kelp-stalk" style="height:100%; animation: growKelp {duration}s cubic-bezier(0.1, 0.8, 0.3, 1) {delay}s forwards;">'
-        kelp_html += '<div class="kelp-stem"></div>'
-        
-        num_fronds = int(height // 3)
-        for j in range(num_fronds):
-            frond_class = "kelp-frond-left" if j % 2 == 0 else "kelp-frond-right"
-            kelp_html += f'<div class="{frond_class}"></div>'
-        kelp_html += '</div></div>'
-        
-    for _ in range(25):
-        left = random.randint(1, 55)
-        delay = random.uniform(0, 4)
-        size = random.uniform(0.5, 1.5)
-        kelp_html += f'<div class="bubble" style="left: {left}%; animation-delay: {delay}s; font-size: {size}rem;">🫧</div>'
-        
-    kelp_html += "</div>"
-    st.markdown(kelp_html, unsafe_allow_html=True)
 
 if "library" not in st.session_state: 
     st.session_state.library = []
@@ -242,7 +165,7 @@ if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "assistant", "content": "Argon MCDA active. How can I assist with your portfolio today?"}]
 
 # =========================================================
-# 3. AUDITABLE ACTION: CRYPTOGRAPHIC PDF GENERATOR
+# 2. AUDITABLE ACTION: CRYPTOGRAPHIC PDF GENERATOR
 # =========================================================
 def safe_encode(text):
     if not isinstance(text, str): text = str(text)
@@ -298,7 +221,7 @@ def export_to_geojson(df: pd.DataFrame) -> bytes:
     return json.dumps({"type": "FeatureCollection", "features": features}).encode('utf-8')
 
 # =========================================================
-# 4. SECURE API INITIALIZATION & GRACEFUL FALLBACK
+# 3. SECURE API INITIALIZATION & GRACEFUL FALLBACK
 # =========================================================
 ee_connected = False
 if EE_AVAILABLE:
@@ -323,7 +246,7 @@ if GENAI_AVAILABLE:
     except Exception: pass
 
 # =========================================================
-# 5. GEE BIOGEOCHEMICAL MODELING
+# 4. GEE BIOGEOCHEMICAL MODELING
 # =========================================================
 @st.cache_data(ttl=3600)
 def get_scientific_kelp_data(sector):
@@ -381,7 +304,7 @@ def get_scientific_kelp_data(sector):
     return mock
 
 # =========================================================
-# 6. MCDA DECONFLICTION
+# 5. MCDA DECONFLICTION
 # =========================================================
 @st.cache_resource(ttl=60)
 def get_hazard_vectors(sector):
@@ -389,7 +312,7 @@ def get_hazard_vectors(sector):
     vessels, mammals = [], []
     for _ in range(10): vessels.append({"lat": base_lat + random.uniform(-0.5, 0.5), "lon": base_lon + random.uniform(-0.8, 0.8)})
     for _ in range(3): mammals.append({"lat": base_lat + random.uniform(-0.2, 0.2), "lon": base_lon + random.uniform(-0.4, 0.4)})
-    weather_poly = [[[-120.2, 33.6], [-119.6, 33.6], [-119.6, 34.2], [-120.2, 34.2], [-120.2, 33.6]]] if sector == "Channel Islands" else [[[-158.2, 21.1], [-157.7, 21.1], [-157.7, 21.5], [-158.2, 21.5], [-158.2, 21.1]]]
+    weather_poly = [[[-120.2, 33.6], [-119.6, 33.6], [-119.6, 34.2], [-120.2, 34.2]]] if sector == "Channel Islands" else [[[-158.2, 21.1], [-157.7, 21.1], [-157.7, 21.5], [-158.2, 21.5]]]
     return pd.DataFrame(vessels), pd.DataFrame(mammals), [{"polygon": weather_poly[0]}]
 
 def run_mcda_deconfliction(sites, vessels_df, mammals_df, weather_data):
@@ -420,16 +343,21 @@ def run_mcda_deconfliction(sites, vessels_df, mammals_df, weather_data):
     return pd.DataFrame(processed)
 
 # =========================================================
-# 7. HEADER & SIDEBAR CONTROLS
+# 6. HEADER & SIDEBAR CONTROLS
 # =========================================================
-st.markdown("<h1 style='color: #06b6d4; font-weight: 700; margin-bottom: 0;'>BLUE 42 <span style='color:#F8FAFC; font-weight: 300;'>| Planetary Capital OS</span></h1>", unsafe_allow_html=True)
+# Apply Leaf Tooltip to Main Title
+st.markdown(f"<h1 style='color: #06b6d4; font-weight: 700; margin-bottom: 0;'>BLUE 42 <span style='color:#F8FAFC; font-weight: 300;'>| Planetary Capital OS</span> {leaf_info('A planetary-scale biogeochemical operating system fusing frontier AI and Earth telemetry to automate global marine conservation.')}</h1>", unsafe_allow_html=True)
 st.markdown(f"<p style='color: #94A3B8; font-size: 1.1rem; margin-top: -10px;'><span class='blinking'>●</span> {'GEE UPLINK SECURE' if ee_connected else 'MCDA ENGINE ACTIVE'} | VERIFIABLE KELP FRAMEWORK</p>", unsafe_allow_html=True)
 
-st.sidebar.markdown(f"<h2 style='color:#0EA5E9; font-weight:600;'>MCDA ENGINE</h2>", unsafe_allow_html=True)
+# Apply Leaf Tooltip to Sidebar MCDA Engine
+st.sidebar.markdown(f"<h2 style='color:#0EA5E9; font-weight:600; display:flex; align-items:center;'>MCDA ENGINE {leaf_info('Multi-Criteria Decision Analysis (MCDA) synthesizes overlapping biogeochemical and socioeconomic data layers to calculate the absolute optimal coordinates for planetary interventions.')}</h2>", unsafe_allow_html=True)
 sector = st.sidebar.selectbox("Target Bioregion", ["Channel Islands, CA", "Hawaiian Archipelago, HI"])
 sector_key = "Channel Islands" if "Channel" in sector else "Hawaii"
 
-st.sidebar.markdown("### 🎛️ Pareto Optimization")
+st.sidebar.markdown("---")
+# Apply Leaf Tooltip to Pareto Optimization
+st.sidebar.markdown(f"<h3 style='display:flex; align-items:center;'>🎛️ Pareto Optimization {leaf_info('A mathematical framework that forces the system to find the optimal trade-off frontier between competing global priorities: Carbon Drawdown, Coastal Shielding, and Fishery Revival.')}</h3>", unsafe_allow_html=True)
+st.sidebar.caption("Adjust priorities to recalculate viable kelp sites based on economic needs.")
 weight_carbon = st.sidebar.slider("Carbon Sequestration", 0.0, 1.0, 0.8)
 weight_coastal = st.sidebar.slider("Coastal Resilience", 0.0, 1.0, 0.6)
 weight_bio = st.sidebar.slider("Fishery Biodiversity", 0.0, 1.0, 0.9)
@@ -441,14 +369,14 @@ raw_sites = copy.deepcopy(raw_sites_cached)
 vessels_df, mammals_df, weather_data = get_hazard_vectors(sector_key)
 
 for site in raw_sites:
-    site['pareto_score'] = round((site.get('co2_tons', 0) * weight_carbon) + (site.get('averted_damage_millions', 0) * weight_coastal * 10) + (site.get('biodiversity_score', 0) * weight_bio), 1)
+    site['pareto_score'] = round((site.get('co2_tons',0) * weight_carbon) + (site.get('averted_damage_millions', 0) * weight_coastal * 10) + (site.get('biodiversity_score', 0) * weight_bio), 1)
 
 raw_sites = sorted(raw_sites, key=lambda x: x.get('pareto_score', 0), reverse=True)
 kelp_df = run_mcda_deconfliction(raw_sites, vessels_df, mammals_df, weather_data)
 safe_df = kelp_df[kelp_df['status'].str.contains("CLEARED")] if not kelp_df.empty else pd.DataFrame()
 
 # =========================================================
-# 8. UI: EXECUTIVE DASHBOARD & 3D KPI CARDS
+# 7. UI: EXECUTIVE DASHBOARD & 3D KPI CARDS
 # =========================================================
 col1, col2, col3, col4 = st.columns(4)
 
@@ -462,18 +390,22 @@ math2 = "<span class='math-var'>Area (HA)</span><br><span class='math-op'>×</sp
 math3 = "<span class='math-var'>Σ [ Area (HA)</span><br><span class='math-op'>×</span> <span class='math-var'>Wave Energy (kW/m)</span><br><span class='math-op'>×</span> <span class='math-var'>0.15 (Atten. Coeff) ]</span><br><div class='math-divider'>━━━━━━━━━</div><span class='math-hl'>Averted Damage ($)</span>"
 math4 = "<span class='math-var'>(CO2e MT × $150)</span><br><span class='math-op'>+</span> <span class='math-var'>(Biomass MT × $300)</span><br><span class='math-op'>+</span> <span class='math-var'>(Net HA × $1500)</span><br><div class='math-divider'>━━━━━━━━━</div><span class='math-hl'>Stacked Annual ROI</span>"
 
-col1.markdown(make_flip_card("Net Viable Kelp Area", f"{v_area:.1f} HA", "Mathematically Deconflicted", math1), unsafe_allow_html=True)
-col2.markdown(make_flip_card("Harvestable Yield", f"{v_bio:.1f} MT", "Macrocystis Wet Biomass", math2), unsafe_allow_html=True)
-col3.markdown(make_flip_card("Averted Infrastructure Damage", f"${v_dmg:.1f}M", "Via Wave Attenuation", math3), unsafe_allow_html=True)
-col4.markdown(make_flip_card("Ecological Capital ROI", f"${v_roi:,.0f}", "Stacked Value / Yr", math4), unsafe_allow_html=True)
+# Apply Leaf Tooltips inside the Flip Card Titles
+col1.markdown(make_flip_card(f"Net Viable Kelp Area {leaf_info('The gross geospatial area mathematically cleared of all shipping, severe weather, and cetacean migration hazards.')}", f"{v_area:.1f} HA", "Mathematically Deconflicted", math1), unsafe_allow_html=True)
+col2.markdown(make_flip_card(f"Harvestable Yield {leaf_info('Projected wet biomass of Macrocystis pyrifera, factoring in depth profiles, thermal modifiers, and localized nutrient upwelling proxies.')}", f"{v_bio:.1f} MT", "Macrocystis Wet Biomass", math2), unsafe_allow_html=True)
+col3.markdown(make_flip_card(f"Averted Infrastructure Damage {leaf_info('Quantifies the infrastructural savings achieved by utilizing kelp canopies to attenuate destructive hydrodynamic wave energy during severe storm events.')}", f"${v_dmg:.1f}M", "Via Wave Attenuation", math3), unsafe_allow_html=True)
+col4.markdown(make_flip_card(f"Ecological Capital ROI {leaf_info('The stacked annual revenue generated by monetizing verified carbon sequestration, commercial biomass off-take, and coastal resilience subsidies.')}", f"${v_roi:,.0f}", "Stacked Value / Yr", math4), unsafe_allow_html=True)
+
 st.markdown("<br>", unsafe_allow_html=True)
 
 # =========================================================
-# 9. VISUALIZATIONS: MAP & ANALYTICS
+# 8. VISUALIZATIONS: MAP & ANALYTICS
 # =========================================================
 col_map, col_ops = st.columns([6, 4], gap="large")
 
 with col_map:
+    # Apply Leaf Tooltip to the Map Header
+    st.markdown(f"<h4 style='display:flex; align-items:center;'>🌊 Spatial Deconfliction Map {leaf_info('A dynamic WebGL rendering of the ocean digital twin, displaying live vectors of maritime hazards and algorithmically cleared biological growth zones.')}</h4>", unsafe_allow_html=True)
     layers = []
     if not kelp_df.empty:
         layers.append(pdk.Layer("ScatterplotLayer", data=kelp_df, get_position="[lon, lat]", get_color="color", get_radius=1500, pickable=True))
@@ -513,6 +445,9 @@ with col_ops:
 
     with t1:
         st.markdown("<br>", unsafe_allow_html=True)
+        # Apply Leaf Tooltip to Analytics Header
+        st.markdown(f"<h5 style='display:flex; align-items:center;'>Kelp Growth & Weather Analytics {leaf_info('A depth-resolved analysis plotting the intersection of the thermocline (temperature drop) and nutricline (nitrate increase) to guarantee biological viability.')}</h5>", unsafe_allow_html=True)
+
         if site_data is not None and PLOTLY_AVAILABLE:
             months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
             growth = [10, 40, 80, 20, 50, 90, 30, 60, 100, 25, 55, 85] 
@@ -532,11 +467,13 @@ with col_ops:
             
     with t2:
         st.markdown("<br>", unsafe_allow_html=True)
-        st.caption("**Value Stacking:** Combines Premium Blue Carbon ($150/MT), Bioplastic-Grade Harvest ($300/MT), and Resilience Subsidies ($1,500/HA).")
+        # Apply Leaf Tooltip to TEA Header
+        st.markdown(f"<h5 style='display:flex; align-items:center;'>10-Year Techno-Economic Assessment {leaf_info('A rigorous 10-year financial projection modeling CAPEX and OPEX against the stacked revenue streams of verified Natural Capital.')}</h5>", unsafe_allow_html=True)
+        st.caption("**Value Stacking:** Combines Premium Blue Carbon (\\$150/MT), Bioplastic-Grade Harvest (\\$300/MT), and Resilience Subsidies (\\$1,500/HA).")
         
         if site_data is not None and "CLEARED" in site_data.get('status', ''):
-            capex = site_data.get('area_ha', 0) * 10000  
-            opex_yr = site_data.get('area_ha', 0) * 1500 
+            capex = site_data.get('area_ha', 0) * 15000  
+            opex_yr = site_data.get('area_ha', 0) * 2000 
             rev_yr = (site_data.get('co2_tons', 0) * 150) + (site_data.get('biomass_tons', 0) * 300) + (site_data.get('area_ha', 0) * 1500)
             
             years = np.arange(0, 11)
@@ -553,15 +490,16 @@ with col_ops:
             annual_profit = rev_yr - opex_yr
             if annual_profit > 0:
                 break_even = capex / annual_profit
-                st.success(f"**Projected Break-Even:** Year {break_even:.1f} | **10-Yr Net Profit:** ${(revenues[-1]-costs[-1]):,.2f}")
+                st.success(f"**Projected Break-Even:** Year {break_even:.1f} | **10-Yr Net Profit:** \\${(revenues[-1]-costs[-1]):,.2f}")
                 
             st.divider()
-            st.markdown("###### 🌍 Macro-Economics: Planetary Scale-Up")
+            # Apply Leaf Tooltip to Macro-Economics Header
+            st.markdown(f"<h6 style='display:flex; align-items:center;'>🌍 Macro-Economics: Planetary Scale-Up {leaf_info('A macroeconomic simulator demonstrating how algorithmic spatial verification unlocks gigaton-scale carbon markets and mobilizes sidelined institutional capital.')}</h6>", unsafe_allow_html=True)
             
             target_scale_ha = st.slider("Target Deployment Area (Hectares)", min_value=10000, max_value=50000000, value=1000000, step=10000, label_visibility="collapsed")
             
-            macro_capex = target_scale_ha * 10000
-            macro_opex_yr = target_scale_ha * 1500
+            macro_capex = target_scale_ha * 15000
+            macro_opex_yr = target_scale_ha * 2000
             macro_co2 = target_scale_ha * 12.5
             macro_biomass = target_scale_ha * 17.0
             
@@ -578,7 +516,8 @@ with col_ops:
 
     with t_mrv:
         st.markdown("<br>", unsafe_allow_html=True)
-        st.caption("**Ending Greenwashing:** Continuous ingestion of Sentinel-2 multispectral imagery verifies canopy regrowth after every commercial harvest cycle.")
+        # Apply Leaf Tooltip to MRV Header
+        st.markdown(f"<h5 style='display:flex; align-items:center;'>Measurement, Reporting, & Verification {leaf_info('Continuous cryptographic ingestion of multispectral satellite imagery to guarantee long-term carbon permanence and eliminate ESG greenwashing.')}</h5>", unsafe_allow_html=True)
         
         if site_data is not None and "CLEARED" in site_data.get('status', ''):
             st.write(f"**Target Analyzed:** {sel_site}")
@@ -592,15 +531,18 @@ with col_ops:
                 st.plotly_chart(fig3, use_container_width=True)
             
             if st.button("Cryptographically Sign & Mint Credits", use_container_width=True):
-                kelp_animation()
                 tx_hash = hashlib.sha256(str(time.time()).encode()).hexdigest()
-                st.success(f"✅ Biomass & Regrowth verified via satellite. {site_data.get('co2_tons', 0)} MT CO2e minted.")
+                st.success(f"✅ Verified via satellite. {site_data.get('co2_tons', 0)} MT CO2e minted.")
                 st.markdown(f"<div class='crypto-box'>TX_HASH: {tx_hash}</div>", unsafe_allow_html=True)
+                st.balloons()
         else:
             st.error("MRV disabled for hazardous sites.")
 
     with t3:
         st.markdown("<br>", unsafe_allow_html=True)
+        # Apply Leaf Tooltip to AI Audit Header
+        st.markdown(f"<h5 style='display:flex; align-items:center;'>Responsible AI Compliance Audit {leaf_info('An agentic reasoning protocol that forces the AI to output confidence intervals and declare known unknowns to ensure responsible, human-in-the-loop oversight.')}</h5>", unsafe_allow_html=True)
+
         if site_data is not None:
             if st.button("Generate Cryptographic Audit (PDF)", use_container_width=True) and "HAZARD" not in site_data.get('status', 'HAZARD'):
                 with st.spinner("Hashing & Verifying via Ledger..."):
@@ -626,7 +568,7 @@ with col_ops:
                             st.session_state.library.append({"id": sel_site, "pdf": pdf, "time": timestamp, "hash": signature})
                             st.success("✅ Deterministic Telemetry Audit Generated.")
                         
-            for idx, doc in enumerate(reversed(st.session_state.library)):
+            for doc in reversed(st.session_state.library):
                 if 'pdf' in doc and doc['pdf']:
                     st.markdown(f"<div class='crypto-box'><b>LEDGER RECEIPT</b><br>ID: {doc['id']}<br>TIME: {doc['time']}<br>SHA-256: {doc['hash']}</div>", unsafe_allow_html=True)
                     st.download_button(f"📥 Download Verified PDF", data=doc['pdf'], file_name=f"TEA_Audit_{doc['id']}.pdf", mime="application/pdf", key=f"dl_{doc['hash']}", use_container_width=True)
