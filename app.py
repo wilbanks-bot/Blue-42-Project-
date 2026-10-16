@@ -55,30 +55,30 @@ st.markdown("""
     .block-container { padding-top: 1rem; padding-bottom: 2rem; max-width: 98%; }
     .stMarkdown, .stMarkdown div, .element-container { overflow: visible !important; position: relative; z-index: 99 !important; }
 
-    /* Custom CSS for Leaf Tooltips - NO CLIPPING */
+    /* Custom CSS for Leaf Tooltips - NO CLIPPING & SHRUNK FONT */
     .leaf-tooltip {
         position: relative; display: inline-block; cursor: help; font-size: 1.1rem; margin-left: 8px; transition: transform 0.2s ease;
     }
     .leaf-tooltip:hover { transform: scale(1.2); }
     .leaf-tooltip .tooltiptext {
-        visibility: hidden; width: max-content; max-width: 260px; background: rgba(15, 23, 42, 0.98);
+        visibility: hidden; width: 220px; background: rgba(15, 23, 42, 0.98);
         backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #F8FAFC; text-align: left; 
-        border: 1px solid #10B981; border-radius: 8px; padding: 14px; position: absolute; z-index: 9999999 !important; 
-        bottom: 150%; left: -10px; transform: translateY(10px); opacity: 0; transition: opacity 0.3s, transform 0.3s; 
-        font-size: 0.85rem; font-family: 'Space Grotesk', sans-serif; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-        line-height: 1.5; font-weight: 500; pointer-events: none; white-space: normal; word-wrap: break-word;
+        border: 1px solid #10B981; border-radius: 6px; padding: 10px; position: absolute; z-index: 9999999 !important; 
+        bottom: 130%; left: 50%; margin-left: -110px; transform: translateY(10px); opacity: 0; transition: opacity 0.3s, transform 0.3s; 
+        font-size: 0.65rem; font-family: 'Space Grotesk', sans-serif; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        line-height: 1.4; font-weight: 500; pointer-events: none; white-space: normal; word-wrap: break-word;
     }
     .leaf-tooltip .tooltiptext::after {
-        content: ""; position: absolute; top: 100%; left: 16px; margin-left: -6px; border-width: 6px; border-style: solid; border-color: #10B981 transparent transparent transparent;
+        content: ""; position: absolute; top: 100%; left: 50%; margin-left: -6px; border-width: 6px; border-style: solid; border-color: #10B981 transparent transparent transparent;
     }
-    .leaf-tooltip:hover .tooltiptext { visibility: visible; opacity: 1; transform: translateX(-50%) translateY(0); }
+    .leaf-tooltip:hover .tooltiptext { visibility: visible; opacity: 1; transform: translateY(0); }
 
-    /* 3D Flip Card Container */
+    /* 3D Flip Card Container - IN PLACE FIX */
     .flip-card { background-color: transparent; height: 210px; perspective: 1000px; margin-bottom: 15px; }
-    .flip-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1); transform-style: preserve-3d; }
+    .flip-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1); transform-style: preserve-3d; transform-origin: center center; }
     .flip-card:hover .flip-card-inner { transform: rotateY(180deg); }
     .flip-card-front, .flip-card-back {
-        position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden;
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden;
         border-radius: 12px; box-sizing: border-box; background: rgba(15, 23, 42, 0.6); 
         backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(6, 182, 212, 0.2); 
         padding: 20px 15px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; justify-content: center;
@@ -134,7 +134,7 @@ def make_flip_card(title, value, sub, math_html):
     """
 
 # =========================================================
-# 2. RESTORED: CUSTOM KELP ANIMATION
+# 2. CUSTOM ANIMATIONS (KELP & HANDSHAKE)
 # =========================================================
 def kelp_animation():
     kelp_html = """
@@ -179,6 +179,31 @@ def kelp_animation():
         
     kelp_html += "</div>"
     st.markdown(kelp_html, unsafe_allow_html=True)
+
+def handshake_animation():
+    """Injects a CSS animation for a glowing handshake."""
+    handshake_html = """
+    <style>
+        @keyframes shakeHand {
+            0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); opacity: 0; }
+            15% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
+            30% { transform: translate(-50%, -50%) rotate(-15deg) scale(1.5); }
+            50% { transform: translate(-50%, -50%) rotate(15deg) scale(1.5); }
+            70% { transform: translate(-50%, -50%) rotate(-15deg) scale(1.5); }
+            85% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+        }
+        .handshake-overlay {
+            position: fixed; top: 50%; left: 50%; z-index: 9999999;
+            font-size: 8rem; pointer-events: none;
+            animation: shakeHand 2.5s ease-in-out forwards;
+            text-shadow: 0 0 40px rgba(16, 185, 129, 0.8);
+        }
+    </style>
+    <div class="handshake-overlay">🤝</div>
+    """
+    st.markdown(handshake_html, unsafe_allow_html=True)
+
 
 if "library" not in st.session_state: 
     st.session_state.library = []
@@ -460,7 +485,6 @@ math3 = "Σ [ Area (HA)<br><span class='math-op'>×</span> <span class='math-var
 math4 = "(CO2e MT × \\$150)<br><span class='math-op'>+</span> <span class='math-var'>(Biomass MT × \\$300)</span><br><span class='math-op'>+</span> <span class='math-var'>(Nitrogen MT × \\$2000)</span><br><div class='math-divider'>━━━━━━━━━</div><span class='math-hl'>Stacked Annual ROI</span>"
 
 col1.markdown(make_flip_card(f"Net Viable Kelp Area {leaf_info('The gross geospatial area mathematically cleared of all shipping, severe weather, and cetacean migration hazards.')}", f"{v_area:.1f} HA", "Mathematically Deconflicted", math1), unsafe_allow_html=True)
-# Updated to show dynamically stress-tested Biomass instead of static Nitrogen for better UX demonstration of the new feature
 col2.markdown(make_flip_card(f"Net Harvestable Yield {leaf_info('Dynamic Biomass Yield after calculating the active 4D Environmental Stress Test.')}", f"{v_bio:.1f} MT", f"Stress Mod: {stress_scenario}", math2), unsafe_allow_html=True)
 col3.markdown(make_flip_card(f"Averted Coastal Damage {leaf_info('Quantifies the infrastructural savings achieved by utilizing kelp canopies to attenuate destructive hydrodynamic wave energy during severe storm events.')}", f"${v_dmg:.1f}M", "Via Wave Attenuation", math3), unsafe_allow_html=True)
 col4.markdown(make_flip_card(f"Ecological Capital ROI {leaf_info('The stacked annual revenue generated by monetizing verified carbon sequestration, commercial biomass off-take, and coastal resilience subsidies.')}", f"${v_roi:,.0f}", "Stacked Value / Yr", math4), unsafe_allow_html=True)
@@ -485,7 +509,7 @@ with col_map:
             "ColumnLayer", 
             data=kelp_df, 
             get_position="[lon, lat]", 
-            get_elevation="biomass_tons * 100", # Scale up visually for 3D effect
+            get_elevation="biomass_tons * 100", 
             elevation_scale=1,
             radius=1500,
             get_fill_color="color", 
@@ -500,7 +524,6 @@ with col_map:
         layers.append(pdk.Layer("ScatterplotLayer", data=mammals_df, get_position="[lon, lat]", get_color="[139, 92, 246, 150]", get_radius=4000, pickable=False))
     
     tt_html = "<div style='font-family:Space Grotesk; background:rgba(15,23,42,0.9); padding:10px; border-radius:8px; border:1px solid #06b6d4;'><b>{id}</b><br/>Pareto Score: {pareto_score}<br/>Area: {area_ha} HA<br/>Current Biomass: {biomass_tons} MT<br/><span style='color:#10B981;'>Status: <b>{status}</b></span></div>"
-    # Adjusted pitch to 55 for aggressive 3D isometric view
     view_state = pdk.ViewState(latitude=33.95 if sector_key == "Channel Islands" else 21.3, longitude=-119.8 if sector_key == "Channel Islands" else -157.9, zoom=8.5, pitch=55, bearing=15)
     
     st.pydeck_chart(pdk.Deck(layers=layers, initial_view_state=view_state, map_style=None, tooltip={"html": tt_html}), use_container_width=True, height=600)
@@ -584,7 +607,6 @@ with col_ops:
             </div>
             """, unsafe_allow_html=True)
             
-            # RESTORED: Quantitative Biosphere Report
             report_lines = [
                 f"Genomic Strain Recommended: {recommended_strain}",
                 f"Socioeconomic Impact: {jobs} Total Marine Industry Jobs Created",
@@ -630,7 +652,6 @@ with col_ops:
                 
             st.divider()
             
-            # RESTORED: PORTFOLIO PROFITABILITY RANKING
             st.markdown(f"<h6 style='display:flex; align-items:center;'>🏦 Global Portfolio: Cleared & Profitable Sites {leaf_info('A comprehensive financial breakdown of all sites that have bypassed restriction zones, shipping hazards, and storm tracks, demonstrating positive 10-year ROI.')}</h6>", unsafe_allow_html=True)
             
             portfolio_data = []
@@ -655,13 +676,13 @@ with col_ops:
             
             st.divider()
             
-            # RESTORED: SITE ACQUISITION & LEASING PATHWAY
             st.markdown(f"<h6 style='display:flex; align-items:center;'>🏛️ Capital Deployment & Site Acquisition {leaf_info('Initiate legal and financial protocols to acquire aquaculture rights for these mathematically cleared sites.')}</h6>", unsafe_allow_html=True)
             st.info("Kelp cultivation in sovereign waters requires multi-agency aquaculture permits (e.g., BOEM, NOAA, Coastal Commissions). This system bridges the gap between algorithmic site selection and legal acquisition.")
             
             if st.button("Initiate Sovereign Lease Acquisition for Portfolio", use_container_width=True):
                 st.success("✅ Legal acquisition protocols initiated. Generating BOEM and NOAA aquaculture permit applications for the selected coordinates...")
-                st.balloons()
+                # TRIGGER THE NEW HANDSHAKE ANIMATION HERE
+                handshake_animation()
             
             st.divider()
             
@@ -739,19 +760,16 @@ with col_ops:
             st.write(f"**Target Analyzed:** {sel_site}")
             years_mrv = ["Q1", "Q2", "Q3", "Q4"]
             
-            # Apply stress testing modifier visually to the satellite regrowth chart
             canopy_density = [int(75*stress_modifier), int(82*stress_modifier), int(88*stress_modifier), int(95*stress_modifier)] 
             
             if PLOTLY_AVAILABLE:
                 fig3 = go.Figure()
-                # Change color if stressed
                 bar_color = "#ef4444" if stress_modifier < 1.0 else "#06b6d4"
                 fig3.add_trace(go.Bar(x=years_mrv, y=canopy_density, marker_color=bar_color, name="Regrowth (%)"))
                 fig3.update_layout(template="plotly_dark", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_title="Sentinel-2 Regrowth (%)", margin=dict(l=0, r=0, t=10, b=0), height=220)
                 st.plotly_chart(fig3, use_container_width=True)
             
             if st.button("Cryptographically Sign & Mint Credits to Ledger", use_container_width=True):
-                # RESTORED KELP ANIMATION TRIGGER
                 kelp_animation()
                 tx_hash = hashlib.sha256(str(time.time()).encode()).hexdigest()
                 st.success(f"✅ Biomass verified via satellite. {site_data.get('co2_tons', 0):.2f} MT CO2e minted.")
@@ -764,7 +782,6 @@ with col_ops:
         st.markdown(f"<h5 style='display:flex; align-items:center;'>Responsible AI Compliance Audit {leaf_info('An agentic reasoning protocol that forces the AI to output confidence intervals and declare known unknowns to ensure responsible, human-in-the-loop oversight.')}</h5>", unsafe_allow_html=True)
 
         if site_data is not None:
-            # RESTORED: CONTEXT-AWARE AI CHAT
             st.info(f"**Agentic Reasoning:** The AI is actively evaluating the spatial viability for **{sel_site}**.")
             
             chat_container = st.container(height=200)
