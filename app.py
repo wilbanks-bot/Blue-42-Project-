@@ -73,7 +73,7 @@ st.markdown("""
     }
     .leaf-tooltip:hover .tooltiptext { visibility: visible; opacity: 1; transform: translateY(0); }
 
-    /* 3D Flip Card Container - STRICT IN-PLACE FIX & FONT SCALING */
+    /* 3D Flip Card Container - STRICT IN-PLACE FIX, FONT SCALING & SOLID BACKGROUND */
     .flip-card { background-color: transparent; height: 210px; perspective: 1000px; margin-bottom: 15px; }
     .flip-card-inner { 
         position: relative; width: 100%; height: 100%; text-align: center; 
@@ -84,15 +84,15 @@ st.markdown("""
     .flip-card-front, .flip-card-back {
         position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
         -webkit-backface-visibility: hidden; backface-visibility: hidden;
-        border-radius: 12px; box-sizing: border-box; background: rgba(15, 23, 42, 0.6); 
-        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(6, 182, 212, 0.2); 
+        border-radius: 12px; box-sizing: border-box; background: #0F172A; 
+        border: 1px solid rgba(6, 182, 212, 0.2); 
         padding: 15px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); 
         display: flex; flex-direction: column; justify-content: center;
     }
     .flip-card-front { border-left: 4px solid #0D9488; }
     .flip-card-back { 
         transform: rotateY(180deg); border-left: 4px solid #10B981; 
-        background: rgba(30, 41, 59, 0.95); text-align: left; align-items: flex-start; padding-left: 20px; 
+        background: #1E293B; text-align: left; align-items: flex-start; padding-left: 20px; 
     }
 
     /* Responsive Font Sizing to Ensure Fit */
