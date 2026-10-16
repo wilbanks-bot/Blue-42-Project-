@@ -7,7 +7,6 @@ import math
 import random
 import time
 import hashlib
-import copy
 from datetime import datetime
 
 # Safely import optional dependencies
@@ -45,7 +44,7 @@ st.set_page_config(layout="wide", page_title="Blue 42 | Planetary Capital OS", p
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap');
 
     html, body, [class*="css"] {
         font-family: 'Space Grotesk', sans-serif !important;
@@ -53,71 +52,17 @@ st.markdown("""
     }
     .block-container { padding-top: 1rem; padding-bottom: 2rem; max-width: 98%; }
 
-    /* 3D Flip Card Container */
-    .flip-card {
-        background-color: transparent;
-        height: 160px;
-        perspective: 1000px;
-        margin-bottom: 15px;
+    .glass-card {
+        background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(6, 182, 212, 0.2); border-radius: 12px; padding: 20px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); transition: all 0.3s ease; text-align: center;
     }
-    .flip-card-inner {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        text-align: center;
-        transition: transform 0.6s;
-        transform-style: preserve-3d;
-    }
-    /* Trigger the flip on hover */
-    .flip-card:hover .flip-card-inner {
-        transform: rotateY(180deg);
-    }
-    
-    .flip-card-front, .flip-card-back {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        -webkit-backface-visibility: hidden;
-        backface-visibility: hidden;
-        border-radius: 12px;
-        background: rgba(15, 23, 42, 0.6); 
-        backdrop-filter: blur(12px); 
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(6, 182, 212, 0.2); 
-        padding: 15px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); 
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    
-    .flip-card-front {
-        border-left: 4px solid #0D9488;
-    }
-    .flip-card-front:hover {
-        border: 1px solid rgba(6, 182, 212, 0.8);
-        box-shadow: 0 8px 32px 0 rgba(6, 182, 212, 0.3);
-    }
-    
-    .flip-card-back {
-        transform: rotateY(180deg);
-        border-left: 4px solid #10B981;
-        background: rgba(15, 23, 42, 0.95); 
-        text-align: left;
-        align-items: flex-start;
-        padding-left: 20px;
-    }
-
+    .glass-card:hover { transform: translateY(-5px); border: 1px solid rgba(6, 182, 212, 0.8); box-shadow: 0 8px 32px 0 rgba(6, 182, 212, 0.3); }
     .glass-title { font-size: 0.85rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;}
-    .glass-value { font-size: 2.2rem; font-weight: 700; background: -webkit-linear-gradient(45deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
+    .glass-value { font-size: 2rem; font-weight: 700; background: -webkit-linear-gradient(45deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
     .glass-sub { font-size: 0.8rem; color: #10B981; margin-top: 8px; font-weight: 600; }
 
-    /* Math Terminal Text for the Back of the Cards */
-    .math-text { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #94A3B8; line-height: 1.5; width: 100%; }
-    .math-hl { color: #10B981; font-weight: bold; }
-    .math-var { color: #E2E8F0; }
-    .math-op { color: #EF4444; font-weight: bold; padding-right: 5px; }
-
+    /* Cryptographic Terminal Box */
     .crypto-box {
         background-color: rgba(0,0,0,0.5); border: 1px solid #10B981; border-radius: 6px; padding: 10px;
         font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #10B981; word-wrap: break-word;
@@ -132,31 +77,65 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Helper function to generate the flip cards
-def make_flip_card(title, value, sub, math_html):
-    return f"""
-    <div class="flip-card">
-      <div class="flip-card-inner">
-        <div class="flip-card-front">
-          <div class="glass-title">{title}</div>
-          <div class="glass-value">{value}</div>
-          <div class="glass-sub">{sub}</div>
-        </div>
-        <div class="flip-card-back">
-          <div class="glass-title" style="margin-bottom:6px; color:#38BDF8;">ALGORITHMIC PROVENANCE</div>
-          <div class="math-text">{math_html}</div>
-        </div>
-      </div>
-    </div>
-    """
-
 if "library" not in st.session_state: 
     st.session_state.library = []
 if "messages" not in st.session_state: 
     st.session_state.messages = [{"role": "assistant", "content": "Argon MCDA active. How can I assist with your portfolio today?"}]
 
 # =========================================================
-# 2. AUDITABLE ACTION: CRYPTOGRAPHIC PDF GENERATOR
+# 2. CUSTOM KELP ANIMATION
+# =========================================================
+def kelp_animation():
+    """Injects a custom CSS animation of growing kelp and bubbles."""
+    kelp_html = """
+    <style>
+        .kelp-container {
+            position: fixed; bottom: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 999999; overflow: hidden;
+        }
+        .kelp-stalk {
+            position: absolute; bottom: -200px; font-size: 4rem; opacity: 0.8;
+            animation: growUp 5s ease-in-out forwards;
+        }
+        .bubble {
+            position: absolute; bottom: -50px; font-size: 2rem; opacity: 0.6;
+            animation: floatUp 4s ease-in forwards;
+        }
+        @keyframes growUp {
+            0% { bottom: -200px; transform: translateX(0px) rotate(0deg) scale(0.5); }
+            50% { transform: translateX(30px) rotate(15deg) scale(1.2); }
+            100% { bottom: 120vh; transform: translateX(-30px) rotate(-15deg) scale(1.5); opacity: 0; }
+        }
+        @keyframes floatUp {
+            0% { bottom: -50px; transform: translateX(0px); }
+            50% { transform: translateX(-20px); }
+            100% { bottom: 120vh; transform: translateX(20px); opacity: 0; }
+        }
+    </style>
+    <div class="kelp-container">
+        <!-- Kelp Stalks -->
+        <div class="kelp-stalk" style="left: 5%; animation-delay: 0.1s;">🌿</div>
+        <div class="kelp-stalk" style="left: 15%; animation-delay: 0.4s; font-size: 5rem;">🌿</div>
+        <div class="kelp-stalk" style="left: 25%; animation-delay: 0.2s; font-size: 3.5rem;">🌿</div>
+        <div class="kelp-stalk" style="left: 35%; animation-delay: 0.7s; font-size: 6rem;">🌿</div>
+        <div class="kelp-stalk" style="left: 45%; animation-delay: 0.3s; font-size: 4.5rem;">🌿</div>
+        <div class="kelp-stalk" style="left: 55%; animation-delay: 0.8s; font-size: 5.5rem;">🌿</div>
+        <div class="kelp-stalk" style="left: 65%; animation-delay: 0.1s; font-size: 3rem;">🌿</div>
+        <div class="kelp-stalk" style="left: 75%; animation-delay: 0.5s; font-size: 5rem;">🌿</div>
+        <div class="kelp-stalk" style="left: 85%; animation-delay: 0.2s; font-size: 4rem;">🌿</div>
+        <div class="kelp-stalk" style="left: 95%; animation-delay: 0.6s; font-size: 6rem;">🌿</div>
+        <!-- Bubbles -->
+        <div class="bubble" style="left: 10%; animation-delay: 0.2s;">🫧</div>
+        <div class="bubble" style="left: 30%; animation-delay: 1.0s;">🫧</div>
+        <div class="bubble" style="left: 50%; animation-delay: 0.5s;">🫧</div>
+        <div class="bubble" style="left: 70%; animation-delay: 1.2s;">🫧</div>
+        <div class="bubble" style="left: 90%; animation-delay: 0.8s;">🫧</div>
+    </div>
+    """
+    st.markdown(kelp_html, unsafe_allow_html=True)
+
+# =========================================================
+# 3. AUDITABLE ACTION: CRYPTOGRAPHIC PDF GENERATOR
 # =========================================================
 def safe_encode(text):
     if not isinstance(text, str): text = str(text)
@@ -212,7 +191,7 @@ def export_to_geojson(df: pd.DataFrame) -> bytes:
     return json.dumps({"type": "FeatureCollection", "features": features}).encode('utf-8')
 
 # =========================================================
-# 3. SECURE API INITIALIZATION & GRACEFUL FALLBACK
+# 4. SECURE API INITIALIZATION & GRACEFUL FALLBACK
 # =========================================================
 ee_connected = False
 if EE_AVAILABLE:
@@ -237,7 +216,7 @@ if GENAI_AVAILABLE:
     except Exception: pass
 
 # =========================================================
-# 4. GEE BIOGEOCHEMICAL MODELING
+# 5. GEE BIOGEOCHEMICAL MODELING
 # =========================================================
 @st.cache_data(ttl=3600)
 def get_scientific_kelp_data(sector):
@@ -295,7 +274,7 @@ def get_scientific_kelp_data(sector):
     return mock
 
 # =========================================================
-# 5. MCDA DECONFLICTION
+# 6. MCDA DECONFLICTION
 # =========================================================
 @st.cache_resource(ttl=60)
 def get_hazard_vectors(sector):
@@ -334,7 +313,7 @@ def run_mcda_deconfliction(sites, vessels_df, mammals_df, weather_data):
     return pd.DataFrame(processed)
 
 # =========================================================
-# 6. HEADER & SIDEBAR CONTROLS
+# 7. HEADER & SIDEBAR CONTROLS
 # =========================================================
 st.markdown("<h1 style='color: #06b6d4; font-weight: 700; margin-bottom: 0;'>BLUE 42 <span style='color:#F8FAFC; font-weight: 300;'>| Planetary Capital OS</span></h1>", unsafe_allow_html=True)
 st.markdown(f"<p style='color: #94A3B8; font-size: 1.1rem; margin-top: -10px;'><span class='blinking'>●</span> {'GEE UPLINK SECURE' if ee_connected else 'MCDA ENGINE ACTIVE'} | VERIFIABLE KELP FRAMEWORK</p>", unsafe_allow_html=True)
@@ -348,44 +327,34 @@ weight_carbon = st.sidebar.slider("Carbon Sequestration", 0.0, 1.0, 0.8)
 weight_coastal = st.sidebar.slider("Coastal Resilience", 0.0, 1.0, 0.6)
 weight_bio = st.sidebar.slider("Fishery Biodiversity", 0.0, 1.0, 0.9)
 
-raw_sites_cached = get_scientific_kelp_data(sector_key)
-if not raw_sites_cached: raw_sites_cached = []
-raw_sites = copy.deepcopy(raw_sites_cached)
-
+raw_sites = get_scientific_kelp_data(sector_key)
+if not raw_sites: raw_sites = []
 vessels_df, mammals_df, weather_data = get_hazard_vectors(sector_key)
 
 for site in raw_sites:
-    site['pareto_score'] = round((site.get('co2_tons', 0) * weight_carbon) + (site.get('averted_damage_millions', 0) * weight_coastal * 10) + (site.get('biodiversity_score', 0) * weight_bio), 1)
+    site['pareto_score'] = round((site.get('co2_tons',0) * weight_carbon) + (site.get('averted_damage_millions', 0) * weight_coastal * 10) + (site.get('biodiversity_score', 0) * weight_bio), 1)
 
 raw_sites = sorted(raw_sites, key=lambda x: x.get('pareto_score', 0), reverse=True)
 kelp_df = run_mcda_deconfliction(raw_sites, vessels_df, mammals_df, weather_data)
 safe_df = kelp_df[kelp_df['status'].str.contains("CLEARED")] if not kelp_df.empty else pd.DataFrame()
 
 # =========================================================
-# 7. UI: EXECUTIVE DASHBOARD & KPIs (WITH 3D FLIP CARDS)
+# 8. UI: EXECUTIVE DASHBOARD & KPIs
 # =========================================================
 col1, col2, col3, col4 = st.columns(4)
-
 v_area = safe_df['area_ha'].sum() if not safe_df.empty else 0
 v_bio = safe_df['biomass_tons'].sum() if not safe_df.empty else 0
 v_dmg = safe_df['averted_damage_millions'].sum() if not safe_df.empty else 0
 v_roi = ((safe_df['co2_tons'].sum() * 150) + (safe_df['biomass_tons'].sum() * 300) + (v_area * 1500)) if not safe_df.empty else 0
 
-# Interactive Mathematical Provenance (Back of Cards)
-math1 = "Σ(GEE Raster Area) <br><span class='math-op'>-</span> <span class='math-var'>Σ(Shipping Intersects)</span> <br><span class='math-op'>-</span> <span class='math-var'>Σ(Storm Tracks)</span> <br><span class='math-op'>-</span> <span class='math-var'>Σ(Mammal Zones)</span><br>====================<br><span class='math-hl'>Net Viable HA</span>"
-math2 = "Area (HA) <br><span class='math-op'>×</span> 18.5 (Wet MT / HA Base) <br><span class='math-op'>×</span> 0.92 (Thermal Modifier)<br>====================<br><span class='math-hl'>NPP Biomass Yield</span>"
-math3 = "Σ[ Area (HA) <br><span class='math-op'>×</span> Site Wave Energy (kW/m) <br><span class='math-op'>×</span> 0.15 (Attenuation Coeff.) ]<br>====================<br><span class='math-hl'>Averted Damage ($)</span>"
-math4 = "(CO2e MT <span class='math-var'>× $150</span>)<br><span class='math-op'>+</span> (Biomass MT <span class='math-var'>× $300</span>)<br><span class='math-op'>+</span> (Net Area HA <span class='math-var'>× $1500</span>)<br>====================<br><span class='math-hl'>Stacked Annual ROI ($)</span>"
-
-col1.markdown(make_flip_card("Net Viable Kelp Area", f"{v_area:.1f} HA", "Mathematically Deconflicted", math1), unsafe_allow_html=True)
-col2.markdown(make_flip_card("Harvestable Yield", f"{v_bio:.1f} MT", "Macrocystis Wet Biomass", math2), unsafe_allow_html=True)
-col3.markdown(make_flip_card("Averted Infrastructure Damage", f"${v_dmg:.1f}M", "Via Wave Attenuation", math3), unsafe_allow_html=True)
-col4.markdown(make_flip_card("Ecological Capital ROI", f"${v_roi:,.0f}", "Stacked Value / Yr", math4), unsafe_allow_html=True)
-
+col1.markdown(f"<div class='glass-card'><div class='glass-title'>Net Viable Kelp Area</div><div class='glass-value'>{v_area:.1f} HA</div><div class='glass-sub'>Mathematically Deconflicted</div></div>", unsafe_allow_html=True)
+col2.markdown(f"<div class='glass-card'><div class='glass-title'>Harvestable Yield</div><div class='glass-value'>{v_bio:.1f} MT</div><div class='glass-sub'>Macrocystis Wet Biomass</div></div>", unsafe_allow_html=True)
+col3.markdown(f"<div class='glass-card'><div class='glass-title'>Averted Infrastructure Damage</div><div class='glass-value'>${v_dmg:.1f}M</div><div class='glass-sub'>Via Wave Attenuation</div></div>", unsafe_allow_html=True)
+col4.markdown(f"<div class='glass-card'><div class='glass-title'>Ecological Capital ROI</div><div class='glass-value'>${v_roi:,.0f}</div><div class='glass-sub'>Stacked Value / Yr</div></div>", unsafe_allow_html=True)
 st.markdown("<br>", unsafe_allow_html=True)
 
 # =========================================================
-# 8. VISUALIZATIONS: MAP & ANALYTICS
+# 9. VISUALIZATIONS: MAP & ANALYTICS
 # =========================================================
 col_map, col_ops = st.columns([6, 4], gap="large")
 
@@ -448,6 +417,8 @@ with col_ops:
             
     with t2:
         st.markdown("<br>", unsafe_allow_html=True)
+        st.caption("**Value Stacking:** Combines Premium Blue Carbon ($150/MT), Bioplastic-Grade Harvest ($300/MT), and Resilience Subsidies ($1,500/HA).")
+        
         if site_data is not None and "CLEARED" in site_data.get('status', ''):
             capex = site_data.get('area_ha', 0) * 15000  
             opex_yr = site_data.get('area_ha', 0) * 2000 
@@ -467,7 +438,7 @@ with col_ops:
             annual_profit = rev_yr - opex_yr
             if annual_profit > 0:
                 break_even = capex / annual_profit
-                st.caption(f"**Projected Break-Even:** Year {break_even:.1f} | **10-Yr Net Profit:** ${(revenues[-1]-costs[-1]):,.2f}")
+                st.success(f"**Projected Break-Even:** Year {break_even:.1f} | **10-Yr Net Profit:** ${(revenues[-1]-costs[-1]):,.2f}")
                 
             st.divider()
             st.markdown("###### 🌍 Macro-Economics: Planetary Scale-Up")
@@ -506,10 +477,10 @@ with col_ops:
                 st.plotly_chart(fig3, use_container_width=True)
             
             if st.button("Cryptographically Sign & Mint Credits", use_container_width=True):
+                kelp_animation()
                 tx_hash = hashlib.sha256(str(time.time()).encode()).hexdigest()
                 st.success(f"✅ Verified via satellite. {site_data.get('co2_tons', 0)} MT CO2e minted.")
                 st.markdown(f"<div class='crypto-box'>TX_HASH: {tx_hash}</div>", unsafe_allow_html=True)
-                st.balloons()
         else:
             st.error("MRV disabled for hazardous sites.")
 
