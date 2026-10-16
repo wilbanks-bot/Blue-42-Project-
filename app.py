@@ -40,25 +40,22 @@ except ImportError:
 # =========================================================
 # 1. UX SETUP & "CYBERNETIC OCEAN" DESIGN SYSTEM
 # =========================================================
-st.set_page_config(layout="wide", page_title="Blue 42 | Planetary Capital OS", page_icon="🌊", initial_sidebar_state="expanded")
+st.set_page_config(layout="wide", page_title="Blue 42 | Planetary Capital OS", page_icon="🌊", initial_sidebar_state="collapsed")
 
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap');
 
-    html, body, [class*="css"] {
+    html, body, [class*="css"], .stSlider {
         font-family: 'Space Grotesk', sans-serif !important;
         background-color: #020617; color: #F8FAFC;
     }
     
-    /* Maximize space and ensure containers allow popups to overflow visibly */
     .block-container { padding-top: 1rem; padding-bottom: 2rem; max-width: 98%; }
-    .stMarkdown, .stMarkdown div, div[data-testid="stVerticalBlock"], div[data-testid="stHorizontalBlock"] { 
-        overflow: visible !important; 
-    }
+    .stMarkdown, .stMarkdown div { overflow: visible !important; }
 
-    /* Custom CSS for Leaf Tooltips - EXPERT UX FIX */
+    /* Custom CSS for Leaf Tooltips */
     .leaf-tooltip {
         position: relative;
         display: inline-block;
@@ -70,7 +67,7 @@ st.markdown("""
     .leaf-tooltip:hover { transform: scale(1.2); }
     .leaf-tooltip .tooltiptext {
         visibility: hidden; 
-        width: 260px; /* Responsive width */
+        width: 240px; 
         background: rgba(15, 23, 42, 0.98);
         backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
         color: #E2E8F0; text-align: left; border: 1px solid #10B981;
@@ -78,21 +75,19 @@ st.markdown("""
         position: absolute; 
         z-index: 999999 !important; 
         top: 150%; 
-        right: 0; /* Anchors to the right so it flows inward, NEVER off-screen */
-        left: auto; 
+        left: 50%; 
+        transform: translateX(-50%) translateY(-10px); 
         opacity: 0; transition: opacity 0.3s, transform 0.3s; 
-        transform: translateY(-10px);
         font-size: 0.8rem;
         font-family: 'Space Grotesk', sans-serif; box-shadow: 0 10px 30px rgba(0,0,0,0.9);
         line-height: 1.5; font-weight: 400; pointer-events: none;
         white-space: normal; word-wrap: break-word;
     }
-    /* Move the little triangle pointer to align with the right anchor */
     .leaf-tooltip .tooltiptext::after {
-        content: ""; position: absolute; bottom: 100%; right: 10px; 
+        content: ""; position: absolute; bottom: 100%; left: 50%; margin-left: -6px;
         border-width: 6px; border-style: solid; border-color: transparent transparent #10B981 transparent;
     }
-    .leaf-tooltip:hover .tooltiptext { visibility: visible; opacity: 1; transform: translateY(0); }
+    .leaf-tooltip:hover .tooltiptext { visibility: visible; opacity: 1; transform: translateX(-50%) translateY(0); }
 
     /* 3D Flip Card Container */
     .flip-card { background-color: transparent; height: 190px; perspective: 1000px; margin-bottom: 15px; }
@@ -107,9 +102,15 @@ st.markdown("""
     .flip-card-front { border-left: 4px solid #0D9488; }
     .flip-card-back { transform: rotateY(180deg); border-left: 4px solid #10B981; background: rgba(15, 23, 42, 0.95); text-align: left; align-items: flex-start; padding-left: 25px; }
 
-    .glass-title { font-size: 0.85rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;}
-    .glass-value { font-size: 2.2rem; font-weight: 700; background: -webkit-linear-gradient(45deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
-    .glass-sub { font-size: 0.8rem; color: #10B981; margin-top: 8px; font-weight: 600; }
+    /* Glassmorphic Static Cards (for Macro UI) */
+    .glass-card {
+        background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(6, 182, 212, 0.2); 
+        border-radius: 12px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-align: center; border-top: 3px solid #0EA5E9;
+    }
+
+    .glass-title { font-size: 0.80rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;}
+    .glass-value { font-size: 1.8rem; font-weight: 700; background: -webkit-linear-gradient(45deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
+    .glass-sub { font-size: 0.75rem; color: #10B981; margin-top: 8px; font-weight: 600; }
     .math-text { font-family: 'JetBrains Mono', monospace; font-size: 0.70rem; color: #94A3B8; line-height: 1.4; width: 100%; display: flex; flex-direction: column; justify-content: center; }
     .math-hl { color: #10B981; font-weight: 600; font-size: 0.75rem; }
     .math-var { color: #E2E8F0; }
@@ -120,17 +121,14 @@ st.markdown("""
     .stButton > button { background: rgba(15, 23, 42, 0.8); color: #06b6d4; border: 1px solid #06b6d4; border-radius: 8px; font-weight: 600; transition: all 0.3s ease; }
     .stButton > button:hover { background: #06b6d4; color: #020617; box-shadow: 0 0 15px rgba(6, 182, 212, 0.6); }
 
-    /* EXPERT UX FIX: Keep header transparent to preserve the Sidebar toggle button */
     header { background-color: transparent !important; }
     #MainMenu {visibility: hidden;} footer {visibility: hidden;} 
-    
     .blinking { animation: blinker 1.5s linear infinite; color: #10B981; font-weight: bold; }
     @keyframes blinker { 50% { opacity: 0; } }
 </style>
 """, unsafe_allow_html=True)
 
 def leaf_info(text):
-    """Generates a perfectly positioned HTML tooltip."""
     return f"""<div class="leaf-tooltip">🌿<span class="tooltiptext">{text}</span></div>"""
 
 def make_flip_card(title, value, sub, math_html):
@@ -296,7 +294,7 @@ def get_scientific_kelp_data(sector):
     return mock
 
 # =========================================================
-# 5. MCDA DECONFLICTION (WITH ZONING)
+# 5. JURISDICTIONAL ZONES & MULTI-VECTOR DECONFLICTION
 # =========================================================
 @st.cache_resource(ttl=60)
 def get_hazard_vectors(sector):
@@ -399,7 +397,7 @@ v_roi = ((safe_df['co2_tons'].sum() * 150) + (safe_df['biomass_tons'].sum() * 30
 math1 = "<span class='math-var'>Σ(GEE Raster Area)</span><br><span class='math-op'>-</span> <span class='math-var'>Σ(Shipping)</span><br><span class='math-op'>-</span> <span class='math-var'>Σ(Storms)</span><br><span class='math-op'>-</span> <span class='math-var'>Σ(Mammals)</span><br><div class='math-divider'>━━━━━━━━━</div><span class='math-hl'>Net Viable HA</span>"
 math2 = "<span class='math-var'>Area (HA)</span><br><span class='math-op'>×</span> <span class='math-var'>18.5 (Wet MT/HA)</span><br><span class='math-op'>×</span> <span class='math-var'>0.92 (Thermal Mod)</span><br><div class='math-divider'>━━━━━━━━━</div><span class='math-hl'>NPP Biomass Yield</span>"
 math3 = "<span class='math-var'>Σ [ Area (HA)</span><br><span class='math-op'>×</span> <span class='math-var'>Wave Energy (kW/m)</span><br><span class='math-op'>×</span> <span class='math-var'>0.15 (Atten. Coeff) ]</span><br><div class='math-divider'>━━━━━━━━━</div><span class='math-hl'>Averted Damage ($)</span>"
-math4 = "<span class='math-var'>(CO2e MT × $150)</span><br><span class='math-op'>+</span> <span class='math-var'>(Biomass MT × $300)</span><br><span class='math-op'>+</span> <span class='math-var'>(Net HA × $1500)</span><br><div class='math-divider'>━━━━━━━━━</div><span class='math-hl'>Stacked Annual ROI</span>"
+math4 = "<span class='math-var'>(CO2e MT × \\$150)</span><br><span class='math-op'>+</span> <span class='math-var'>(Biomass MT × \\$300)</span><br><span class='math-op'>+</span> <span class='math-var'>(Net HA × \\$1500)</span><br><div class='math-divider'>━━━━━━━━━</div><span class='math-hl'>Stacked Annual ROI</span>"
 
 col1.markdown(make_flip_card(f"Net Viable Kelp Area {leaf_info('The gross geospatial area mathematically cleared of all shipping, severe weather, and cetacean migration hazards.')}", f"{v_area:.1f} HA", "Mathematically Deconflicted", math1), unsafe_allow_html=True)
 col2.markdown(make_flip_card(f"Harvestable Yield {leaf_info('Projected wet biomass of Macrocystis pyrifera, factoring in depth profiles, thermal modifiers, and localized nutrient upwelling proxies.')}", f"{v_bio:.1f} MT", "Macrocystis Wet Biomass", math2), unsafe_allow_html=True)
@@ -431,7 +429,6 @@ with col_map:
     tt_html = "<div style='font-family:Space Grotesk; background:rgba(15,23,42,0.9); padding:10px; border-radius:8px; border:1px solid #06b6d4;'><b>{id}</b><br/>Pareto Score: {pareto_score}<br/>Area: {area_ha} HA<br/><span style='color:#10B981;'>Status: <b>{status}</b></span><br/>NPP: {biomass_tons} MT</div>"
     view_state = pdk.ViewState(latitude=33.95 if sector_key == "Channel Islands" else 21.3, longitude=-119.8 if sector_key == "Channel Islands" else -157.9, zoom=8.5, pitch=45, bearing=15)
     
-    # Safe Streamlit map without Mapbox
     st.pydeck_chart(pdk.Deck(layers=layers, initial_view_state=view_state, map_style=None, tooltip={"html": tt_html}), use_container_width=True, height=600)
 
 with col_ops:
@@ -483,9 +480,16 @@ with col_ops:
         st.caption("**Value Stacking:** Combines Premium Blue Carbon (\\$150/MT), Bioplastic-Grade Harvest (\\$300/MT), and Resilience Subsidies (\\$1,500/HA).")
         
         if site_data is not None and "CLEARED" in site_data.get('status', ''):
+            st.markdown("###### 🔬 Micro-Economics: Selected Site")
+            
+            # Using custom HTML for aligned metrics without font clipping
             capex = site_data.get('area_ha', 0) * 15000  
             opex_yr = site_data.get('area_ha', 0) * 2000 
-            rev_yr = (site_data.get('co2_tons', 0) * 150) + (site_data.get('biomass_tons', 0) * 300) + (site_data.get('area_ha', 0) * 1500)
+            
+            carbon_rev = site_data.get('co2_tons', 0) * 150     
+            harvest_rev = site_data.get('biomass_tons', 0) * 300 
+            subsidy_rev = site_data.get('area_ha', 0) * 1500      
+            rev_yr = carbon_rev + harvest_rev + subsidy_rev 
             
             years = np.arange(0, 11)
             costs = capex + (opex_yr * years)
@@ -506,20 +510,67 @@ with col_ops:
             st.divider()
             st.markdown(f"<h6 style='display:flex; align-items:center;'>🌍 Macro-Economics: Planetary Scale-Up {leaf_info('A macroeconomic simulator demonstrating how algorithmic spatial verification unlocks gigaton-scale carbon markets and mobilizes sidelined institutional capital.')}</h6>", unsafe_allow_html=True)
             
-            target_scale_ha = st.slider("Target Deployment Area (Hectares)", min_value=10000, max_value=50000000, value=1000000, step=10000, label_visibility="collapsed")
+            target_scale_ha = st.slider("Target Deployment Area (Hectares)", min_value=10000, max_value=50000000, value=1000000, step=10000)
             
             macro_capex = target_scale_ha * 15000
             macro_opex_yr = target_scale_ha * 2000
             macro_co2 = target_scale_ha * 12.5
             macro_biomass = target_scale_ha * 17.0
             
-            macro_rev_yr = (macro_co2 * 150) + (macro_biomass * 300) + (target_scale_ha * 1500)
-            macro_net_yr = macro_rev_yr - macro_opex_yr
+            macro_carbon_rev = macro_co2 * 150
+            macro_biomass_rev = macro_biomass * 300
+            macro_subsidy_rev = target_scale_ha * 1500
             
-            mc1, mc2, mc3 = st.columns(3)
-            mc1.metric("Gigaton Potential", f"{macro_co2 / 1e6:.2f} GT/yr")
-            mc2.metric("CAPEX Required", f"${macro_capex / 1e9:.2f} Billion")
-            mc3.metric("10-Yr Portfolio Value", f"${(macro_net_yr * 10) / 1e9:.2f} Billion")
+            macro_rev_yr = macro_carbon_rev + macro_biomass_rev + macro_subsidy_rev
+            macro_net_yr = macro_rev_yr - macro_opex_yr
+            macro_10yr_val = macro_net_yr * 10
+            
+            st.markdown(f"""
+            <div style="display: flex; gap: 10px; justify-content: space-between; margin-bottom: 20px;">
+                <div class="glass-card" style="flex: 1; padding: 15px;">
+                    <div class="glass-title" style="font-size: 0.75rem;">Gigaton Potential</div>
+                    <div class="glass-value" style="font-size: 1.5rem;">{macro_co2 / 1e6:.2f} GT/yr</div>
+                </div>
+                <div class="glass-card" style="flex: 1; padding: 15px;">
+                    <div class="glass-title" style="font-size: 0.75rem;">CAPEX Required</div>
+                    <div class="glass-value" style="font-size: 1.5rem;">\\${macro_capex / 1e9:.2f}B</div>
+                </div>
+                <div class="glass-card" style="flex: 1; padding: 15px;">
+                    <div class="glass-title" style="font-size: 0.75rem;">10-Yr Portfolio Value</div>
+                    <div class="glass-value" style="font-size: 1.5rem;">\\${macro_10yr_val / 1e9:.2f}B</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if macro_net_yr > 1e10:
+                st.success(f"🚀 **Trillion-Dollar Market Unlocked:** Estimated 10-year net value of **\\${macro_10yr_val / 1e12:.2f} Trillion**, directly mobilizing sidelined climate capital.")
+
+            with st.expander("📄 View In-Depth 10-Year Macro-Financial Prospectus", expanded=False):
+                st.markdown("##### Revenue Stream Composition (Annual)")
+                if PLOTLY_AVAILABLE:
+                    fig_pie = go.Figure(data=[go.Pie(
+                        labels=['Premium Blue Carbon', 'Bioplastic-Grade Harvest', 'Coastal Resilience Subsidies'],
+                        values=[macro_carbon_rev, macro_biomass_rev, macro_subsidy_rev],
+                        hole=.4, marker_colors=["#3b82f6", "#10b981", "#0ea5e9"]
+                    )])
+                    fig_pie.update_layout(template="plotly_dark", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=10, b=10), height=250, legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5))
+                    st.plotly_chart(fig_pie, use_container_width=True)
+                
+                st.markdown("##### 10-Year Amortized Cash Flow Projection")
+                years_list = [f"Year {i}" for i in range(1, 11)]
+                cf_data = {
+                    "CAPEX ($)": [-macro_capex if i == 0 else 0 for i in range(10)],
+                    "OPEX ($)": [-macro_opex_yr for _ in range(10)],
+                    "Gross Revenue ($)": [macro_rev_yr for _ in range(10)],
+                    "Net Cash Flow ($)": [(macro_rev_yr - macro_opex_yr) - (macro_capex if i==0 else 0) for i in range(10)],
+                    "Cumulative ROI ($)": [((macro_rev_yr - macro_opex_yr) * (i+1)) - macro_capex for i in range(10)]
+                }
+                cf_df = pd.DataFrame(cf_data, index=years_list)
+                for col in cf_df.columns:
+                    cf_df[col] = cf_df[col].apply(lambda x: f"${x:,.0f}")
+                st.dataframe(cf_df, use_container_width=True)
+                
+                st.info(f"**Impact Summary at {target_scale_ha:,.0f} HA Scale:** Generates **{int(target_scale_ha * 2.2):,}** direct coastal blue-economy jobs and attenuates destructive wave energy across an estimated **{int(target_scale_ha * 0.05):,}** kilometers of vulnerable coastline.")
 
         else:
             st.error("Site contains HAZARDS. Financial modeling suspended.")
@@ -543,7 +594,6 @@ with col_ops:
                 tx_hash = hashlib.sha256(str(time.time()).encode()).hexdigest()
                 st.success(f"✅ Biomass verified via satellite. {site_data.get('co2_tons', 0)} MT CO2e minted.")
                 st.markdown(f"<div class='crypto-box'>TX_HASH: {tx_hash}</div>", unsafe_allow_html=True)
-                st.balloons()
         else:
             st.error("MRV disabled for hazardous sites.")
 
