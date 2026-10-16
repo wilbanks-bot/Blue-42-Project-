@@ -1,16 +1,3 @@
-This error happened because my explanation text from an earlier message (the sentence starting with *"To a sovereign wealth fund or a Nobel judge..."*) was accidentally copied and pasted into your `app.py` file. 
-
-Python only understands programming code. When it tries to read that English paragraph and hits the `$50k` part, it crashes with a `SyntaxError: invalid decimal literal` because it thinks you are trying to write a broken mathematical equation!
-
-### How to fix this permanently right now:
-1. Open your `app.py` file in GitHub.
-2. **Delete every single line of text currently in the file so it is completely blank.**
-3. Hover over the black code block below and click the **"Copy"** icon that appears in the top-right corner of the block. *(Do not highlight the text manually with your mouse, as that often accidentally grabs the English sentences above and below it!)*
-4. Paste the copied code into your empty `app.py` file and click **Commit changes**.
-
-Here is the 100% pure, perfectly clean code:
-
-```python
 import streamlit as st
 import pydeck as pdk
 import pandas as pd
@@ -20,6 +7,7 @@ import math
 import random
 import time
 import hashlib
+import copy
 from datetime import datetime
 
 # Safely import optional dependencies
@@ -90,7 +78,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-if "library" not in st.session_state: st.session_state.library = []
+# FIX 2: Initialize proper Streamlit state (prevents KeyErrors on fresh loads)
+if "library" not in st.session_state: 
+    st.session_state.library = []
+if "messages" not in st.session_state: 
+    st.session_state.messages = [{"role": "assistant", "content": "Argon MCDA active. How can I assist with your portfolio today?"}]
 
 # =========================================================
 # 2. AUDITABLE ACTION: CRYPTOGRAPHIC PDF GENERATOR
@@ -256,13 +248,13 @@ def run_mcda_deconfliction(sites, vessels_df, mammals_df, weather_data):
                 break
         if site['status'].startswith("CLEARED"):
             for _, ship in vessels_df.iterrows():
-                a = math.sin(math.radians(ship['lat'] - site['lat'])/2)**2 + math.cos(math.radians(site['lat'])) * math.cos(math.radians(ship['lat'])) * math.sin(math.radians(ship['lon'] - site['lon'])/2)**2
+                a = math.sin(math.radians(ship['lat'] - site['lat'])/2)**2 + math.cos(math.radians(site['lat'])) * math.cos(math.radians(ship['lat'])) * math.sin(math.radians(ship.get('lon',0) - site['lon'])/2)**2
                 if R * (2 * math.atan2(math.sqrt(a), math.sqrt(1-a))) < 2.5:
                     site['status'], site['color'] = "HAZARD: Shipping Lane", [245, 158, 11, 230]
                     break
         if site['status'].startswith("CLEARED"):
             for _, whale in mammals_df.iterrows():
-                a = math.sin(math.radians(whale['lat'] - site['lat'])/2)**2 + math.cos(math.radians(site['lat'])) * math.cos(math.radians(whale['lat'])) * math.sin(math.radians(whale['lon'] - site['lon'])/2)**2
+                a = math.sin(math.radians(whale['lat'] - site['lat'])/2)**2 + math.cos(math.radians(site['lat'])) * math.cos(math.radians(whale['lat'])) * math.sin(math.radians(whale.get('lon',0) - site['lon'])/2)**2
                 if R * (2 * math.atan2(math.sqrt(a), math.sqrt(1-a))) < 4.0:
                     site['status'], site['color'] = "HAZARD: Mammal Corridor", [139, 92, 246, 230]
                     break
@@ -284,8 +276,11 @@ weight_carbon = st.sidebar.slider("Carbon Sequestration", 0.0, 1.0, 0.8)
 weight_coastal = st.sidebar.slider("Coastal Resilience", 0.0, 1.0, 0.6)
 weight_bio = st.sidebar.slider("Fishery Biodiversity", 0.0, 1.0, 0.9)
 
-raw_sites = get_scientific_kelp_data(sector_key)
-if not raw_sites: raw_sites = []
+# FIX 3: Use deepcopy to prevent cached object mutation warnings
+raw_sites_cached = get_scientific_kelp_data(sector_key)
+if not raw_sites_cached: raw_sites_cached = []
+raw_sites = copy.deepcopy(raw_sites_cached)
+
 vessels_df, mammals_df, weather_data = get_hazard_vectors(sector_key)
 
 for site in raw_sites:
@@ -295,14 +290,11 @@ raw_sites = sorted(raw_sites, key=lambda x: x.get('pareto_score', 0), reverse=Tr
 kelp_df = run_mcda_deconfliction(raw_sites, vessels_df, mammals_df, weather_data)
 safe_df = kelp_df[kelp_df['status'].str.contains("CLEARED")] if not kelp_df.empty else pd.DataFrame()
 
-# =========================================================
-# 7. UI: EXECUTIVE DASHBOARD & KPIs
-# =========================================================
-c1, c2, c3, c4 = st.columns(4)
+col1, col2, col3, col4 = st.columns(4)
 v_area = safe_df['area_ha'].sum() if not safe_df.empty else 0
 v_bio = safe_df['biomass_tons'].sum() if not safe_df.empty else 0
 v_dmg = safe_df['averted_damage_millions'].sum() if not safe_df.empty else 0
-v_roi = ((safe_df['co2_tons'].sum() * 150) + (safe_df['biomass_tons'].sum() * 300) + (v_area * 1500)) if not safe_df.empty else 0
+v_roi = ((safe_df['co2_tons'].sum() * 85) + (safe_df['biomass_tons'].sum() * 120)) if not safe_df.empty else 0
 
 col1.markdown(f"<div class='glass-card'><div class='glass-title'>Net Viable Kelp Area</div><div class='glass-value'>{v_area:.1f} HA</div><div class='glass-sub'>Mathematically Deconflicted</div></div>", unsafe_allow_html=True)
 col2.markdown(f"<div class='glass-card'><div class='glass-title'>Harvestable Yield</div><div class='glass-value'>{v_bio:.1f} MT</div><div class='glass-sub'>Macrocystis Wet Biomass</div></div>", unsafe_allow_html=True)
@@ -311,7 +303,7 @@ col4.markdown(f"<div class='glass-card'><div class='glass-title'>Ecological Capi
 st.markdown("<br>", unsafe_allow_html=True)
 
 # =========================================================
-# 8. VISUALIZATIONS: MAP & ANALYTICS
+# 7. MAP HUD & ANALYTICS TERMINAL
 # =========================================================
 col_map, col_ops = st.columns([6, 4], gap="large")
 
@@ -442,9 +434,9 @@ with col_ops:
                             st.session_state.library.append({"id": sel_site, "pdf": pdf, "time": timestamp, "hash": signature})
                             st.warning("Generated Offline Audit.")
                         
-            for idx, doc in enumerate(reversed(st.session_state.library)):
+            # FIX 1: Use cryptographic hash as key to prevent Streamlit widget DuplicateID crashes
+            for doc in reversed(st.session_state.library):
                 if 'pdf' in doc and doc['pdf']:
                     st.markdown(f"<div class='crypto-box'><b>LEDGER RECEIPT</b><br>ID: {doc['id']}<br>TIME: {doc['time']}<br>SHA-256: {doc['hash']}</div>", unsafe_allow_html=True)
-                    st.download_button(f"📥 Download Verified PDF", data=doc['pdf'], file_name=f"TEA_Audit_{doc['id']}.pdf", mime="application/pdf", key=f"dl_{idx}", use_container_width=True)
+                    st.download_button(f"📥 Download Verified PDF", data=doc['pdf'], file_name=f"TEA_Audit_{doc['id']}.pdf", mime="application/pdf", key=f"dl_{doc['hash']}", use_container_width=True)
                     st.write("---")
-```
