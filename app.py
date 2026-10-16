@@ -423,8 +423,23 @@ st.markdown(f"<h1 style='color: #06b6d4; font-weight: 700; margin-bottom: 0;'>BL
 st.markdown(f"<p style='color: #94A3B8; font-size: 1.1rem; margin-top: -10px;'><span class='blinking'>●</span> {'GEE UPLINK SECURE' if ee_connected else 'MCDA ENGINE ACTIVE'} | VERIFIABLE KELP FRAMEWORK</p>", unsafe_allow_html=True)
 
 st.sidebar.markdown(f"<h2 style='color:#0EA5E9; font-weight:600; display:flex; align-items:center;'>MCDA ENGINE {leaf_info('Multi-Criteria Decision Analysis (MCDA) synthesizes overlapping biogeochemical and socioeconomic data layers to calculate the absolute optimal coordinates for planetary interventions.')}</h2>", unsafe_allow_html=True)
-sector = st.sidebar.selectbox("Target Bioregion", ["Channel Islands, CA", "Hawaiian Archipelago, HI"])
-sector_key = "Channel Islands" if "Channel" in sector else "Hawaii"
+
+# BIOREGION SELECTOR WITH NORTHEAST PACIFIC COAST ADDITION
+sector = st.sidebar.selectbox("Target Bioregion / Location", [
+    "Northeast Pacific Coast (Alaska down to Baja California)", 
+    "Hawaiian Archipelago, HI"
+])
+sector_key = "Channel Islands" if "Pacific" in sector else "Hawaii"
+
+if "Pacific" in sector:
+    st.sidebar.markdown("""
+    <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid #1E293B; border-left: 3px solid #0EA5E9; border-radius: 6px; padding: 12px; margin-bottom: 15px; margin-top: -10px;">
+        <div style="font-size: 0.75rem; color: #38BDF8; text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Key Characteristics & Dominant Species</div>
+        <div style="font-size: 0.8rem; color: #F8FAFC; line-height: 1.4;">
+            The premier global hotspot for kelp. Driven by the cold, subarctic water of the <b>California Current</b> and strong coastal wind patterns, this region experiences high upwelling. Dominated by towering canopy-forming species: <b>Giant Kelp</b> (<i>Macrocystis pyrifera</i>) and <b>Bull Kelp</b> (<i>Nereocystis luetkeana</i>).
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # AWARD-WINNING FEATURE: 4D Stress-Test Simulator
 st.sidebar.markdown("---")
@@ -681,7 +696,6 @@ with col_ops:
             
             if st.button("Initiate Sovereign Lease Acquisition for Portfolio", use_container_width=True):
                 st.success("✅ Legal acquisition protocols initiated. Generating BOEM and NOAA aquaculture permit applications for the selected coordinates...")
-                # TRIGGER THE NEW HANDSHAKE ANIMATION HERE
                 handshake_animation()
             
             st.divider()
@@ -723,7 +737,6 @@ with col_ops:
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.success(f"🚀 **Trillion-Dollar Market Unlocked:** Estimated 10-year net value of **\\${macro_10yr_val / 1e12:.2f} Trillion**, directly mobilizing sidelined climate capital.")
 
-            # RESTORED: In-Depth Financial Prospectus
             with st.expander("📄 View In-Depth 10-Year Macro-Financial Prospectus", expanded=False):
                 st.markdown("##### Revenue Stream Composition (Annual)")
                 if PLOTLY_AVAILABLE:
