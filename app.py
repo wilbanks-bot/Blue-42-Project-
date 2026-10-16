@@ -53,7 +53,7 @@ st.markdown("""
     }
     .block-container { padding-top: 1rem; padding-bottom: 2rem; max-width: 98%; }
 
-    /* Custom CSS for Leaf Tooltips */
+    /* Custom CSS for Leaf Tooltips - RESPONSIVE FIX */
     .leaf-tooltip {
         position: relative;
         display: inline-block;
@@ -62,49 +62,26 @@ st.markdown("""
         margin-left: 8px;
         transition: transform 0.2s ease;
     }
-    .leaf-tooltip:hover {
-        transform: scale(1.2);
-    }
+    .leaf-tooltip:hover { transform: scale(1.2); }
     .leaf-tooltip .tooltiptext {
-        visibility: hidden;
-        width: 320px;
-        background: rgba(15, 23, 42, 0.95);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        color: #E2E8F0;
-        text-align: left;
-        border: 1px solid #10B981;
-        border-radius: 8px;
-        padding: 15px;
-        position: absolute;
-        z-index: 999999;
-        bottom: 150%;
-        left: 50%;
-        transform: translateX(-50%) translateY(10px);
-        opacity: 0;
-        transition: opacity 0.3s, transform 0.3s;
-        font-size: 0.8rem;
-        font-family: 'Space Grotesk', sans-serif;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-        line-height: 1.5;
-        font-weight: 400;
-        pointer-events: none;
+        visibility: hidden; 
+        width: 250px; /* Reduced width to prevent sidebar clipping */
+        background: rgba(15, 23, 42, 0.98);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        color: #E2E8F0; text-align: left; border: 1px solid #10B981;
+        border-radius: 8px; padding: 12px; position: absolute; 
+        z-index: 999999 !important; /* Force tooltip above all containers */
+        top: 150%; left: 50%; transform: translateX(-50%); /* Popping below the icon prevents top-edge clipping */
+        opacity: 0; transition: opacity 0.3s; font-size: 0.75rem;
+        font-family: 'Space Grotesk', sans-serif; box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+        line-height: 1.4; font-weight: 400; pointer-events: none;
+        white-space: normal; word-wrap: break-word; /* Ensure text wraps perfectly */
     }
     .leaf-tooltip .tooltiptext::after {
-        content: "";
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        margin-left: -6px;
-        border-width: 6px;
-        border-style: solid;
-        border-color: #10B981 transparent transparent transparent;
+        content: ""; position: absolute; bottom: 100%; left: 50%; margin-left: -6px;
+        border-width: 6px; border-style: solid; border-color: transparent transparent #10B981 transparent;
     }
-    .leaf-tooltip:hover .tooltiptext {
-        visibility: visible;
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-    }
+    .leaf-tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
 
     /* 3D Flip Card Container */
     .flip-card { background-color: transparent; height: 190px; perspective: 1000px; margin-bottom: 15px; }
@@ -122,6 +99,7 @@ st.markdown("""
     .glass-title { font-size: 0.85rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;}
     .glass-value { font-size: 2.2rem; font-weight: 700; background: -webkit-linear-gradient(45deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
     .glass-sub { font-size: 0.8rem; color: #10B981; margin-top: 8px; font-weight: 600; }
+    
     .math-text { font-family: 'JetBrains Mono', monospace; font-size: 0.70rem; color: #94A3B8; line-height: 1.4; width: 100%; display: flex; flex-direction: column; justify-content: center; }
     .math-hl { color: #10B981; font-weight: 600; font-size: 0.75rem; }
     .math-var { color: #E2E8F0; }
@@ -138,7 +116,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Helper function for generating the Leaf Info Tooltips
 def leaf_info(text):
     return f"""<div class="leaf-tooltip">🌿<span class="tooltiptext">{text}</span></div>"""
 
@@ -184,16 +161,17 @@ def create_lca_brief(site: dict, ai_analysis: str, signature: str, timestamp: st
     pdf.ln(5)
     
     pdf.set_font("Arial", "B", 11)
-    pdf.cell(0, 10, "1. SPATIAL & BIOGEOCHEMICAL METRICS", ln=True)
+    pdf.cell(0, 10, "1. SPATIAL, JURISDICTIONAL & BIOGEOCHEMICAL METRICS", ln=True)
     pdf.set_font("Arial", size=10)
     pdf.cell(0, 8, f"Timestamp: {timestamp} UTC", ln=True)
     pdf.cell(0, 8, f"Coordinates: {site.get('lat', 0):.4f} N, {site.get('lon', 0):.4f} W | Area: {site.get('area_ha', 0)} HA", ln=True)
+    pdf.cell(0, 8, f"Status: {site.get('status', 'UNKNOWN')}", ln=True)
     pdf.cell(0, 8, f"Thermal Regime (SST): {site.get('sst_mean', 0)} C | Depth Profile: {site.get('depth', 0)}m", ln=True)
     pdf.cell(0, 8, f"Nitrate Flux Proxy: {site.get('nitrate_score', 0)}/100 | Salinity: {site.get('salinity', 0)} PSU", ln=True)
     pdf.ln(3)
 
     pdf.set_font("Arial", "B", 11)
-    pdf.cell(0, 10, "2. KELP GROWTH & HARVEST YIELDS", ln=True)
+    pdf.cell(0, 10, "2. KELP GROWTH, HARVEST & CO-BENEFITS", ln=True)
     pdf.set_font("Arial", size=10)
     pdf.cell(0, 8, f"Annual Biomass Yield (Macrocystis pyrifera): {site.get('biomass_tons', 0)} Wet MT/yr", ln=True)
     pdf.cell(0, 8, f"Harvesting Cadence: Quarterly canopy trimming to maintain 2ft/day growth rate", ln=True)
@@ -217,7 +195,7 @@ def create_lca_brief(site: dict, ai_analysis: str, signature: str, timestamp: st
     return pdf.output(dest="S").encode("latin-1")
 
 def export_to_geojson(df: pd.DataFrame) -> bytes:
-    features = [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [r["lon"], r["lat"]]}, "properties": {"id": r["id"], "area_ha": r["area_ha"]}} for _, r in df.iterrows()]
+    features = [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [r["lon"], r["lat"]]}, "properties": {"id": r["id"], "area_ha": r["area_ha"], "status": r.get("status", "")}} for _, r in df.iterrows()]
     return json.dumps({"type": "FeatureCollection", "features": features}).encode('utf-8')
 
 # =========================================================
@@ -312,50 +290,69 @@ def get_hazard_vectors(sector):
     vessels, mammals = [], []
     for _ in range(10): vessels.append({"lat": base_lat + random.uniform(-0.5, 0.5), "lon": base_lon + random.uniform(-0.8, 0.8)})
     for _ in range(3): mammals.append({"lat": base_lat + random.uniform(-0.2, 0.2), "lon": base_lon + random.uniform(-0.4, 0.4)})
-    weather_poly = [[[-120.2, 33.6], [-119.6, 33.6], [-119.6, 34.2], [-120.2, 34.2]]] if sector == "Channel Islands" else [[[-158.2, 21.1], [-157.7, 21.1], [-157.7, 21.5], [-158.2, 21.5]]]
-    return pd.DataFrame(vessels), pd.DataFrame(mammals), [{"polygon": weather_poly[0]}]
+    
+    if sector == "Channel Islands":
+        weather_poly = [[[-120.2, 33.6], [-119.6, 33.6], [-119.6, 34.2], [-120.2, 34.2], [-120.2, 33.6]]]
+        restricted_poly = [[[-120.5, 33.8], [-119.5, 33.8], [-119.5, 34.2], [-120.5, 34.2], [-120.5, 33.8]]]
+        allowed_poly = [[[-119.5, 33.5], [-118.5, 33.5], [-118.5, 34.0], [-119.5, 34.0], [-119.5, 33.5]]]
+    else:
+        weather_poly = [[[-158.2, 21.1], [-157.7, 21.1], [-157.7, 21.5], [-158.2, 21.5], [-158.2, 21.1]]]
+        restricted_poly = [[[-158.3, 21.4], [-157.8, 21.4], [-157.8, 21.7], [-158.3, 21.7], [-158.3, 21.4]]]
+        allowed_poly = [[[-157.8, 21.0], [-157.3, 21.0], [-157.3, 21.5], [-157.8, 21.5], [-157.8, 21.0]]]
+        
+    return pd.DataFrame(vessels), pd.DataFrame(mammals), [{"polygon": weather_poly[0]}], [{"polygon": restricted_poly[0]}], [{"polygon": allowed_poly[0]}]
 
-def run_mcda_deconfliction(sites, vessels_df, mammals_df, weather_data):
+def run_mcda_deconfliction(sites, vessels_df, mammals_df, weather_data, restricted_data, allowed_data):
     R = 6371 
     processed = []
     for site in sites:
         site['status'], site['color'] = "CLEARED: Optimal", [16, 185, 129, 230] 
-        for w in weather_data:
-            poly = w.get('polygon', [])
+        
+        for r_zone in restricted_data:
+            poly = r_zone.get('polygon', [])
             if poly:
                 lons, lats = [p[0] for p in poly], [p[1] for p in poly]
                 if min(lons) <= site.get('lon', 0) <= max(lons) and min(lats) <= site.get('lat', 0) <= max(lats):
-                    site['status'], site['color'] = "HAZARD: Storm Risk", [239, 68, 68, 230]
+                    site['status'], site['color'] = "HAZARD: Restricted No-Take Zone", [239, 68, 68, 230]
                     break
+                    
+        if site['status'].startswith("CLEARED"):
+            for w in weather_data:
+                poly = w.get('polygon', [])
+                if poly:
+                    lons, lats = [p[0] for p in poly], [p[1] for p in poly]
+                    if min(lons) <= site.get('lon', 0) <= max(lons) and min(lats) <= site.get('lat', 0) <= max(lats):
+                        site['status'], site['color'] = "HAZARD: Storm Shearing Risk", [249, 115, 22, 230]
+                        break
+                        
         if site['status'].startswith("CLEARED"):
             for _, ship in vessels_df.iterrows():
                 a = math.sin(math.radians(ship.get('lat', 0) - site.get('lat', 0))/2)**2 + math.cos(math.radians(site.get('lat', 0))) * math.cos(math.radians(ship.get('lat', 0))) * math.sin(math.radians(ship.get('lon', 0) - site.get('lon', 0))/2)**2
                 if R * (2 * math.atan2(math.sqrt(a), math.sqrt(1-a))) < 2.5:
                     site['status'], site['color'] = "HAZARD: Shipping Lane", [245, 158, 11, 230]
                     break
+                    
         if site['status'].startswith("CLEARED"):
             for _, whale in mammals_df.iterrows():
                 a = math.sin(math.radians(whale.get('lat', 0) - site.get('lat', 0))/2)**2 + math.cos(math.radians(site.get('lat', 0))) * math.cos(math.radians(whale.get('lat', 0))) * math.sin(math.radians(whale.get('lon', 0) - site.get('lon', 0))/2)**2
                 if R * (2 * math.atan2(math.sqrt(a), math.sqrt(1-a))) < 4.0:
                     site['status'], site['color'] = "HAZARD: Mammal Corridor", [139, 92, 246, 230]
                     break
+                    
         processed.append(site)
     return pd.DataFrame(processed)
 
 # =========================================================
 # 6. HEADER & SIDEBAR CONTROLS
 # =========================================================
-# Apply Leaf Tooltip to Main Title
 st.markdown(f"<h1 style='color: #06b6d4; font-weight: 700; margin-bottom: 0;'>BLUE 42 <span style='color:#F8FAFC; font-weight: 300;'>| Planetary Capital OS</span> {leaf_info('A planetary-scale biogeochemical operating system fusing frontier AI and Earth telemetry to automate global marine conservation.')}</h1>", unsafe_allow_html=True)
 st.markdown(f"<p style='color: #94A3B8; font-size: 1.1rem; margin-top: -10px;'><span class='blinking'>●</span> {'GEE UPLINK SECURE' if ee_connected else 'MCDA ENGINE ACTIVE'} | VERIFIABLE KELP FRAMEWORK</p>", unsafe_allow_html=True)
 
-# Apply Leaf Tooltip to Sidebar MCDA Engine
 st.sidebar.markdown(f"<h2 style='color:#0EA5E9; font-weight:600; display:flex; align-items:center;'>MCDA ENGINE {leaf_info('Multi-Criteria Decision Analysis (MCDA) synthesizes overlapping biogeochemical and socioeconomic data layers to calculate the absolute optimal coordinates for planetary interventions.')}</h2>", unsafe_allow_html=True)
 sector = st.sidebar.selectbox("Target Bioregion", ["Channel Islands, CA", "Hawaiian Archipelago, HI"])
 sector_key = "Channel Islands" if "Channel" in sector else "Hawaii"
 
 st.sidebar.markdown("---")
-# Apply Leaf Tooltip to Pareto Optimization
 st.sidebar.markdown(f"<h3 style='display:flex; align-items:center;'>🎛️ Pareto Optimization {leaf_info('A mathematical framework that forces the system to find the optimal trade-off frontier between competing global priorities: Carbon Drawdown, Coastal Shielding, and Fishery Revival.')}</h3>", unsafe_allow_html=True)
 st.sidebar.caption("Adjust priorities to recalculate viable kelp sites based on economic needs.")
 weight_carbon = st.sidebar.slider("Carbon Sequestration", 0.0, 1.0, 0.8)
@@ -366,13 +363,13 @@ raw_sites_cached = get_scientific_kelp_data(sector_key)
 if not raw_sites_cached: raw_sites_cached = []
 raw_sites = copy.deepcopy(raw_sites_cached)
 
-vessels_df, mammals_df, weather_data = get_hazard_vectors(sector_key)
+vessels_df, mammals_df, weather_data, restricted_data, allowed_data = get_hazard_vectors(sector_key)
 
 for site in raw_sites:
-    site['pareto_score'] = round((site.get('co2_tons',0) * weight_carbon) + (site.get('averted_damage_millions', 0) * weight_coastal * 10) + (site.get('biodiversity_score', 0) * weight_bio), 1)
+    site['pareto_score'] = round((site.get('co2_tons', 0) * weight_carbon) + (site.get('averted_damage_millions', 0) * weight_coastal * 10) + (site.get('biodiversity_score', 0) * weight_bio), 1)
 
 raw_sites = sorted(raw_sites, key=lambda x: x.get('pareto_score', 0), reverse=True)
-kelp_df = run_mcda_deconfliction(raw_sites, vessels_df, mammals_df, weather_data)
+kelp_df = run_mcda_deconfliction(raw_sites, vessels_df, mammals_df, weather_data, restricted_data, allowed_data)
 safe_df = kelp_df[kelp_df['status'].str.contains("CLEARED")] if not kelp_df.empty else pd.DataFrame()
 
 # =========================================================
@@ -390,7 +387,6 @@ math2 = "<span class='math-var'>Area (HA)</span><br><span class='math-op'>×</sp
 math3 = "<span class='math-var'>Σ [ Area (HA)</span><br><span class='math-op'>×</span> <span class='math-var'>Wave Energy (kW/m)</span><br><span class='math-op'>×</span> <span class='math-var'>0.15 (Atten. Coeff) ]</span><br><div class='math-divider'>━━━━━━━━━</div><span class='math-hl'>Averted Damage ($)</span>"
 math4 = "<span class='math-var'>(CO2e MT × $150)</span><br><span class='math-op'>+</span> <span class='math-var'>(Biomass MT × $300)</span><br><span class='math-op'>+</span> <span class='math-var'>(Net HA × $1500)</span><br><div class='math-divider'>━━━━━━━━━</div><span class='math-hl'>Stacked Annual ROI</span>"
 
-# Apply Leaf Tooltips inside the Flip Card Titles
 col1.markdown(make_flip_card(f"Net Viable Kelp Area {leaf_info('The gross geospatial area mathematically cleared of all shipping, severe weather, and cetacean migration hazards.')}", f"{v_area:.1f} HA", "Mathematically Deconflicted", math1), unsafe_allow_html=True)
 col2.markdown(make_flip_card(f"Harvestable Yield {leaf_info('Projected wet biomass of Macrocystis pyrifera, factoring in depth profiles, thermal modifiers, and localized nutrient upwelling proxies.')}", f"{v_bio:.1f} MT", "Macrocystis Wet Biomass", math2), unsafe_allow_html=True)
 col3.markdown(make_flip_card(f"Averted Infrastructure Damage {leaf_info('Quantifies the infrastructural savings achieved by utilizing kelp canopies to attenuate destructive hydrodynamic wave energy during severe storm events.')}", f"${v_dmg:.1f}M", "Via Wave Attenuation", math3), unsafe_allow_html=True)
@@ -404,9 +400,12 @@ st.markdown("<br>", unsafe_allow_html=True)
 col_map, col_ops = st.columns([6, 4], gap="large")
 
 with col_map:
-    # Apply Leaf Tooltip to the Map Header
     st.markdown(f"<h4 style='display:flex; align-items:center;'>🌊 Spatial Deconfliction Map {leaf_info('A dynamic WebGL rendering of the ocean digital twin, displaying live vectors of maritime hazards and algorithmically cleared biological growth zones.')}</h4>", unsafe_allow_html=True)
     layers = []
+    layers.append(pdk.Layer("PolygonLayer", data=restricted_data, get_polygon="polygon", get_fill_color="[239, 68, 68, 20]", get_line_color="[239, 68, 68, 200]", line_width_min_pixels=2))
+    layers.append(pdk.Layer("PolygonLayer", data=allowed_data, get_polygon="polygon", get_fill_color="[16, 185, 129, 20]", get_line_color="[16, 185, 129, 200]", line_width_min_pixels=2))
+    layers.append(pdk.Layer("PolygonLayer", data=weather_data, get_polygon="polygon", get_fill_color="[249, 115, 22, 30]", get_line_color="[249, 115, 22, 200]", line_width_min_pixels=2))
+    
     if not kelp_df.empty:
         layers.append(pdk.Layer("ScatterplotLayer", data=kelp_df, get_position="[lon, lat]", get_color="color", get_radius=1500, pickable=True))
         layers.append(pdk.Layer("TextLayer", data=kelp_df, get_position="[lon, lat]", get_text="id", get_color="[255, 255, 255, 200]", get_size=16, get_alignment_baseline="'bottom'"))
@@ -414,17 +413,16 @@ with col_map:
         layers.append(pdk.Layer("ScatterplotLayer", data=vessels_df, get_position="[lon, lat]", get_color="[148, 163, 184, 150]", get_radius=800, pickable=False))
     if not mammals_df.empty:
         layers.append(pdk.Layer("ScatterplotLayer", data=mammals_df, get_position="[lon, lat]", get_color="[139, 92, 246, 150]", get_radius=4000, pickable=False))
-    layers.append(pdk.Layer("PolygonLayer", data=weather_data, get_polygon="polygon", get_fill_color="[239, 68, 68, 40]", get_line_color="[239, 68, 68, 200]"))
     
     tt_html = "<div style='font-family:Space Grotesk; background:rgba(15,23,42,0.9); padding:10px; border-radius:8px; border:1px solid #06b6d4;'><b>{id}</b><br/>Pareto Score: {pareto_score}<br/>Area: {area_ha} HA<br/><span style='color:#10B981;'>Status: <b>{status}</b></span><br/>NPP: {biomass_tons} MT</div>"
     view_state = pdk.ViewState(latitude=33.95 if sector_key == "Channel Islands" else 21.3, longitude=-119.8 if sector_key == "Channel Islands" else -157.9, zoom=8.5, pitch=45, bearing=15)
     
-    st.pydeck_chart(pdk.Deck(layers=layers, initial_view_state=view_state, map_style="carto-dark", tooltip={"html": tt_html}), use_container_width=True, height=600)
+    st.pydeck_chart(pdk.Deck(layers=layers, initial_view_state=view_state, map_style=None, tooltip={"html": tt_html}), use_container_width=True, height=600)
 
 with col_ops:
     sel_site, site_data = None, None
     if not kelp_df.empty:
-        st.info("☝️ **What is this?** The AI has mathematically deconflicted several viable ocean zones. Select a specific site from the map to drill down into its localized growth metrics, 10-year financial ROI, and satellite verification.")
+        st.info("☝️ **What is this?** The AI has deconflicted viable ocean zones. Select a specific site from the map to drill down into its localized growth metrics, financial ROI, and satellite verification.")
         sel_site = st.selectbox("🎯 Target Site for Deep-Dive Analysis:", kelp_df['id'].tolist(), label_visibility="collapsed")
         site_data = kelp_df[kelp_df['id'] == sel_site].iloc[0]
 
@@ -437,15 +435,14 @@ with col_ops:
         st.caption("Giant Kelp sequesters carbon 20x faster than terrestrial forests. We automate site selection to unlock capital allocation.")
         st.markdown("**2. Adaptation (Coastal & Economic Resilience)**")
         st.caption("Kelp buffers coastlines against storm surges, saving billions in infrastructure, and generates thousands of coastal blue-economy jobs.")
-        st.markdown("**3. Protection (Do No Harm)**")
-        st.caption("The MCDA dynamically deconflicts kelp sites from active shipping lanes, severe weather, and cetacean migration corridors.")
+        st.markdown("**3. Protection & Compliance (Do No Harm)**")
+        st.caption("The MCDA dynamically enforces marine jurisdiction, deconflicting kelp sites from No-Take Marine Sanctuaries, shipping lanes, and cetacean migration corridors.")
 
         if not safe_df.empty:
             st.download_button("📥 Export Verified Portfolio (GeoJSON)", data=export_to_geojson(safe_df), file_name='Blue42_Portfolio.geojson', mime='application/geo+json', use_container_width=True)
 
     with t1:
         st.markdown("<br>", unsafe_allow_html=True)
-        # Apply Leaf Tooltip to Analytics Header
         st.markdown(f"<h5 style='display:flex; align-items:center;'>Kelp Growth & Weather Analytics {leaf_info('A depth-resolved analysis plotting the intersection of the thermocline (temperature drop) and nutricline (nitrate increase) to guarantee biological viability.')}</h5>", unsafe_allow_html=True)
 
         if site_data is not None and PLOTLY_AVAILABLE:
@@ -467,7 +464,6 @@ with col_ops:
             
     with t2:
         st.markdown("<br>", unsafe_allow_html=True)
-        # Apply Leaf Tooltip to TEA Header
         st.markdown(f"<h5 style='display:flex; align-items:center;'>10-Year Techno-Economic Assessment {leaf_info('A rigorous 10-year financial projection modeling CAPEX and OPEX against the stacked revenue streams of verified Natural Capital.')}</h5>", unsafe_allow_html=True)
         st.caption("**Value Stacking:** Combines Premium Blue Carbon (\\$150/MT), Bioplastic-Grade Harvest (\\$300/MT), and Resilience Subsidies (\\$1,500/HA).")
         
@@ -493,7 +489,6 @@ with col_ops:
                 st.success(f"**Projected Break-Even:** Year {break_even:.1f} | **10-Yr Net Profit:** \\${(revenues[-1]-costs[-1]):,.2f}")
                 
             st.divider()
-            # Apply Leaf Tooltip to Macro-Economics Header
             st.markdown(f"<h6 style='display:flex; align-items:center;'>🌍 Macro-Economics: Planetary Scale-Up {leaf_info('A macroeconomic simulator demonstrating how algorithmic spatial verification unlocks gigaton-scale carbon markets and mobilizes sidelined institutional capital.')}</h6>", unsafe_allow_html=True)
             
             target_scale_ha = st.slider("Target Deployment Area (Hectares)", min_value=10000, max_value=50000000, value=1000000, step=10000, label_visibility="collapsed")
@@ -516,7 +511,6 @@ with col_ops:
 
     with t_mrv:
         st.markdown("<br>", unsafe_allow_html=True)
-        # Apply Leaf Tooltip to MRV Header
         st.markdown(f"<h5 style='display:flex; align-items:center;'>Measurement, Reporting, & Verification {leaf_info('Continuous cryptographic ingestion of multispectral satellite imagery to guarantee long-term carbon permanence and eliminate ESG greenwashing.')}</h5>", unsafe_allow_html=True)
         
         if site_data is not None and "CLEARED" in site_data.get('status', ''):
@@ -530,9 +524,9 @@ with col_ops:
                 fig3.update_layout(template="plotly_dark", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", yaxis_title="Sentinel-2 Regrowth (%)", margin=dict(l=0, r=0, t=10, b=0), height=220)
                 st.plotly_chart(fig3, use_container_width=True)
             
-            if st.button("Cryptographically Sign & Mint Credits", use_container_width=True):
+            if st.button("Cryptographically Sign & Mint Credits to Ledger", use_container_width=True):
                 tx_hash = hashlib.sha256(str(time.time()).encode()).hexdigest()
-                st.success(f"✅ Verified via satellite. {site_data.get('co2_tons', 0)} MT CO2e minted.")
+                st.success(f"✅ Biomass verified via satellite. {site_data.get('co2_tons', 0)} MT CO2e minted.")
                 st.markdown(f"<div class='crypto-box'>TX_HASH: {tx_hash}</div>", unsafe_allow_html=True)
                 st.balloons()
         else:
@@ -540,7 +534,6 @@ with col_ops:
 
     with t3:
         st.markdown("<br>", unsafe_allow_html=True)
-        # Apply Leaf Tooltip to AI Audit Header
         st.markdown(f"<h5 style='display:flex; align-items:center;'>Responsible AI Compliance Audit {leaf_info('An agentic reasoning protocol that forces the AI to output confidence intervals and declare known unknowns to ensure responsible, human-in-the-loop oversight.')}</h5>", unsafe_allow_html=True)
 
         if site_data is not None:
@@ -568,7 +561,7 @@ with col_ops:
                             st.session_state.library.append({"id": sel_site, "pdf": pdf, "time": timestamp, "hash": signature})
                             st.success("✅ Deterministic Telemetry Audit Generated.")
                         
-            for doc in reversed(st.session_state.library):
+            for idx, doc in enumerate(reversed(st.session_state.library)):
                 if 'pdf' in doc and doc['pdf']:
                     st.markdown(f"<div class='crypto-box'><b>LEDGER RECEIPT</b><br>ID: {doc['id']}<br>TIME: {doc['time']}<br>SHA-256: {doc['hash']}</div>", unsafe_allow_html=True)
                     st.download_button(f"📥 Download Verified PDF", data=doc['pdf'], file_name=f"TEA_Audit_{doc['id']}.pdf", mime="application/pdf", key=f"dl_{doc['hash']}", use_container_width=True)
