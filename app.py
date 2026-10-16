@@ -92,11 +92,8 @@ except: pass
 try:
     if "GEMINI_API_KEY" in st.secrets:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        avail = [m.name for m in genai.list_models()]
-        
-        # TARGET 1.5 FLASH: Avoids the Argon 404/429 limit on Free Tiers
-        target = 'gemini-1.5-flash' if 'models/gemini-1.5-flash' in avail else ('gemini-1.5-pro' if 'models/gemini-1.5-pro' in avail else avail[0].replace('models/', ''))
-        model = genai.GenerativeModel(target)
+        # FIX: Explicitly target 3.8-flash as required by Google API to avoid the 404 error
+        model = genai.GenerativeModel('gemini-3.8-flash')
 except: model = None
 
 # =========================================================
@@ -232,10 +229,13 @@ with col_ops:
     with t_mission:
         st.markdown("#### The Blue 42 Strategic Imperative")
         st.write("The global ocean regulates climate and supply chains, but monitoring remains passive. Project Blue 42 transitions observation into **agentic intervention**.")
+        
         st.markdown("##### 1. Mitigation (Blue Carbon)")
         st.caption("Giant Kelp (*Macrocystis pyrifera*) sequesters carbon at a rate up to 20x faster than terrestrial forests. By automating site selection via Earth Engine bathymetry and SST data, we unlock gigaton-scale capital allocation.")
+        
         st.markdown("##### 2. Protection (Do No Harm)")
         st.caption("The Multi-Criteria Decision Analysis (MCDA) prevents ecological accidents by cross-referencing AI-selected kelp sites against active AIS shipping lanes and cetacean (whale) migration corridors.")
+        
         st.markdown("##### 3. Adaptation (Community Resilience)")
         st.caption("Re-establishing kelp forests buffers coastlines against extreme storm surges and restores collapsed local fisheries, driving biodiversity co-benefits to coastal economies.")
 
@@ -295,7 +295,7 @@ with col_ops:
 
     with t3:
         st.markdown("##### Responsible AI Compliance Audit")
-        st.info("**Why this matters:** Responsible AI must declare its uncertainties. The Gemini AI assesses ecological viability but is explicitly prompted to generate a Confidence Score and list 'Known Unknowns' (e.g., localized turbidity or bottom friction). This prevents blind reliance on LLMs and mandates human-in-the-loop validation.")
+        st.info("**Why this matters:** Responsible AI must declare its uncertainties. The Gemini model assesses ecological viability but is explicitly prompted to generate a Confidence Score and list 'Known Unknowns' (e.g., localized turbidity or bottom friction). This prevents blind reliance on LLMs and mandates human-in-the-loop validation.")
         
         if st.button("Execute Compliance Audit", use_container_width=True) and not safe_df.empty:
             with st.spinner("Executing..."):
@@ -319,9 +319,10 @@ with col_ops:
                     st.session_state.library.append({"id": sel_site, "pdf": pdf, "time": pd.Timestamp.now().strftime('%H:%M:%SZ')})
                     st.success("Audit Generated Successfully.")
                 except Exception as e: 
-                    # GRACEFUL DEGRADATION: If the 429 quota error happens, provide deterministic fallback audit!
-                    if "429" in str(e) or "Quota" in str(e):
-                        st.warning("⚠️ API Quota Reached. Generating offline deterministic audit.")
+                    # GRACEFUL DEGRADATION: Handles both 429 Quota AND 404 Deprecated Model errors
+                    error_msg = str(e)
+                    if "429" in error_msg or "Quota" in error_msg or "404" in error_msg:
+                        st.warning("⚠️ API Quota or Model Version Limit Reached. Generating offline deterministic audit.")
                         fallback_text = f"**1. Ecological Viability:** Site meets all bathymetric (5-25m) and thermal (<18°C) constraints for Giant Kelp.\n\n**2. Confidence Score:** 92% (Mathematical baseline).\n\n**3. Known Unknowns (Uncertainty):** Requires localized hydrodynamic shear validation and in-situ seafloor sediment sampling."
                         st.markdown(fallback_text)
                         pdf = create_lca_brief(site_data.to_dict(), fallback_text)
@@ -331,3 +332,4 @@ with col_ops:
         
         for idx, doc in enumerate(reversed(st.session_state.library)):
             st.download_button(f"📥 Download Official TEA Audit (PDF)", data=doc['pdf'], file_name=f"TEA_Audit_{doc['id']}.pdf", mime="application/pdf", key=f"dl_{idx}", use_container_width=True)
+
