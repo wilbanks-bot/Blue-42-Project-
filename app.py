@@ -36,6 +36,7 @@ st.markdown(f"""
     .stButton>button {{ border-radius: 4px; font-weight: 600; background-color: {card_bg}; border: 1px solid {accent_teal}; color: white; }}
     .stButton>button:hover {{ border-color: {accent_green}; color: {accent_green}; }}
     h1, h2, h3, h4, h5 {{ font-family: 'Inter', sans-serif; font-weight: 300; tracking: wide; }}
+    /* Hide Streamlit Branding */
     #MainMenu {{visibility: hidden;}} footer {{visibility: hidden;}}
 </style>
 """, unsafe_allow_html=True)
@@ -137,7 +138,7 @@ def get_scientific_kelp_data(sector):
             if sites: return sites
         except Exception as e: print(e)
 
-    # MOCK DATA
+    # MOCK DATA (Fallback if Earth Engine times out or isn't authed)
     base_lat, base_lon = (34.0, -119.8) if sector == "Channel Islands" else (21.3, -157.9)
     mock = []
     for i in range(8):
@@ -243,8 +244,6 @@ with col_ops:
 
     with t1:
         st.markdown("##### Biogeochemical Profiling")
-        
-        # EXPLANATION BLOCK
         st.info("**Why this matters:** Giant Kelp relies on cold, nutrient-rich upwelling. The depth profile chart below plots the thermocline (falling temperatures) against the nutricline (rising nitrate proxy). If these intersect favorably within the 5m-25m depth range, the site is highly viable for kelp sporophyte attachment and growth.")
         
         if not safe_df.empty:
@@ -274,11 +273,11 @@ with col_ops:
             
     with t2:
         st.markdown("##### 10-Year Techno-Economic Assessment")
-        
-        # EXPLANATION BLOCK
         st.info("**Why this matters:** Institutional capital requires verifiable returns. This TEA models the initial capital expenditure (CAPEX) for seeding/anchors against ongoing operational costs (OPEX). Revenue is calculated by multiplying verified sequestration tonnage by standard voluntary carbon market pricing (e.g., $85/MT CO2e).")
         
         if not safe_df.empty:
+            # We reference site_data assigned in Tab 1, which works perfectly here 
+            # because Streamlit executes scripts top-to-bottom on every interaction.
             capex = site_data['area_ha'] * 15000  
             opex_yr = site_data['area_ha'] * 2000 
             rev_yr = site_data['co2_tons'] * 85   
@@ -301,8 +300,6 @@ with col_ops:
 
     with t3:
         st.markdown("##### Responsible AI Compliance Audit")
-        
-        # EXPLANATION BLOCK
         st.info("**Why this matters:** Responsible AI must declare its uncertainties. The Gemini 4 Argon model assesses ecological viability but is explicitly prompted to generate a Confidence Score and list 'Known Unknowns' (e.g., localized turbidity or bottom friction). This prevents blind reliance on LLMs and mandates human-in-the-loop validation.")
         
         if st.button("Execute Argon Compliance Audit", use_container_width=True) and not safe_df.empty:
@@ -323,9 +320,23 @@ with col_ops:
                         ai_text = "AI Offline. System confirms spatial deconfliction. Uncertainty: Missing local hydrodynamic validation."
                     
                     st.markdown(ai_text)
+                    
+                    # Generate the PDF and link it to sel_site
                     pdf = create_lca_brief(site_data.to_dict(), ai_text)
-                    st.session_state.library.append({"id": target_site, "pdf": pdf, "time": pd.Timestamp.now().strftime('%H:%M:%SZ')})
-                except Exception as e: st.error("Audit generation failed.")
+                    st.session_state.library.append({"id": sel_site, "pdf": pdf, "time": pd.Timestamp.now().strftime('%H:%M:%SZ')})
+                    st.success("Audit Generated Successfully.")
+                    
+                except Exception as e: 
+                    # If it fails, print the exact Python/API error trace so you can debug
+                    st.error(f"Audit generation failed: {e}")
         
+        # Display all saved audits for download
         for idx, doc in enumerate(reversed(st.session_state.library)):
-            st.download_button(f"📥 Download Official TEA Audit (PDF)", data=doc['pdf'], file_name=f"TEA_Audit_{doc['id']}.pdf", mime="application/pdf", key=f"dl_{idx}", use_container_width=True)
+            st.download_button(
+                label=f"📥 Download Official TEA Audit (PDF)", 
+                data=doc['pdf'], 
+                file_name=f"TEA_Audit_{doc['id']}.pdf", 
+                mime="application/pdf", 
+                key=f"dl_{idx}", 
+                use_container_width=True
+            )
