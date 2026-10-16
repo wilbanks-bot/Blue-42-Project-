@@ -74,7 +74,7 @@ st.markdown("""
     .leaf-tooltip:hover .tooltiptext { visibility: visible; opacity: 1; transform: translateY(0); }
 
     /* 3D Flip Card Container - STRICT IN-PLACE FIX, FONT SCALING & SOLID BACKGROUND */
-    .flip-card { background-color: transparent; height: 210px; perspective: 1000px; margin-bottom: 15px; }
+    .flip-card { background-color: rgba(30, 41, 59, 0.9); height: 210px; perspective: 1000px; margin-bottom: 15px; }
     .flip-card-inner { 
         position: relative; width: 100%; height: 100%; text-align: center; 
         transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1); 
@@ -116,7 +116,7 @@ st.markdown("""
     .metric-val { font-size: 1.5rem; font-weight: 700; color: #06b6d4; line-height: 1.2; }
     .metric-sub { font-size: 0.75rem; color: #10B981; margin-top: 4px; font-weight: 600; }
 
-    header { background-color: transparent !important; }
+    header { background-color: rgba(30, 41, 59, 0.9) !important; }
     #MainMenu {visibility: hidden;} footer {visibility: hidden;} 
     .blinking { animation: blinker 1.5s linear infinite; color: #10B981; font-weight: bold; }
     @keyframes blinker { 50% { opacity: 0; } }
@@ -147,9 +147,10 @@ def make_flip_card(title, value, sub, math_html):
 # 2. CUSTOM ANIMATIONS (KELP & HANDSHAKE)
 # =========================================================
 def kelp_animation():
+    # MODIFIED: Width restricted to 25vw, positioned bottom-left, z-index elevated, opacity set to 0.65
     kelp_html = """
     <style>
-        .ocean-animation-container { position: fixed; bottom: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 99999; overflow: hidden; }
+        .ocean-animation-container { position: fixed; bottom: 0; left: 0; width: 25vw; height: 100vh; pointer-events: none; z-index: 999999; overflow: visible; opacity: 0.65; }
         .kelp-stalk { position: absolute; bottom: 0; width: 60px; transform-origin: bottom center; transform: scaleY(0); opacity: 0; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; }
         .kelp-stem { position: absolute; bottom: 0; width: 6px; height: 100%; background: linear-gradient(to top, #364219, #6b7a2d, #8f9c3e); border-radius: 4px; z-index: 1; }
         .kelp-frond-left, .kelp-frond-right { position: relative; height: 12px; background: linear-gradient(to right, #5a6b25, #7a8b35); border-radius: 50% 10% 50% 10%; z-index: 2; margin: 15px 0; }
@@ -166,7 +167,7 @@ def kelp_animation():
     <div class="ocean-animation-container">
     """
     for _ in range(15):
-        left = random.randint(2, 55) 
+        left = random.randint(2, 90) 
         delay = random.uniform(0.1, 1.5)
         duration = random.uniform(3.5, 5.5)
         sway_dir = random.choice(["swayKelp1", "swayKelp2"])
@@ -182,7 +183,7 @@ def kelp_animation():
         kelp_html += '</div></div>'
         
     for _ in range(25):
-        left = random.randint(1, 55)
+        left = random.randint(1, 95)
         delay = random.uniform(0, 4)
         size = random.uniform(0.5, 1.5)
         kelp_html += f'<div class="bubble" style="left: {left}%; animation-delay: {delay}s; font-size: {size}rem;">🫧</div>'
@@ -254,34 +255,30 @@ def create_provenance_pdf(site: dict) -> bytes:
     def add_metric_section(title, value, formula, source, context):
         """Helper to neatly lay out explainable data blocks in the PDF"""
         pdf.set_font("Arial", "B", 11)
-        pdf.set_text_color(6, 182, 212) # Streamlit cyan-ish color
+        pdf.set_text_color(6, 182, 212) 
         pdf.cell(0, 8, title, ln=True)
         pdf.set_text_color(0, 0, 0)
         
-        # Value
         pdf.set_font("Arial", "B", 10)
         pdf.cell(30, 6, "Calculated:", border=0)
         pdf.set_font("Arial", "", 10)
         pdf.cell(0, 6, str(value), ln=True)
         
-        # Formula
         pdf.set_font("Arial", "B", 10)
         pdf.cell(30, 6, "Formula:", border=0)
         pdf.set_font("Courier", "", 9)
         pdf.multi_cell(0, 6, formula)
         
-        # Source
         pdf.set_font("Arial", "B", 10)
         pdf.cell(30, 6, "Data Source:", border=0)
         pdf.set_font("Arial", "", 9)
         pdf.multi_cell(0, 6, source)
         
-        # Context
         pdf.set_font("Arial", "I", 9)
         pdf.multi_cell(0, 6, context)
         pdf.ln(4)
 
-    # 1. Blue Collar Jobs
+    # Metrics
     jobs = site.get('jobs_created', 0)
     fleet = int(jobs * 0.4)
     proc = int(jobs * 0.4)
@@ -293,7 +290,6 @@ def create_provenance_pdf(site: dict) -> bytes:
         "Estimates direct and indirect job creation based on standard kelp aquaculture labor requirements per hectare, including vessel operations and onshore processing facilities."
     )
     
-    # 2. Acidification Halo
     add_metric_section(
         "Ocean Acidification Halo",
         f"{site.get('halo_ha', 0)} HA Shellfish Protected",
@@ -302,7 +298,6 @@ def create_provenance_pdf(site: dict) -> bytes:
         "Calculates the localized pH buffering effect of kelp photosynthesis, which creates an alkalized protective 'halo' around the farm, preventing shell dissolution in proximate bivalve aquaculture."
     )
     
-    # 3. Nitrogen Extracted
     add_metric_section(
         "Nitrogen Extracted",
         f"{site.get('nitrogen_tons', 0)} MT Runoff Remediated",
@@ -311,7 +306,6 @@ def create_provenance_pdf(site: dict) -> bytes:
         "Quantifies the amount of anthropogenic nitrogen (agricultural runoff, wastewater effluent) absorbed into Macrocystis pyrifera tissue during the grow-out phase."
     )
     
-    # 4. Sinking Logistics (Distance)
     add_metric_section(
         "Distance to Abyssal Trench",
         f"{site.get('abyssal_dist_km', 0)} km",
@@ -320,7 +314,6 @@ def create_provenance_pdf(site: dict) -> bytes:
         "Identifies the shortest navigable path to abyssal depths (>1000m) required to lock biomass below the active thermocline and mathematically guarantee 1000+ year carbon permanence."
     )
     
-    # 5. Sinking Logistics (Cost)
     add_metric_section(
         "Estimated Sinking Fuel Cost",
         f"${site.get('sinking_cost', 0):,.2f} USD Logistics OPEX",
@@ -329,7 +322,6 @@ def create_provenance_pdf(site: dict) -> bytes:
         "Calculates the operational expenditure (OPEX) of chartering maritime tow vessels to transport the harvested biomass to the abyssal drop-off zone."
     )
     
-    # Signature Footer
     timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
     sig = generate_sha256_signature(site, timestamp)
     pdf.set_font("Arial", "B", 10)
@@ -342,7 +334,6 @@ def create_provenance_pdf(site: dict) -> bytes:
     return pdf.output(dest="S").encode("latin-1")
 
 def create_lca_brief(site: dict, ai_analysis: str, signature: str, timestamp: str) -> bytes:
-    # Existing AI Brief generator code preserved
     if not FPDF_AVAILABLE: return b""
     pdf = FPDF()
     pdf.add_page()
@@ -529,7 +520,7 @@ if "Pacific" in sector:
     </div>
     """, unsafe_allow_html=True)
 
-# AWARD-WINNING FEATURE: 4D Stress-Test Simulator
+# SPECIAL FEATURE: 4D Stress-Test Simulator
 st.sidebar.markdown("---")
 st.sidebar.markdown(f"<h3 style='display:flex; align-items:center; color:#ef4444;'>🌪️ 4D Stress-Test Simulator {leaf_info('Simulates catastrophic environmental events to mathematically de-risk the portfolio for institutional investors.')}</h3>", unsafe_allow_html=True)
 stress_scenario = st.sidebar.radio("Environmental Conditions", ["Nominal (Baseline)", "Category 4 Storm Event", "Marine Heatwave (El Niño)"])
@@ -601,6 +592,19 @@ col_map, col_ops = st.columns([6, 4], gap="large")
 
 with col_map:
     st.markdown(f"<h4 style='display:flex; align-items:center;'>🌊 3D Spatial Deconfliction Map {leaf_info('A dynamic WebGL rendering of the ocean digital twin. Kelp sites are mapped in 3D to visualize volume and bathymetry.')}</h4>", unsafe_allow_html=True)
+    
+    # SPECIAL FEATURE: Integrated HUD Legend overlaid directly under the map title
+    legend_html = """
+    <div style="display: flex; flex-wrap: wrap; gap: 15px; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.2); margin-bottom: 10px; margin-top: -5px;">
+        <div style="display: flex; align-items: center; font-size: 0.75rem; color: #F8FAFC;"><span style="display: inline-block; width: 10px; height: 10px; background: rgb(16, 185, 129); border-radius: 2px; margin-right: 6px;"></span> Optimal Kelp Zone</div>
+        <div style="display: flex; align-items: center; font-size: 0.75rem; color: #F8FAFC;"><span style="display: inline-block; width: 10px; height: 10px; background: rgba(239, 68, 68, 0.4); border: 1px solid rgb(239, 68, 68); border-radius: 2px; margin-right: 6px;"></span> No-Take Zone</div>
+        <div style="display: flex; align-items: center; font-size: 0.75rem; color: #F8FAFC;"><span style="display: inline-block; width: 10px; height: 10px; background: rgba(249, 115, 22, 0.4); border: 1px solid rgb(249, 115, 22); border-radius: 2px; margin-right: 6px;"></span> Storm Track</div>
+        <div style="display: flex; align-items: center; font-size: 0.75rem; color: #F8FAFC;"><span style="display: inline-block; width: 10px; height: 10px; background: rgb(148, 163, 184); border-radius: 50%; margin-right: 6px;"></span> Shipping Vessel</div>
+        <div style="display: flex; align-items: center; font-size: 0.75rem; color: #F8FAFC;"><span style="display: inline-block; width: 10px; height: 10px; background: rgb(139, 92, 246); border-radius: 50%; margin-right: 6px;"></span> Mammal Corridor</div>
+    </div>
+    """
+    st.markdown(legend_html, unsafe_allow_html=True)
+
     layers = []
     layers.append(pdk.Layer("PolygonLayer", data=restricted_data, get_polygon="polygon", get_fill_color="[239, 68, 68, 20]", get_line_color="[239, 68, 68, 200]", line_width_min_pixels=2))
     layers.append(pdk.Layer("PolygonLayer", data=allowed_data, get_polygon="polygon", get_fill_color="[16, 185, 129, 20]", get_line_color="[16, 185, 129, 200]", line_width_min_pixels=2))
