@@ -32,7 +32,7 @@ except ImportError:
     PLOTLY_AVAILABLE = False
 
 # =========================================================
-# 1. UX SETUP & "GOOGLE MATERIAL DARK OCEAN" DESIGN SYSTEM
+# 1. UX SETUP & "GOOGLE MATERIAL DAYLIGHT" DESIGN SYSTEM
 # =========================================================
 st.set_page_config(layout="wide", page_title="Blue 42 | The Kelp Contender", page_icon="🌊", initial_sidebar_state="expanded")
 
@@ -40,23 +40,24 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap');
     :root {
-        --g-blue: #4285F4; --g-blue-light: #8AB4F8; --g-red: #EA4335; --g-red-light: #F28B82;
-        --g-yellow: #FBBC04; --g-yellow-light: #FDD663; --g-green: #34A853; --g-green-light: #81C995;
-        --g-bg: #131314; --g-surface: #1E1F20; --g-surface-elevated: #282A2C; --g-border: #4A4E54;
-        --g-text: #FFFFFF; --g-text-sub: #E8EAED;
+        --g-blue: #1A73E8; --g-blue-dark: #174EA6; --g-red: #D93025; --g-red-dark: #A50E0E;
+        --g-yellow: #F9AB00; --g-yellow-dark: #B06000; --g-green: #188038; --g-green-dark: #0D652D;
+        --g-bg: #F8FAFC; --g-surface: #FFFFFF; --g-surface-elevated: #F1F5F9; --g-border: #CBD5E1;
+        --g-text: #0F172A; --g-text-sub: #334155;
     }
     html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stHeader"] {
         font-family: 'Google Sans', 'Plus Jakarta Sans', -apple-system, sans-serif !important;
-        background-color: #131314 !important;
-        color: #FFFFFF !important;
+        background-color: #F8FAFC !important;
+        color: #0F172A !important;
     }
     [data-testid="stSidebar"], [data-testid="stSidebar"] > div:first-child {
-        background-color: #1A1B1E !important;
-        color: #FFFFFF !important;
+        background-color: #F1F5F9 !important;
+        color: #0F172A !important;
+        border-right: 1px solid #CBD5E1 !important;
     }
     .stMarkdown, .stMarkdown p, .stMarkdown li, .stCaption, label, [data-testid="stWidgetLabel"] p,
     [data-testid="stExpander"] summary p, [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {
-        color: #FFFFFF !important;
+        color: #0F172A !important;
     }
     .block-container { padding-top: 1rem; padding-bottom: 2rem; max-width: 98%; }
     .stMarkdown, .element-container { overflow: visible !important; }
@@ -64,9 +65,9 @@ st.markdown("""
     .leaf-tooltip { position: relative !important; display: inline-block; cursor: help; font-size: 1.05rem; margin-left: 6px; transition: transform 0.2s ease; z-index: 999999 !important; }
     .leaf-tooltip:hover { transform: scale(1.2); }
     .leaf-tooltip .tooltiptext {
-        visibility: hidden; width: 255px; background: #1E1F20 !important; color: #FFFFFF !important; text-align: left;
-        border: 1.5px solid #8AB4F8; border-radius: 8px; padding: 10px 12px; position: absolute !important; z-index: 9999999 !important;
-        bottom: 135%; left: 50%; margin-left: -127px; opacity: 0; transition: opacity 0.25s; font-size: 0.85rem; line-height: 1.45; font-weight: 500; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.85);
+        visibility: hidden; width: 255px; background: #FFFFFF !important; color: #0F172A !important; text-align: left;
+        border: 1.5px solid #1A73E8; border-radius: 8px; padding: 10px 12px; position: absolute !important; z-index: 9999999 !important;
+        bottom: 135%; left: 50%; margin-left: -127px; opacity: 0; transition: opacity 0.25s; font-size: 0.85rem; line-height: 1.45; font-weight: 500; pointer-events: none; box-shadow: 0 10px 25px rgba(15,23,42,0.18);
     }
     .leaf-tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
     .flip-card { background-color: transparent !important; width: 100% !important; height: 215px !important; perspective: 1000px !important; margin-bottom: 15px !important; position: relative !important; cursor: pointer; }
@@ -75,31 +76,31 @@ st.markdown("""
     .flip-card-front, .flip-card-back {
         position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important;
         -webkit-backface-visibility: hidden !important; backface-visibility: hidden !important; border-radius: 12px !important;
-        background: #1E1F20 !important; border: 1.5px solid #4A4E54 !important; padding: 15px !important;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45) !important; display: flex !important; flex-direction: column !important; justify-content: center !important;
+        background: #FFFFFF !important; border: 1.5px solid #CBD5E1 !important; padding: 15px !important;
+        box-shadow: 0 4px 16px 0 rgba(15, 23, 42, 0.08) !important; display: flex !important; flex-direction: column !important; justify-content: center !important;
     }
-    .flip-card-back { transform: rotateY(180deg) !important; border-left: 4px solid #34A853 !important; background: #26282B !important; text-align: left !important; align-items: flex-start !important; padding-left: 20px !important; }
-    .glass-title { font-size: clamp(0.84rem, 1.05vw, 0.95rem); color: #FFFFFF !important; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; font-weight: 700; }
+    .flip-card-back { transform: rotateY(180deg) !important; border-left: 5px solid #188038 !important; background: #F0FDF4 !important; text-align: left !important; align-items: flex-start !important; padding-left: 20px !important; }
+    .glass-title { font-size: clamp(0.84rem, 1.05vw, 0.95rem); color: #334155 !important; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; font-weight: 700; }
     .glass-value { font-size: clamp(1.75rem, 2.2vw, 2.35rem); font-weight: 800; margin: 0; line-height: 1.15; }
-    .glass-sub { font-size: clamp(0.84rem, 1vw, 0.92rem); color: #81C995 !important; margin-top: 8px; font-weight: 700; }
-    .math-text { font-family: 'Roboto Mono', monospace; font-size: 0.82rem; color: #FFFFFF !important; line-height: 1.45; width: 100%; font-weight: 500; }
-    .math-hl { color: #81C995 !important; font-weight: 700; font-size: 0.88rem; }
-    .math-var { color: #E8EAED !important; }
-    .math-op { color: #8AB4F8 !important; font-weight: 700; padding-right: 6px; }
-    .crypto-box { background-color: #1E1F20 !important; border: 1.5px solid #34A853; border-radius: 8px; padding: 14px; font-family: 'Roboto Mono', monospace; font-size: 0.9rem; color: #FFFFFF !important; word-wrap: break-word; }
-    .stButton > button { background: #26282B !important; color: #8AB4F8 !important; border: 1.5px solid #4285F4 !important; border-radius: 20px; font-weight: 700; font-size: 0.92rem !important; transition: all 0.25s ease; }
-    .stButton > button:hover { background: #4285F4 !important; color: #FFFFFF !important; box-shadow: 0 2px 12px rgba(66, 133, 244, 0.5); }
+    .glass-sub { font-size: clamp(0.84rem, 1vw, 0.92rem); color: #188038 !important; margin-top: 8px; font-weight: 700; }
+    .math-text { font-family: 'Roboto Mono', monospace; font-size: 0.82rem; color: #0F172A !important; line-height: 1.45; width: 100%; font-weight: 500; }
+    .math-hl { color: #188038 !important; font-weight: 700; font-size: 0.88rem; }
+    .math-var { color: #334155 !important; }
+    .math-op { color: #1A73E8 !important; font-weight: 700; padding-right: 6px; }
+    .crypto-box { background-color: #F0FDF4 !important; border: 1.5px solid #188038; border-radius: 8px; padding: 14px; font-family: 'Roboto Mono', monospace; font-size: 0.9rem; color: #0F172A !important; word-wrap: break-word; }
+    .stButton > button { background: #FFFFFF !important; color: #1A73E8 !important; border: 1.5px solid #1A73E8 !important; border-radius: 20px; font-weight: 700; font-size: 0.92rem !important; transition: all 0.25s ease; }
+    .stButton > button:hover { background: #1A73E8 !important; color: #FFFFFF !important; box-shadow: 0 2px 10px rgba(26, 115, 232, 0.35); }
     .metric-grid { display: flex; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
-    .metric-box { flex: 1; min-width: 120px; background: #1E1F20 !important; border: 1.5px solid #4A4E54; border-radius: 10px; border-top: 3px solid #4285F4; padding: 12px; text-align: center; }
-    .metric-title { font-size: 0.85rem; color: #FFFFFF !important; text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
-    .metric-val { font-size: 1.55rem; font-weight: 800; color: #8AB4F8; line-height: 1.2; }
-    .metric-sub { font-size: 0.84rem; color: #81C995 !important; margin-top: 4px; font-weight: 700; }
+    .metric-box { flex: 1; min-width: 120px; background: #FFFFFF !important; border: 1.5px solid #CBD5E1; border-radius: 10px; border-top: 4px solid #1A73E8; padding: 12px; text-align: center; box-shadow: 0 2px 8px rgba(15,23,42,0.05); }
+    .metric-title { font-size: 0.85rem; color: #334155 !important; text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
+    .metric-val { font-size: 1.55rem; font-weight: 800; color: #1A73E8; line-height: 1.2; }
+    .metric-sub { font-size: 0.84rem; color: #188038 !important; margin-top: 4px; font-weight: 700; }
     @media (max-width: 768px) {
         .block-container { padding-left: 0.6rem !important; padding-right: 0.6rem !important; max-width: 100% !important; }
         h1 { font-size: 1.5rem !important; } .flip-card { height: 185px !important; } .metric-box { min-width: 45% !important; }
     }
     header { background-color: transparent !important; } #MainMenu, footer { visibility: hidden; }
-    .blinking { animation: blinker 1.5s linear infinite; color: #81C995; font-weight: bold; }
+    .blinking { animation: blinker 1.5s linear infinite; color: #188038; font-weight: bold; }
     @keyframes blinker { 50% { opacity: 0; } }
 </style>
 """, unsafe_allow_html=True)
@@ -107,13 +108,13 @@ st.markdown("""
 def leaf_info(text):
     return f'<div class="leaf-tooltip">🌿<span class="tooltiptext">{text}</span></div>'
 
-def make_flip_card(title, value, sub, math_html, accent_color="#4285F4", value_color="#8AB4F8"):
+def make_flip_card(title, value, sub, math_html, accent_color="#1A73E8", value_color="#1A73E8"):
     return (
         f'<div class="flip-card" tabindex="0" onclick="this.classList.toggle(\'flipped\')"><div class="flip-card-inner">'
-        f'<div class="flip-card-front" style="border-left: 4px solid {accent_color} !important;">'
+        f'<div class="flip-card-front" style="border-left: 5px solid {accent_color} !important;">'
         f'<div class="glass-title">{title}</div><div class="glass-value" style="color: {value_color};">{value}</div>'
-        f'<div class="glass-sub">{sub} <span style="font-size:0.78rem; color:#E8EAED;">(Hover/Tap)</span></div></div>'
-        f'<div class="flip-card-back"><div class="glass-title" style="margin-bottom:6px; color:#8AB4F8 !important; font-size:0.85rem;">HOW THIS IS CALCULATED</div>'
+        f'<div class="glass-sub">{sub} <span style="font-size:0.78rem; color:#475569;">(Hover/Tap)</span></div></div>'
+        f'<div class="flip-card-back"><div class="glass-title" style="margin-bottom:6px; color:#1A73E8 !important; font-size:0.85rem;">HOW THIS IS CALCULATED</div>'
         f'<div class="math-text">{math_html}</div></div></div></div>'
     )
 
@@ -284,9 +285,9 @@ def export_to_interactive_map_html(df: pd.DataFrame, sector_label: str) -> bytes
         net_prof = (((net_c * 150.0) + (bio * 300.0) + (ha * 1500.0) + (float(r.get("nitrogen_tons", 0)) * 2000.0)) * 0.92) - ((ha * 2000.0) + float(r.get("sinking_cost", 0)))
         gurl = f"https://www.google.com/maps/search/?api=1&query={lat:.4f},{lon:.4f}"
         pop = f"<b>{sid} — ✅ SAFE TO INVEST</b><br>Score: {sc}/100 | Size: {ha:.1f} HA ({ha*2.471:.0f} Acres)<br>Est. Net Profit: <b>${net_prof:,.0f}/yr</b><br>Cable Dist: {r.get('cable_dist_km', 10):.1f} km<br><a href='{gurl}' target='_blank'>📍 Open in Google Maps ↗</a>"
-        markers.append(f"L.circleMarker([{lat:.4f},{lon:.4f}],{{radius:11,fillColor:'#34A853',color:'#fff',weight:2,fillOpacity:0.9}}).addTo(map).bindPopup({json.dumps(pop)});")
-        rows.append(f"<tr><td><b>{sid}</b></td><td style='color:#81C995;'>✅ CLEARED</td><td><b>{sc}/100</b></td><td>{ha:.1f} HA ({ha*2.471:.0f} Ac)</td><td>${capex:,.0f}</td><td style='color:#81C995;font-weight:700;'>${net_prof:,.0f}/yr</td><td>{r.get('cable_dist_km', 10):.1f} km</td><td><a href='{gurl}' target='_blank' style='color:#8AB4F8;'>{lat:.4f}, {lon:.4f} ↗</a></td></tr>")
-    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Blue 42 Interactive Safe Sites Map</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><style>body{{margin:0;padding:24px;background:#131314;color:#E8EAED;font-family:sans-serif;}}#map{{width:100%;height:420px;border-radius:12px;border:1px solid #3C4043;margin-bottom:20px;}}table{{width:100%;border-collapse:collapse;background:#1E1F20;font-size:13px;}}th{{background:#282A2C;color:#8AB4F8;text-align:left;padding:10px;}}td{{padding:10px;border-bottom:1px solid #2D2F31;}}</style></head><body><h2>🌊 BLUE 42 | The Kelp Contender — Interactive Safe Sites Map ({sector_label})</h2><div id="map"></div><table><thead><tr><th>Site ID</th><th>Verdict</th><th>Score</th><th>Farm Size</th><th>Upfront Cost</th><th>Est. Net Profit</th><th>Subsea Cable Dist</th><th>Google Maps</th></tr></thead><tbody>{"".join(rows)}</tbody></table><script>var map=L.map('map').setView([{clat:.4f},{clon:.4f}],8);L.tileLayer('https://{{s}}.basemaps.cartocdn.com/dark_all/{{z}}/{{x}}/{{y}}{{r}}.png').addTo(map);{"".join(markers)}</script></body></html>"""
+        markers.append(f"L.circleMarker([{lat:.4f},{lon:.4f}],{{radius:11,fillColor:'#188038',color:'#fff',weight:2,fillOpacity:0.9}}).addTo(map).bindPopup({json.dumps(pop)});")
+        rows.append(f"<tr><td><b>{sid}</b></td><td style='color:#188038;font-weight:700;'>✅ CLEARED</td><td><b>{sc}/100</b></td><td>{ha:.1f} HA ({ha*2.471:.0f} Ac)</td><td>${capex:,.0f}</td><td style='color:#188038;font-weight:700;'>${net_prof:,.0f}/yr</td><td>{r.get('cable_dist_km', 10):.1f} km</td><td><a href='{gurl}' target='_blank' style='color:#1A73E8;'>{lat:.4f}, {lon:.4f} ↗</a></td></tr>")
+    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Blue 42 Interactive Safe Sites Map</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><style>body{{margin:0;padding:24px;background:#F8FAFC;color:#0F172A;font-family:sans-serif;}}#map{{width:100%;height:420px;border-radius:12px;border:1px solid #CBD5E1;margin-bottom:20px;}}table{{width:100%;border-collapse:collapse;background:#FFFFFF;font-size:13px;border:1px solid #CBD5E1;}}th{{background:#F1F5F9;color:#1A73E8;text-align:left;padding:10px;}}td{{padding:10px;border-bottom:1px solid #E2E8F0;}}</style></head><body><h2>🌊 BLUE 42 | The Kelp Contender — Interactive Safe Sites Map ({sector_label})</h2><div id="map"></div><table><thead><tr><th>Site ID</th><th>Verdict</th><th>Score</th><th>Farm Size</th><th>Upfront Cost</th><th>Est. Net Profit</th><th>Subsea Cable Dist</th><th>Google Maps</th></tr></thead><tbody>{"".join(rows)}</tbody></table><script>var map=L.map('map').setView([{clat:.4f},{clon:.4f}],8);L.tileLayer('https://{{s}}.basemaps.cartocdn.com/rastertiles/voyager/{{z}}/{{x}}/{{y}}{{r}}.png').addTo(map);{"".join(markers)}</script></body></html>"""
     return html.encode("utf-8")
 
 def export_to_geojson(df: pd.DataFrame) -> bytes:
@@ -465,32 +466,32 @@ SAMPLE_CSV_TEMPLATE = "id,lat,lon,area_ha,sst_mean,depth,wave_energy\nKK-INVESTO
 
 st.markdown('<div class="google-accent-bar"></div>', unsafe_allow_html=True)
 st.markdown(
-    f"<h1 style='font-weight: 800; margin-bottom: 0;'><span style='color:#4285F4;'>B</span><span style='color:#EA4335;'>L</span><span style='color:#FBBC04;'>U</span><span style='color:#34A853;'>E</span> <span style='color:#4285F4;'>42</span> <span style='color:#FFFFFF !important; font-weight: 500;'>| The Kelp Contender</span> {leaf_info('The Kelp Contender turns satellite ocean data, subsea cable maps, and GAAP accounting into a simple investment dashboard to evaluate safe ocean kelp sites (Kelp Kandidates).')}</h1>",
+    f"<h1 style='font-weight: 800; margin-bottom: 0;'><span style='color:#1A73E8;'>B</span><span style='color:#D93025;'>L</span><span style='color:#F9AB00;'>U</span><span style='color:#188038;'>E</span> <span style='color:#1A73E8;'>42</span> <span style='color:#0F172A !important; font-weight: 600;'>| The Kelp Contender</span> {leaf_info('The Kelp Contender turns satellite ocean data, subsea cable maps, and GAAP accounting into a simple investment dashboard to evaluate safe ocean kelp sites (Kelp Kandidates).')}</h1>",
     unsafe_allow_html=True,
 )
-st.markdown("<p style='color: #D2E3FC !important; font-size: 1.05rem; font-weight: 600; margin-top: -6px;'><span class='blinking'>●</span> INVESTOR DECISION ENGINE ACTIVE | 4 GLOBAL HOTSPOTS • 40-YR SATELLITE REPORT CARDS • ROV AI &amp; SUBSEA CABLE DECONFLICTION</p>", unsafe_allow_html=True)
+st.markdown("<p style='color: #334155 !important; font-size: 1.05rem; font-weight: 600; margin-top: -6px;'><span class='blinking'>●</span> INVESTOR DECISION ENGINE ACTIVE | 4 GLOBAL HOTSPOTS • 40-YR SATELLITE REPORT CARDS • ROV AI &amp; SUBSEA CABLE DECONFLICTION</p>", unsafe_allow_html=True)
 
 st.markdown("""
-<div style="background-color: #1A1C20 !important; border: 2px solid #4285F4; border-left: 6px solid #4285F4; border-radius: 12px; padding: 16px 18px; margin-bottom: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.65);">
-    <div style="font-size: 0.96rem; color: #8AB4F8 !important; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px;">🧭 How This App Works in 60 Seconds (Plain-English Investor Guide)</div>
-    <div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.96rem; color: #FFFFFF !important; line-height: 1.55; font-weight: 500;">
-        <div style="flex: 1; min-width: 240px; background-color: #24272D !important; border: 1px solid #3C4043; border-top: 3px solid #34A853; border-radius: 8px; padding: 12px 14px; color: #FFFFFF !important;">
-            <span style="color: #81C995 !important; font-weight: 800; font-size: 1.0rem;">1️⃣ Pick a Region &amp; Safe "Kelp Kandidate":</span><br/>
-            Green 3D columns are <b style="color:#81C995 !important;">Cleared &amp; Safe to Invest</b> (clear of shipping lanes, whale paths, storms, and <b style="color:#E1BEE7 !important;">purple Subsea Internet/Power Cables</b>). Test custom GPS coordinates anytime.
+<div style="background-color: #F0F7FF !important; border: 1.5px solid #93C5FD; border-left: 6px solid #1A73E8; border-radius: 12px; padding: 16px 18px; margin-bottom: 18px; box-shadow: 0 4px 14px rgba(15,23,42,0.06);">
+    <div style="font-size: 0.96rem; color: #1A73E8 !important; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px;">🧭 How This App Works in 60 Seconds (Plain-English Investor Guide)</div>
+    <div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.96rem; color: #0F172A !important; line-height: 1.55; font-weight: 500;">
+        <div style="flex: 1; min-width: 240px; background-color: #FFFFFF !important; border: 1px solid #CBD5E1; border-top: 4px solid #188038; border-radius: 8px; padding: 12px 14px; color: #0F172A !important;">
+            <span style="color: #188038 !important; font-weight: 800; font-size: 1.0rem;">1️⃣ Pick a Region &amp; Safe "Kelp Kandidate":</span><br/>
+            Green 3D columns are <b style="color:#188038 !important;">Cleared &amp; Safe to Invest</b> (clear of shipping lanes, whale paths, storms, and <b style="color:#7B1FA2 !important;">purple Subsea Internet/Power Cables</b>). Test custom GPS coordinates anytime.
         </div>
-        <div style="flex: 1; min-width: 240px; background-color: #24272D !important; border: 1px solid #3C4043; border-top: 3px solid #4285F4; border-radius: 8px; padding: 12px 14px; color: #FFFFFF !important;">
-            <span style="color: #8AB4F8 !important; font-weight: 800; font-size: 1.0rem;">2️⃣ Check 40-Yr History, Species &amp; 4 Revenues:</span><br/>
-            Inspect 40-year satellite survival grades, match 5 kelp species, and model 4 income streams (<b style="color:#FDD663 !important;">Carbon Credits + Bioplastics + Storm Rebates + Water Cleanup</b>).
+        <div style="flex: 1; min-width: 240px; background-color: #FFFFFF !important; border: 1px solid #CBD5E1; border-top: 4px solid #1A73E8; border-radius: 8px; padding: 12px 14px; color: #0F172A !important;">
+            <span style="color: #1A73E8 !important; font-weight: 800; font-size: 1.0rem;">2️⃣ Check 40-Yr History, Species &amp; 4 Revenues:</span><br/>
+            Inspect 40-year satellite survival grades, match 5 kelp species, and model 4 income streams (<b style="color:#B45309 !important;">Carbon Credits + Bioplastics + Storm Rebates + Water Cleanup</b>).
         </div>
-        <div style="flex: 1; min-width: 240px; background-color: #24272D !important; border: 1px solid #3C4043; border-top: 3px solid #FBBC04; border-radius: 8px; padding: 12px 14px; color: #FFFFFF !important;">
-            <span style="color: #FDD663 !important; font-weight: 800; font-size: 1.0rem;">3️⃣ Lower Costs &amp; Download Signed PDFs:</span><br/>
-            Toggle farm cost-cutting levers, verify carbon via <b style="color:#8AB4F8 !important;">Satellite + Drone + Underwater ROV AI + SMART Cables</b>, and download 1-click PDFs &amp; interactive HTML maps.
+        <div style="flex: 1; min-width: 240px; background-color: #FFFFFF !important; border: 1px solid #CBD5E1; border-top: 4px solid #D97706; border-radius: 8px; padding: 12px 14px; color: #0F172A !important;">
+            <span style="color: #B45309 !important; font-weight: 800; font-size: 1.0rem;">3️⃣ Lower Costs &amp; Download Signed PDFs:</span><br/>
+            Toggle farm cost-cutting levers, verify carbon via <b style="color:#1A73E8 !important;">Satellite + Drone + Underwater ROV AI + SMART Cables</b>, and download 1-click PDFs &amp; interactive HTML maps.
         </div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-st.sidebar.markdown(f"<h2 style='color:#8AB4F8; font-weight:700; display:flex; align-items:center;'>🧭 INVESTOR CONTROLS {leaf_info('Pick a global region, test your own GPS coordinates or CSV file, simulate extreme weather, and set your investment priorities.')}</h2>", unsafe_allow_html=True)
+st.sidebar.markdown(f"<h2 style='color:#1A73E8; font-weight:700; display:flex; align-items:center;'>🧭 INVESTOR CONTROLS {leaf_info('Pick a global region, test your own GPS coordinates or CSV file, simulate extreme weather, and set your investment priorities.')}</h2>", unsafe_allow_html=True)
 
 sector = st.sidebar.selectbox("1. Choose Global Ocean Region", [
     "Northeast Pacific Coast (California / Channel Islands)",
@@ -501,12 +502,12 @@ sector = st.sidebar.selectbox("1. Choose Global Ocean Region", [
 sector_key = "British Columbia" if "British Columbia" in sector else ("Tasmania" if "Tasmania" in sector else ("Hawaii" if "Hawaiian" in sector else "Channel Islands"))
 
 region_notes = {
-    "Channel Islands": "Cold, nutrient-rich water from the <b style='color:#81C995;'>California Current</b> makes this a premier natural growth zone for <b style='color:#FDD663;'>Giant Kelp</b> (<i>Macrocystis pyrifera</i>), growing up to 2 feet per day.",
-    "British Columbia": "Glacial fjords and subarctic upwelling along <b style='color:#81C995;'>British Columbia &amp; Haida Gwaii</b> support dense, heat-resilient forests of <b style='color:#FDD663;'>Giant Kelp</b> and wave-hardy <b style='color:#8AB4F8;'>Bull Kelp</b>.",
-    "Tasmania": "Home to Australia's <b style='color:#81C995;'>Great Southern Reef</b>, where Southern Ocean upwelling supports towering <b style='color:#FDD663;'>Giant Kelp</b> and <b style='color:#8AB4F8;'>Golden Kelp</b> (<i>Ecklonia radiata</i>) restoration corridors.",
-    "Hawaii": "Warm, high-sunlight tropical waters ideal for heat-tolerant <b style='color:#FDD663;'>Red Ogo</b>, <b style='color:#81C995;'>Low-Methane Asparagopsis</b> cattle-feed kelp, and deep-water upwelling.",
+    "Channel Islands": "Cold, nutrient-rich water from the <b style='color:#188038;'>California Current</b> makes this a premier natural growth zone for <b style='color:#B45309;'>Giant Kelp</b> (<i>Macrocystis pyrifera</i>), growing up to 2 feet per day.",
+    "British Columbia": "Glacial fjords and subarctic upwelling along <b style='color:#188038;'>British Columbia &amp; Haida Gwaii</b> support dense, heat-resilient forests of <b style='color:#B45309;'>Giant Kelp</b> and wave-hardy <b style='color:#1A73E8;'>Bull Kelp</b>.",
+    "Tasmania": "Home to Australia's <b style='color:#188038;'>Great Southern Reef</b>, where Southern Ocean upwelling supports towering <b style='color:#B45309;'>Giant Kelp</b> and <b style='color:#1A73E8;'>Golden Kelp</b> (<i>Ecklonia radiata</i>) restoration corridors.",
+    "Hawaii": "Warm, high-sunlight tropical waters ideal for heat-tolerant <b style='color:#B45309;'>Red Ogo</b>, <b style='color:#188038;'>Low-Methane Asparagopsis</b> cattle-feed kelp, and deep-water upwelling.",
 }
-st.sidebar.markdown(f"<div style='background-color:#1E1F20 !important;border:1.5px solid #4285F4;border-left:5px solid #4285F4;border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:0.92rem;line-height:1.5;color:#FFFFFF !important;'><b style='color:#8AB4F8 !important;'>Why Investors Love This Region:</b><br>{region_notes[sector_key]}</div>", unsafe_allow_html=True)
+st.sidebar.markdown(f"<div style='background-color:#FFFFFF !important;border:1.5px solid #93C5FD;border-left:5px solid #1A73E8;border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:0.92rem;line-height:1.5;color:#0F172A !important;'><b style='color:#1A73E8 !important;'>Why Investors Love This Region:</b><br>{region_notes[sector_key]}</div>", unsafe_allow_html=True)
 
 default_lat = round(SECTOR_CONFIG[sector_key]["lat"] + 0.05, 4)
 default_lon = round(SECTOR_CONFIG[sector_key]["lon"] + 0.35, 4)
@@ -541,12 +542,12 @@ with st.sidebar.expander("📍 Bring Your Own Coordinates & Lease CSV Evaluator"
             st.error(f"CSV error: {e}")
 
 st.sidebar.markdown("---")
-st.sidebar.markdown(f"<h3 style='color:#FDD663; font-size:1rem; display:flex; align-items:center;'>2. Test Extreme Weather Scenarios {leaf_info('See how each site holds up if an El Niño heatwave warms the ocean or a Category 4 winter storm hits.')}</h3>", unsafe_allow_html=True)
+st.sidebar.markdown(f"<h3 style='color:#B45309; font-size:1rem; display:flex; align-items:center;'>2. Test Extreme Weather Scenarios {leaf_info('See how each site holds up if an El Niño heatwave warms the ocean or a Category 4 winter storm hits.')}</h3>", unsafe_allow_html=True)
 stress_scenario = st.sidebar.radio("Choose Weather Stress Test:", ["Nominal (Baseline)", "Marine Heatwave (El Niño)", "Category 4 Storm Event"])
 adopt_baja_strain = st.sidebar.checkbox("🧬 Use Heat-Resistant Baja Kelp Seed (+2.0°C Tolerance)", value=False)
 
 st.sidebar.markdown("---")
-st.sidebar.markdown(f"<h3 style='color:#81C995; font-size:1rem; display:flex; align-items:center;'>3. Set Your Investor Priorities {leaf_info('Adjust what matters most to your fund—the Site Quality Score (0–100) updates automatically.')}</h3>", unsafe_allow_html=True)
+st.sidebar.markdown(f"<h3 style='color:#188038; font-size:1rem; display:flex; align-items:center;'>3. Set Your Investor Priorities {leaf_info('Adjust what matters most to your fund—the Site Quality Score (0–100) updates automatically.')}</h3>", unsafe_allow_html=True)
 weight_carbon = st.sidebar.slider("💨 Carbon Credit Income", 0.0, 1.0, 0.8)
 weight_coastal = st.sidebar.slider("🌊 Coastal Storm Protection", 0.0, 1.0, 0.5)
 weight_bio = st.sidebar.slider("🐟 Marine Life & Fishery Health", 0.0, 1.0, 0.9)
@@ -640,10 +641,10 @@ v_dmg = safe_df['averted_damage_millions'].sum() if not safe_df.empty else 0
 v_roi = ((safe_df['net_bankable_co2'].sum() * 150) + (safe_df['biomass_tons'].sum() * 300) + (safe_df['nitrogen_tons'].sum() * 2000)) if not safe_df.empty else 0
 avg_retention = safe_df['stress_retention_pct'].mean() if not safe_df.empty else 0
 
-col1.markdown(make_flip_card(f"Safe Farmable Ocean Area {leaf_info('Total ocean area across green CLEARED Kelp Kandidates free of shipping lanes, whale paths, sanctuaries, and subsea cables.')}", f"{v_area:.1f} HA", f"≈ {v_acres:,.0f} Acres ({len(safe_df)}/{len(kelp_df)} Safe)", "Total Ocean Area<br><span class='math-op'>-</span> <span class='math-var'>Ships, Whales &amp; Subsea Cables</span><br><span class='math-hl'>= Safe Farmable Area (1 HA ≈ 2.47 Ac)</span>", "#4285F4", "#8AB4F8"), unsafe_allow_html=True)
-col2.markdown(make_flip_card(f"Annual Kelp Harvest {leaf_info('Total weight of fresh kelp harvested per year across all safe sites after weather stress testing.')}", f"{v_bio:.1f} MT", f"{stress_scenario} ({avg_retention:.0f}% Kept)", "Safe Area (HA) × 18.5 MT/HA<br><span class='math-op'>×</span> <span class='math-var'>Weather Survival %</span><br><span class='math-hl'>= Annual Kelp Harvest (Metric Tons)</span>", "#34A853", "#81C995"), unsafe_allow_html=True)
-col3.markdown(make_flip_card(f"Coastal Storm Savings {leaf_info('Thick kelp forests act like natural speed bumps for storm waves, preventing shoreline flood damage.')}", f"${v_dmg:.1f}M", "Shoreline Damage Prevented", "Kelp Canopy Area × Wave Force<br><span class='math-op'>×</span> <span class='math-var'>15% Wave Dampening</span><br><span class='math-hl'>= Flood Damage Prevented ($)</span>", "#FBBC04", "#FDD663"), unsafe_allow_html=True)
-col4.markdown(make_flip_card(f"Annual Portfolio Revenue {leaf_info('Combined yearly revenue across all safe sites from carbon credits, bioplastics kelp, and water cleanup.')}", f"${v_roi:,.0f}", "Combined Revenue / Year", "(Carbon × $150) + (Kelp × $300)<br><span class='math-op'>+</span> <span class='math-var'>(Water Cleanup × $2,000)</span><br><span class='math-hl'>= Total Annual Portfolio Revenue</span>", "#EA4335", "#F28B82"), unsafe_allow_html=True)
+col1.markdown(make_flip_card(f"Safe Farmable Ocean Area {leaf_info('Total ocean area across green CLEARED Kelp Kandidates free of shipping lanes, whale paths, sanctuaries, and subsea cables.')}", f"{v_area:.1f} HA", f"≈ {v_acres:,.0f} Acres ({len(safe_df)}/{len(kelp_df)} Safe)", "Total Ocean Area<br><span class='math-op'>-</span> <span class='math-var'>Ships, Whales &amp; Subsea Cables</span><br><span class='math-hl'>= Safe Farmable Area (1 HA ≈ 2.47 Ac)</span>", "#1A73E8", "#1A73E8"), unsafe_allow_html=True)
+col2.markdown(make_flip_card(f"Annual Kelp Harvest {leaf_info('Total weight of fresh kelp harvested per year across all safe sites after weather stress testing.')}", f"{v_bio:.1f} MT", f"{stress_scenario} ({avg_retention:.0f}% Kept)", "Safe Area (HA) × 18.5 MT/HA<br><span class='math-op'>×</span> <span class='math-var'>Weather Survival %</span><br><span class='math-hl'>= Annual Kelp Harvest (Metric Tons)</span>", "#188038", "#188038"), unsafe_allow_html=True)
+col3.markdown(make_flip_card(f"Coastal Storm Savings {leaf_info('Thick kelp forests act like natural speed bumps for storm waves, preventing shoreline flood damage.')}", f"${v_dmg:.1f}M", "Shoreline Damage Prevented", "Kelp Canopy Area × Wave Force<br><span class='math-op'>×</span> <span class='math-var'>15% Wave Dampening</span><br><span class='math-hl'>= Flood Damage Prevented ($)</span>", "#D97706", "#B45309"), unsafe_allow_html=True)
+col4.markdown(make_flip_card(f"Annual Portfolio Revenue {leaf_info('Combined yearly revenue across all safe sites from carbon credits, bioplastics kelp, and water cleanup.')}", f"${v_roi:,.0f}", "Combined Revenue / Year", "(Carbon × $150) + (Kelp × $300)<br><span class='math-op'>+</span> <span class='math-var'>(Water Cleanup × $2,000)</span><br><span class='math-hl'>= Total Annual Portfolio Revenue</span>", "#D93025", "#D93025"), unsafe_allow_html=True)
 
 # =========================================================
 # 7. 3D MAP (WITH SUBSEA CABLES) & 5-TAB INVESTOR CONSOLE
@@ -674,20 +675,20 @@ with col_ops:
         s_payback_yrs = (s_capex_est / s_net_profit_yr) if s_net_profit_yr > 0 else 99.9
 
         verdict_badge = (
-            "<span style='background:#1B3B2B !important; border:1.5px solid #34A853; color:#81C995 !important; padding:4px 10px; border-radius:6px; font-weight:800; font-size:0.88rem;'>✅ CLEARED — SAFE TO INVEST</span>"
+            "<span style='background:#DCFCE7 !important; border:1.5px solid #188038; color:#137333 !important; padding:4px 10px; border-radius:6px; font-weight:800; font-size:0.88rem;'>✅ CLEARED — SAFE TO INVEST</span>"
             if is_sel_safe else
-            f"<span style='background:#3B1B1B !important; border:1.5px solid #EA4335; color:#F28B82 !important; padding:4px 10px; border-radius:6px; font-weight:800; font-size:0.88rem;'>⛔ DO NOT INVEST ({site_data.get('status')})</span>"
+            f"<span style='background:#FEE2E2 !important; border:1.5px solid #D93025; color:#B91C1C !important; padding:4px 10px; border-radius:6px; font-weight:800; font-size:0.88rem;'>⛔ DO NOT INVEST ({site_data.get('status')})</span>"
         )
         st.markdown(f"""
-        <div style="background-color: #1E1F20 !important; border: 1.5px solid #4A4E54; border-left: 5px solid {'#34A853' if is_sel_safe else '#EA4335'}; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; color: #FFFFFF !important;">
+        <div style="background-color: #FFFFFF !important; border: 1.5px solid #CBD5E1; border-left: 5px solid {'#188038' if is_sel_safe else '#D93025'}; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; color: #0F172A !important; box-shadow: 0 2px 8px rgba(15,23,42,0.05);">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
-                <span style="font-size:0.95rem; font-weight:800; color:#8AB4F8 !important;">💡 Plain-English Investor Snapshot: {sel_site}</span>{verdict_badge}
+                <span style="font-size:0.95rem; font-weight:800; color:#1A73E8 !important;">💡 Plain-English Investor Snapshot: {sel_site}</span>{verdict_badge}
             </div>
-            <div style="font-size:0.93rem; color:#FFFFFF !important; line-height:1.6;">
-                • <b style="color:#8AB4F8;">Site Quality Score:</b> <b>{site_data.get('pareto_score', 0)} / 100</b> &nbsp;|&nbsp; <b style="color:#8AB4F8;">40-Yr Satellite Grade:</b> <b style="color:#FDD663;">{site_data.get('report_card_grade')}</b><br/>
-                • <b style="color:#8AB4F8;">Farm Footprint:</b> <b>{s_area_ha:.1f} Hectares</b> (approx. <b>{s_acres:.0f} Acres</b> or <b>{s_acres/1.32:.0f} Football Fields</b>)<br/>
-                • <b style="color:#8AB4F8;">Upfront Cost:</b> <b>${s_capex_est:,.0f}</b> &nbsp;|&nbsp; <b style="color:#8AB4F8;">Est. Net Profit:</b> <b style="color:#81C995 !important;">${s_net_profit_yr:,.0f}/yr</b> &nbsp;|&nbsp; <b style="color:#8AB4F8;">Payback:</b> <b>~{s_payback_yrs:.1f} Yrs</b><br/>
-                • <b style="color:#E1BEE7;">Subsea Cable Check:</b> <b>{site_data.get('smart_cable_status')}</b>
+            <div style="font-size:0.93rem; color:#0F172A !important; line-height:1.6;">
+                • <b style="color:#1A73E8;">Site Quality Score:</b> <b>{site_data.get('pareto_score', 0)} / 100</b> &nbsp;|&nbsp; <b style="color:#1A73E8;">40-Yr Satellite Grade:</b> <b style="color:#B45309;">{site_data.get('report_card_grade')}</b><br/>
+                • <b style="color:#1A73E8;">Farm Footprint:</b> <b>{s_area_ha:.1f} Hectares</b> (approx. <b>{s_acres:.0f} Acres</b> or <b>{s_acres/1.32:.0f} Football Fields</b>)<br/>
+                • <b style="color:#1A73E8;">Upfront Cost:</b> <b>${s_capex_est:,.0f}</b> &nbsp;|&nbsp; <b style="color:#1A73E8;">Est. Net Profit:</b> <b style="color:#188038 !important;">${s_net_profit_yr:,.0f}/yr</b> &nbsp;|&nbsp; <b style="color:#1A73E8;">Payback:</b> <b>~{s_payback_yrs:.1f} Yrs</b><br/>
+                • <b style="color:#7B1FA2;">Subsea Cable Check:</b> <b>{site_data.get('smart_cable_status')}</b>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -709,45 +710,45 @@ with col_ops:
                 st.rerun()
 
 with col_map:
-    st.markdown(f"<h4 style='display:flex; align-items:center; color:#FFFFFF !important;'>🌊 3D Ocean Safety, Subsea Cable &amp; Site Map {leaf_info('Green columns are safe, high-profit Kelp Kandidates. Red/Orange/Yellow/Purple columns are automatically blocked due to sanctuaries, storms, shipping lanes, or Subsea Fiber/Power Cables. The glowing blue arc shows the boat route to the >1,000m deep carbon drop-off trench.')}</h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4 style='display:flex; align-items:center; color:#0F172A !important;'>🌊 3D Ocean Safety, Subsea Cable &amp; Site Map {leaf_info('Green columns are safe, high-profit Kelp Kandidates. Red/Orange/Yellow/Purple columns are automatically blocked due to sanctuaries, storms, shipping lanes, or Subsea Fiber/Power Cables. The glowing blue arc shows the boat route to the >1,000m deep carbon drop-off trench.')}</h4>", unsafe_allow_html=True)
     st.markdown("""
-    <div style="display: flex; flex-wrap: wrap; gap: 14px; background-color: #1E1F20 !important; padding: 12px 16px; border-radius: 8px; border: 1.5px solid #4A4E54; margin-bottom: 10px;">
-        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#FFFFFF !important;"><span style="width:12px; height:12px; background:#34A853; border-radius:2px; margin-right:6px;"></span> ✅ Safe Kelp Kandidate</div>
-        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#FFFFFF !important;"><span style="width:12px; height:12px; background:#EA4335; border-radius:2px; margin-right:6px;"></span> ⛔ Sanctuary (No-Go)</div>
-        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#FFFFFF !important;"><span style="width:12px; height:12px; background:#FA7B17; border-radius:2px; margin-right:6px;"></span> 🌪️ Storm Zone</div>
-        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#FFFFFF !important;"><span style="width:18px; height:4px; background:#FBBC04; margin-right:6px;"></span> 🚢 Shipping Lane</div>
-        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#FFFFFF !important;"><span style="width:18px; height:4px; background:#AB47BC; margin-right:6px;"></span> ⚡ Subsea Fiber/Power Cable (1.5km Buffer)</div>
-        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#FFFFFF !important;"><span style="width:12px; height:12px; background:#4285F4; border-radius:50%; margin-right:6px;"></span> 🐋 Whale Route / Deep Drop-Off Arc</div>
+    <div style="display: flex; flex-wrap: wrap; gap: 14px; background-color: #FFFFFF !important; padding: 12px 16px; border-radius: 8px; border: 1.5px solid #CBD5E1; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(15,23,42,0.04);">
+        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#0F172A !important;"><span style="width:12px; height:12px; background:#34A853; border-radius:2px; margin-right:6px;"></span> ✅ Safe Kelp Kandidate</div>
+        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#0F172A !important;"><span style="width:12px; height:12px; background:#EA4335; border-radius:2px; margin-right:6px;"></span> ⛔ Sanctuary (No-Go)</div>
+        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#0F172A !important;"><span style="width:12px; height:12px; background:#FA7B17; border-radius:2px; margin-right:6px;"></span> 🌪️ Storm Zone</div>
+        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#0F172A !important;"><span style="width:18px; height:4px; background:#FBBC04; margin-right:6px;"></span> 🚢 Shipping Lane</div>
+        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#0F172A !important;"><span style="width:18px; height:4px; background:#AB47BC; margin-right:6px;"></span> ⚡ Subsea Fiber/Power Cable (1.5km Buffer)</div>
+        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#0F172A !important;"><span style="width:12px; height:12px; background:#4285F4; border-radius:50%; margin-right:6px;"></span> 🐋 Whale Route / Deep Drop-Off Arc</div>
     </div>
     """, unsafe_allow_html=True)
 
     layers = [
-        pdk.Layer("PolygonLayer", data=restricted_data, get_polygon="polygon", get_fill_color="[234, 67, 53, 25]", get_line_color="[234, 67, 53, 210]", line_width_min_pixels=2),
-        pdk.Layer("PolygonLayer", data=allowed_data, get_polygon="polygon", get_fill_color="[52, 168, 83, 20]", get_line_color="[52, 168, 83, 200]", line_width_min_pixels=2),
-        pdk.Layer("PolygonLayer", data=weather_data, get_polygon="polygon", get_fill_color="[250, 123, 23, 30]", get_line_color="[250, 123, 23, 200]", line_width_min_pixels=2),
+        pdk.Layer("PolygonLayer", data=restricted_data, get_polygon="polygon", get_fill_color="[234, 67, 53, 35]", get_line_color="[217, 48, 37, 230]", line_width_min_pixels=2),
+        pdk.Layer("PolygonLayer", data=allowed_data, get_polygon="polygon", get_fill_color="[52, 168, 83, 30]", get_line_color="[24, 128, 56, 220]", line_width_min_pixels=2),
+        pdk.Layer("PolygonLayer", data=weather_data, get_polygon="polygon", get_fill_color="[250, 123, 23, 35]", get_line_color="[250, 123, 23, 220]", line_width_min_pixels=2),
     ]
     if not subsea_cables_df.empty:
-        layers.append(pdk.Layer("PathLayer", data=subsea_cables_df, get_path="path", get_color="[171, 71, 188, 225]", width_scale=18, width_min_pixels=3, get_width=4, pickable=False))
+        layers.append(pdk.Layer("PathLayer", data=subsea_cables_df, get_path="path", get_color="[142, 36, 170, 235]", width_scale=18, width_min_pixels=3, get_width=4, pickable=False))
     if not shipping_lanes_df.empty:
-        layers.append(pdk.Layer("PathLayer", data=shipping_lanes_df, get_path="path", get_color="[251, 188, 4, 170]", width_scale=20, width_min_pixels=3, get_width=5, pickable=False))
+        layers.append(pdk.Layer("PathLayer", data=shipping_lanes_df, get_path="path", get_color="[217, 119, 6, 200]", width_scale=20, width_min_pixels=3, get_width=5, pickable=False))
     if not mammals_df.empty:
-        layers.append(pdk.Layer("ScatterplotLayer", data=mammals_df, get_position="[lon, lat]", get_color="[66, 133, 244, 160]", get_radius=4000, pickable=False))
+        layers.append(pdk.Layer("ScatterplotLayer", data=mammals_df, get_position="[lon, lat]", get_color="[26, 115, 232, 180]", get_radius=4000, pickable=False))
     if not kelp_df.empty:
         layers.append(pdk.Layer("ColumnLayer", id="kelp_columns", data=kelp_df, get_position="[lon, lat]", get_elevation="biomass_tons * 100", elevation_scale=1, radius=1500, get_fill_color="color", pickable=True, auto_highlight=True))
-        layers.append(pdk.Layer("TextLayer", data=kelp_df, get_position="[lon, lat]", get_text="id", get_color="[232, 234, 237, 220]", get_size=15, get_alignment_baseline="'bottom'"))
+        layers.append(pdk.Layer("TextLayer", data=kelp_df, get_position="[lon, lat]", get_text="id", get_color="[15, 23, 42, 245]", get_size=15, get_alignment_baseline="'bottom'"))
     if site_data is not None:
         sel_df = pd.DataFrame([site_data])
-        layers.append(pdk.Layer("ScatterplotLayer", data=sel_df, get_position="[lon, lat]", get_fill_color="[66, 133, 244, 55]", get_line_color="[138, 180, 248, 255]", get_radius=3200, stroked=True, line_width_min_pixels=3))
+        layers.append(pdk.Layer("ScatterplotLayer", data=sel_df, get_position="[lon, lat]", get_fill_color="[26, 115, 232, 55]", get_line_color="[26, 115, 232, 255]", get_radius=3200, stroked=True, line_width_min_pixels=3))
         arc_df = pd.DataFrame([{"source": [float(site_data["lon"]), float(site_data["lat"])], "target": [float(site_data["lon"]) - (float(site_data["abyssal_dist_km"]) / 111.0), float(site_data["lat"]) - 0.12]}])
-        layers.append(pdk.Layer("ArcLayer", data=arc_df, get_source_position="source", get_target_position="target", get_source_color="[52, 168, 83, 240]", get_target_color="[66, 133, 244, 240]", get_width=4))
+        layers.append(pdk.Layer("ArcLayer", data=arc_df, get_source_position="source", get_target_position="target", get_source_color="[24, 128, 56, 240]", get_target_color="[26, 115, 232, 240]", get_width=4))
 
     tt_html = (
-        "<div style='font-family:sans-serif; background:rgba(30,31,32,0.95); padding:10px 12px; border-radius:8px; border:1px solid #4285F4; color:#E8EAED;'>"
+        "<div style='font-family:sans-serif; background:#FFFFFF; padding:10px 12px; border-radius:8px; border:1.5px solid #1A73E8; color:#0F172A; box-shadow:0 4px 12px rgba(15,23,42,0.15);'>"
         "<b>Kelp Kandidate: {id}</b> ({report_card_grade})<br/>Site Quality Score: <b>{pareto_score}/100</b> | Size: {area_ha} HA<br/>"
         "Annual Harvest: {biomass_tons} MT | Net Carbon: {net_bankable_co2} MT/yr<br/>"
-        "Subsea Cable Clearance: <b>{cable_dist_km} km</b><br/><span style='color:#81C995;'>Verdict: <b>{status}</b></span></div>"
+        "Subsea Cable Clearance: <b>{cable_dist_km} km</b><br/><span style='color:#188038;'>Verdict: <b>{status}</b></span></div>"
     )
-    deck_obj = pdk.Deck(layers=layers, initial_view_state=pdk.ViewState(latitude=SECTOR_CONFIG[sector_key]["lat"], longitude=SECTOR_CONFIG[sector_key]["lon"], zoom=8.5, pitch=55, bearing=15), map_style=None, tooltip={"html": tt_html})
+    deck_obj = pdk.Deck(layers=layers, initial_view_state=pdk.ViewState(latitude=SECTOR_CONFIG[sector_key]["lat"], longitude=SECTOR_CONFIG[sector_key]["lon"], zoom=8.5, pitch=55, bearing=15), map_style="https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json", tooltip={"html": tt_html})
     try:
         deck_event = st.pydeck_chart(deck_obj, use_container_width=True, height=600, on_select="rerun", selection_mode="single-object")
         picked = deck_event.selection.get("objects", {}).get("kelp_columns", []) if hasattr(deck_event, "selection") and deck_event.selection else []
@@ -780,7 +781,7 @@ with col_ops:
             ]
             st.dataframe(pd.DataFrame(bench_rows), use_container_width=True, hide_index=True)
 
-        with st.expander("📖 Plain-English Investor Glossary (Including Subsea Cables & SMART Telemetry)", expanded=False):
+        with st.expander("📖 Glossary", expanded=False):
             st.markdown("""
             - **Kelp Kandidate (`KK-1` to `KK-12`):** A potential ocean farm site. Green sites (`CLEARED: Optimal`) are safe to fund; red/orange/yellow/purple sites are blocked.
             - **Subsea Fiber & Power Cables (`Purple Lines on Map`):** Heavy 10-ton kelp farm anchors can snap undersea internet or power cables (costing **\\$1.5M–\\$5M** to repair). Blue 42 automatically blocks any site within **1.5 km** of a subsea cable (`ICPC Protection Zone`), while sites safely **1.5–9.0 km away** can tap into **SMART Subsea Cable** seafloor sensors and underwater ROV charging docks!
@@ -803,14 +804,14 @@ with col_ops:
         if site_data is not None:
             sst = site_data.get('effective_sst', site_data.get('sst_mean', 15.0))
             rec_strain = "Heat-Resistant Baja Kelp Seed (M. pyrifera)" if (sst > 16.0 or adopt_baja_strain) else "Standard Cold-Water Alaskan Kelp Seed (M. pyrifera)"
-            st.markdown(f"<div style='background-color:#1E1F20 !important;border:1.5px solid #4285F4;border-left:5px solid #4285F4;padding:12px 14px;border-radius:8px;margin-bottom:12px;color:#FFFFFF !important;'><div style='font-size:0.86rem;color:#8AB4F8 !important;font-weight:800;'>🧬 RECOMMENDED SEED — {sel_site}</div><div style='font-size:1.04rem;color:#FFFFFF !important;font-weight:800;'>{rec_strain}</div><div style='font-size:0.90rem;color:#E8EAED !important;'>Water Temp: <b style='color:#FDD663;'>{sst:.1f}°C</b> | Sunlight (PAR): <b style='color:#8AB4F8;'>{site_data.get('par_light')} mol/m²/d</b> | Keeps <b style='color:#81C995;'>{site_data.get('stress_retention_pct', 100):.0f}%</b> of harvest</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='background-color:#F0F7FF !important;border:1.5px solid #93C5FD;border-left:5px solid #1A73E8;padding:12px 14px;border-radius:8px;margin-bottom:12px;color:#0F172A !important;'><div style='font-size:0.86rem;color:#1A73E8 !important;font-weight:800;'>🧬 RECOMMENDED SEED — {sel_site}</div><div style='font-size:1.04rem;color:#0F172A !important;font-weight:800;'>{rec_strain}</div><div style='font-size:0.90rem;color:#334155 !important;'>Water Temp: <b style='color:#B45309;'>{sst:.1f}°C</b> | Sunlight (PAR): <b style='color:#1A73E8;'>{site_data.get('par_light')} mol/m²/d</b> | Keeps <b style='color:#188038;'>{site_data.get('stress_retention_pct', 100):.0f}%</b> of harvest</div></div>", unsafe_allow_html=True)
 
             jobs = int(site_data.get('jobs_created', 0))
             st.markdown(f"""
             <div class="metric-grid">
-                <div class="metric-box" style="border-top: 3px solid #FBBC04;"><div class="metric-title">Local Jobs Created</div><div class="metric-val" style="color: #FDD663;">{jobs}</div><div class="metric-sub">{int(jobs*0.4)} Boats | {int(jobs*0.4)} Processing</div></div>
-                <div class="metric-box" style="border-top: 3px solid #4285F4;"><div class="metric-title">Shellfish Safe Zone</div><div class="metric-val" style="color: #8AB4F8;">{site_data.get('halo_ha', 0)} HA</div><div class="metric-sub">Calms Acidic Water</div></div>
-                <div class="metric-box" style="border-top: 3px solid #34A853;"><div class="metric-title">Pollution Removed</div><div class="metric-val" style="color: #81C995;">{site_data.get('nitrogen_tons', 0)} MT</div><div class="metric-sub">Fertilizer Nitrogen Cleaned</div></div>
+                <div class="metric-box" style="border-top: 4px solid #D97706;"><div class="metric-title">Local Jobs Created</div><div class="metric-val" style="color: #B45309;">{jobs}</div><div class="metric-sub">{int(jobs*0.4)} Boats | {int(jobs*0.4)} Processing</div></div>
+                <div class="metric-box" style="border-top: 4px solid #1A73E8;"><div class="metric-title">Shellfish Safe Zone</div><div class="metric-val" style="color: #1A73E8;">{site_data.get('halo_ha', 0)} HA</div><div class="metric-sub">Calms Acidic Water</div></div>
+                <div class="metric-box" style="border-top: 4px solid #188038;"><div class="metric-title">Pollution Removed</div><div class="metric-val" style="color: #188038;">{site_data.get('nitrogen_tons', 0)} MT</div><div class="metric-sub">Fertilizer Nitrogen Cleaned</div></div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -819,9 +820,9 @@ with col_ops:
                 s_norm = [round(norm_val(site_data[m], *bounds[m]) * 100, 1) for m in metrics_to_norm]
                 a_norm = [round(float(np.mean([norm_val(s[m], *bounds[m]) * 100 for s in raw_sites])), 1) for m in metrics_to_norm]
                 fig_rad = go.Figure()
-                fig_rad.add_trace(go.Scatterpolar(r=a_norm + [a_norm[0]], theta=cats + [cats[0]], fill='toself', name='Regional Avg', line=dict(color='#9AA0A6', width=1.5)))
-                fig_rad.add_trace(go.Scatterpolar(r=s_norm + [s_norm[0]], theta=cats + [cats[0]], fill='toself', name=f"{sel_site} ({site_data['pareto_score']}/100)", line=dict(color='#4285F4', width=2.5)))
-                fig_rad.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", polar=dict(bgcolor="rgba(30,31,32,0.7)", radialaxis=dict(visible=True, range=[0, 100])), margin=dict(l=30, r=30, t=20, b=15), height=210)
+                fig_rad.add_trace(go.Scatterpolar(r=a_norm + [a_norm[0]], theta=cats + [cats[0]], fill='toself', name='Regional Avg', line=dict(color='#64748B', width=1.5)))
+                fig_rad.add_trace(go.Scatterpolar(r=s_norm + [s_norm[0]], theta=cats + [cats[0]], fill='toself', name=f"{sel_site} ({site_data['pareto_score']}/100)", line=dict(color='#1A73E8', width=2.5)))
+                fig_rad.update_layout(template="plotly_white", font=dict(color="#0F172A"), paper_bgcolor="rgba(0,0,0,0)", polar=dict(bgcolor="#F8FAFC", radialaxis=dict(visible=True, range=[0, 100])), margin=dict(l=30, r=30, t=20, b=15), height=210)
                 st.plotly_chart(fig_rad, use_container_width=True)
 
             # UPGRADE 1: 40-YEAR SATELLITE CANOPY HISTORY & ECOSYSTEM REPORT CARD (SURPASSING KELPWATCH)
@@ -835,8 +836,8 @@ with col_ops:
                 if PLOTLY_AVAILABLE:
                     decs = ["1985", "1990", "1995", "1998 (El Niño)", "2005", "2010", "2015 (Heatwave)", "2020", "2025"]
                     h_vals = [round(hist_p * m, 1) for m in [0.96, 1.00, 0.98, 0.72, 1.02, 1.04, 0.68, 0.97, 1.00]]
-                    fig_h = go.Figure(go.Scatter(x=decs, y=h_vals, mode="lines+markers", line=dict(color="#34A853", width=2.5), fill="tozeroy", fillcolor="rgba(52,168,83,0.16)"))
-                    fig_h.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", yaxis_title="Canopy Persistence (%)", margin=dict(l=0, r=0, t=10, b=0), height=180)
+                    fig_h = go.Figure(go.Scatter(x=decs, y=h_vals, mode="lines+markers", line=dict(color="#188038", width=2.5), fill="tozeroy", fillcolor="rgba(24,128,56,0.14)"))
+                    fig_h.update_layout(template="plotly_white", font=dict(color="#0F172A"), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", yaxis_title="Canopy Persistence (%)", margin=dict(l=0, r=0, t=10, b=0), height=180)
                     st.plotly_chart(fig_h, use_container_width=True)
 
             # UPGRADE 2: MULTI-SPECIES BIOPHYSICAL NICHE MATCHER (SURPASSING KELP NICHE MAPPER)
@@ -887,10 +888,10 @@ with col_ops:
             npv_curve = [-capex + sum((rev_yr - opex_yr) / ((1 + wacc_rate) ** t) for t in range(1, yr + 1)) for yr in years]
             if PLOTLY_AVAILABLE:
                 fig2 = go.Figure()
-                fig2.add_trace(go.Scatter(x=years, y=capex + opex_yr * years, name="Cumulative Cost", line=dict(color="#EA4335", width=2)))
-                fig2.add_trace(go.Scatter(x=years, y=rev_yr * years, name="Cumulative Revenue", line=dict(color="#34A853", width=2), fill='tozeroy', fillcolor='rgba(52,168,83,0.15)'))
-                fig2.add_trace(go.Scatter(x=years, y=npv_curve, name="Discounted 10-Yr NPV ($)", line=dict(color="#4285F4", width=2.5, dash="dot")))
-                fig2.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", yaxis_title="USD ($)", margin=dict(l=0, r=0, t=10, b=0), height=215)
+                fig2.add_trace(go.Scatter(x=years, y=capex + opex_yr * years, name="Cumulative Cost", line=dict(color="#D93025", width=2)))
+                fig2.add_trace(go.Scatter(x=years, y=rev_yr * years, name="Cumulative Revenue", line=dict(color="#188038", width=2), fill='tozeroy', fillcolor='rgba(24,128,56,0.14)'))
+                fig2.add_trace(go.Scatter(x=years, y=npv_curve, name="Discounted 10-Yr NPV ($)", line=dict(color="#1A73E8", width=2.5, dash="dot")))
+                fig2.update_layout(template="plotly_white", font=dict(color="#0F172A"), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", yaxis_title="USD ($)", margin=dict(l=0, r=0, t=10, b=0), height=215)
                 st.plotly_chart(fig2, use_container_width=True)
 
             ann_prof = rev_yr - opex_yr
@@ -962,9 +963,9 @@ with col_ops:
                     x=["Total Absorbed", "Less Boat Fuel", "Less 5% Deep Loss", "Less Insurance Reserve", "Net Sellable Credits"],
                     y=[gross_c, -tow_c, -remin_c, -buf_c, net_c],
                     text=[f"{gross_c:.1f}", f"-{tow_c:.2f}", f"-{remin_c:.2f}", f"-{buf_c:.2f}", f"{net_c:.1f} MT"],
-                    decreasing={"marker": {"color": "#EA4335"}}, increasing={"marker": {"color": "#4285F4"}}, totals={"marker": {"color": "#34A853"}},
+                    decreasing={"marker": {"color": "#D93025"}}, increasing={"marker": {"color": "#1A73E8"}}, totals={"marker": {"color": "#188038"}},
                 ))
-                fig_wf.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", yaxis_title="MT CO₂e / Yr", margin=dict(l=0, r=0, t=15, b=0), height=210)
+                fig_wf.update_layout(template="plotly_white", font=dict(color="#0F172A"), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", yaxis_title="MT CO₂e / Yr", margin=dict(l=0, r=0, t=15, b=0), height=210)
                 st.plotly_chart(fig_wf, use_container_width=True)
 
             # UPGRADE 5: 4-TIER SENSOR FUSION (SATELLITE + DRONE + UNDERWATER ROV AI + SMART SUBSEA CABLE)
