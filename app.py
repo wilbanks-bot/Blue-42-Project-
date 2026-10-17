@@ -42,52 +42,64 @@ st.markdown("""
     :root {
         --g-blue: #4285F4; --g-blue-light: #8AB4F8; --g-red: #EA4335; --g-red-light: #F28B82;
         --g-yellow: #FBBC04; --g-yellow-light: #FDD663; --g-green: #34A853; --g-green-light: #81C995;
-        --g-bg: #131314; --g-surface: #1E1F20; --g-surface-elevated: #282A2C; --g-border: #3C4043;
-        --g-text: #E8EAED; --g-text-sub: #9AA0A6;
+        --g-bg: #131314; --g-surface: #1E1F20; --g-surface-elevated: #282A2C; --g-border: #4A4E54;
+        --g-text: #FFFFFF; --g-text-sub: #E8EAED;
     }
-    html, body, [class*="css"] { font-family: 'Google Sans', 'Plus Jakarta Sans', -apple-system, sans-serif !important; background-color: var(--g-bg); color: var(--g-text); }
+    html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stHeader"] {
+        font-family: 'Google Sans', 'Plus Jakarta Sans', -apple-system, sans-serif !important;
+        background-color: #131314 !important;
+        color: #FFFFFF !important;
+    }
+    [data-testid="stSidebar"], [data-testid="stSidebar"] > div:first-child {
+        background-color: #1A1B1E !important;
+        color: #FFFFFF !important;
+    }
+    .stMarkdown, .stMarkdown p, .stMarkdown li, .stCaption, label, [data-testid="stWidgetLabel"] p,
+    [data-testid="stExpander"] summary p, [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {
+        color: #FFFFFF !important;
+    }
     .block-container { padding-top: 1rem; padding-bottom: 2rem; max-width: 98%; }
     .stMarkdown, .element-container { overflow: visible !important; }
-    .google-accent-bar { height: 4px; width: 100%; border-radius: 4px; background: linear-gradient(90deg, #4285F4 0% 25%, #EA4335 25% 50%, #FBBC04 50% 75%, #34A853 75% 100%); margin-bottom: 14px; }
+    .google-accent-bar { height: 5px; width: 100%; border-radius: 4px; background: linear-gradient(90deg, #4285F4 0% 25%, #EA4335 25% 50%, #FBBC04 50% 75%, #34A853 75% 100%); margin-bottom: 14px; }
     .leaf-tooltip { position: relative !important; display: inline-block; cursor: help; font-size: 1.05rem; margin-left: 6px; transition: transform 0.2s ease; z-index: 999999 !important; }
     .leaf-tooltip:hover { transform: scale(1.2); }
     .leaf-tooltip .tooltiptext {
-        visibility: hidden; width: 235px; background: rgba(30, 31, 32, 0.98); color: var(--g-text); text-align: left;
-        border: 1px solid var(--g-blue); border-radius: 8px; padding: 10px 12px; position: absolute !important; z-index: 9999999 !important;
-        bottom: 135%; left: 50%; margin-left: -117px; opacity: 0; transition: opacity 0.25s; font-size: 0.72rem; line-height: 1.45; font-weight: 500; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.75);
+        visibility: hidden; width: 255px; background: #1E1F20 !important; color: #FFFFFF !important; text-align: left;
+        border: 1.5px solid #8AB4F8; border-radius: 8px; padding: 10px 12px; position: absolute !important; z-index: 9999999 !important;
+        bottom: 135%; left: 50%; margin-left: -127px; opacity: 0; transition: opacity 0.25s; font-size: 0.85rem; line-height: 1.45; font-weight: 500; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.85);
     }
     .leaf-tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
-    .flip-card { background-color: transparent !important; width: 100% !important; height: 210px !important; perspective: 1000px !important; margin-bottom: 15px !important; position: relative !important; cursor: pointer; }
+    .flip-card { background-color: transparent !important; width: 100% !important; height: 215px !important; perspective: 1000px !important; margin-bottom: 15px !important; position: relative !important; cursor: pointer; }
     .flip-card-inner { position: relative !important; width: 100% !important; height: 100% !important; text-align: center !important; transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1) !important; transform-style: preserve-3d !important; }
     .flip-card:hover .flip-card-inner, .flip-card:active .flip-card-inner, .flip-card.flipped .flip-card-inner { transform: rotateY(180deg) !important; }
     .flip-card-front, .flip-card-back {
         position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important;
         -webkit-backface-visibility: hidden !important; backface-visibility: hidden !important; border-radius: 12px !important;
-        background: var(--g-surface) !important; border: 1px solid var(--g-border) !important; padding: 15px !important;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35) !important; display: flex !important; flex-direction: column !important; justify-content: center !important;
+        background: #1E1F20 !important; border: 1.5px solid #4A4E54 !important; padding: 15px !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45) !important; display: flex !important; flex-direction: column !important; justify-content: center !important;
     }
-    .flip-card-back { transform: rotateY(180deg) !important; border-left: 4px solid var(--g-green) !important; background: var(--g-surface-elevated) !important; text-align: left !important; align-items: flex-start !important; padding-left: 20px !important; }
-    .glass-title { font-size: clamp(0.7rem, 1vw, 0.85rem); color: var(--g-text-sub); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 600; }
-    .glass-value { font-size: clamp(1.6rem, 2.1vw, 2.25rem); font-weight: 700; margin: 0; line-height: 1.15; }
-    .glass-sub { font-size: clamp(0.72rem, 0.95vw, 0.82rem); color: var(--g-green-light); margin-top: 8px; font-weight: 600; }
-    .math-text { font-family: 'Roboto Mono', monospace; font-size: 0.7rem; color: var(--g-text); line-height: 1.35; width: 100%; }
-    .math-hl { color: var(--g-green-light); font-weight: 700; font-size: 0.78rem; }
-    .math-var { color: var(--g-text-sub); }
-    .math-op { color: var(--g-blue-light); font-weight: 700; padding-right: 6px; }
-    .crypto-box { background-color: var(--g-surface); border: 1px solid var(--g-green); border-radius: 8px; padding: 14px; font-family: 'Roboto Mono', monospace; font-size: 0.82rem; color: var(--g-text); word-wrap: break-word; }
-    .stButton > button { background: var(--g-surface-elevated); color: var(--g-blue-light); border: 1px solid var(--g-blue); border-radius: 20px; font-weight: 600; transition: all 0.25s ease; }
-    .stButton > button:hover { background: var(--g-blue); color: #FFFFFF; box-shadow: 0 2px 12px rgba(66, 133, 244, 0.5); }
+    .flip-card-back { transform: rotateY(180deg) !important; border-left: 4px solid #34A853 !important; background: #26282B !important; text-align: left !important; align-items: flex-start !important; padding-left: 20px !important; }
+    .glass-title { font-size: clamp(0.84rem, 1.05vw, 0.95rem); color: #FFFFFF !important; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; font-weight: 700; }
+    .glass-value { font-size: clamp(1.75rem, 2.2vw, 2.35rem); font-weight: 800; margin: 0; line-height: 1.15; }
+    .glass-sub { font-size: clamp(0.84rem, 1vw, 0.92rem); color: #81C995 !important; margin-top: 8px; font-weight: 700; }
+    .math-text { font-family: 'Roboto Mono', monospace; font-size: 0.82rem; color: #FFFFFF !important; line-height: 1.45; width: 100%; font-weight: 500; }
+    .math-hl { color: #81C995 !important; font-weight: 700; font-size: 0.88rem; }
+    .math-var { color: #E8EAED !important; }
+    .math-op { color: #8AB4F8 !important; font-weight: 700; padding-right: 6px; }
+    .crypto-box { background-color: #1E1F20 !important; border: 1.5px solid #34A853; border-radius: 8px; padding: 14px; font-family: 'Roboto Mono', monospace; font-size: 0.9rem; color: #FFFFFF !important; word-wrap: break-word; }
+    .stButton > button { background: #26282B !important; color: #8AB4F8 !important; border: 1.5px solid #4285F4 !important; border-radius: 20px; font-weight: 700; font-size: 0.92rem !important; transition: all 0.25s ease; }
+    .stButton > button:hover { background: #4285F4 !important; color: #FFFFFF !important; box-shadow: 0 2px 12px rgba(66, 133, 244, 0.5); }
     .metric-grid { display: flex; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
-    .metric-box { flex: 1; min-width: 120px; background: var(--g-surface); border: 1px solid var(--g-border); border-radius: 10px; border-top: 3px solid var(--g-blue); padding: 12px; text-align: center; }
-    .metric-title { font-size: 0.73rem; color: var(--g-text-sub); text-transform: uppercase; font-weight: 600; margin-bottom: 5px; }
-    .metric-val { font-size: 1.45rem; font-weight: 700; color: var(--g-blue-light); line-height: 1.2; }
-    .metric-sub { font-size: 0.74rem; color: var(--g-green-light); margin-top: 4px; font-weight: 600; }
+    .metric-box { flex: 1; min-width: 120px; background: #1E1F20 !important; border: 1.5px solid #4A4E54; border-radius: 10px; border-top: 3px solid #4285F4; padding: 12px; text-align: center; }
+    .metric-title { font-size: 0.85rem; color: #FFFFFF !important; text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
+    .metric-val { font-size: 1.55rem; font-weight: 800; color: #8AB4F8; line-height: 1.2; }
+    .metric-sub { font-size: 0.84rem; color: #81C995 !important; margin-top: 4px; font-weight: 700; }
     @media (max-width: 768px) {
         .block-container { padding-left: 0.6rem !important; padding-right: 0.6rem !important; max-width: 100% !important; }
-        h1 { font-size: 1.45rem !important; } .flip-card { height: 175px !important; } .metric-box { min-width: 45% !important; }
+        h1 { font-size: 1.5rem !important; } .flip-card { height: 185px !important; } .metric-box { min-width: 45% !important; }
     }
     header { background-color: transparent !important; } #MainMenu, footer { visibility: hidden; }
-    .blinking { animation: blinker 1.5s linear infinite; color: var(--g-green); font-weight: bold; }
+    .blinking { animation: blinker 1.5s linear infinite; color: #81C995; font-weight: bold; }
     @keyframes blinker { 50% { opacity: 0; } }
 </style>
 """, unsafe_allow_html=True)
@@ -100,8 +112,8 @@ def make_flip_card(title, value, sub, math_html, accent_color="#4285F4", value_c
         f'<div class="flip-card" tabindex="0" onclick="this.classList.toggle(\'flipped\')"><div class="flip-card-inner">'
         f'<div class="flip-card-front" style="border-left: 4px solid {accent_color} !important;">'
         f'<div class="glass-title">{title}</div><div class="glass-value" style="color: {value_color};">{value}</div>'
-        f'<div class="glass-sub">{sub} <span style="font-size:0.65rem; color:#9AA0A6;">(Hover/Tap)</span></div></div>'
-        f'<div class="flip-card-back"><div class="glass-title" style="margin-bottom:6px; color:#8AB4F8; font-size:0.75rem;">HOW THIS IS CALCULATED</div>'
+        f'<div class="glass-sub">{sub} <span style="font-size:0.78rem; color:#E8EAED;">(Hover/Tap)</span></div></div>'
+        f'<div class="flip-card-back"><div class="glass-title" style="margin-bottom:6px; color:#8AB4F8 !important; font-size:0.85rem;">HOW THIS IS CALCULATED</div>'
         f'<div class="math-text">{math_html}</div></div></div></div>'
     )
 
@@ -240,7 +252,7 @@ def create_lease_permit_pdf(site: dict, funded_sites: list, commons_share_pct: i
         ("1. GOVERNMENT AQUACULTURE LEASE & PERMIT FILING", [
             f"Lead Site: {site.get('id')} ({site.get('lat'):.4f} N, {site.get('lon'):.4f} W) | Verdict: {site.get('status')}",
             f"Community Revenue Share: {commons_share_pct}% Gross Revenue -> Fast-Track {permit_months}-Month Permit Timeline",
-            f"Subsea Cable Protection Check (ICPC 1.5km Buffer): {site.get('smart_cable_status', 'Cleared')}",
+            f"Subsea Cable Protection Check (ICPC 1.2km Buffer): {site.get('smart_cable_status', 'Cleared')}",
         ]),
         ("2. FUNDED PORTFOLIO SITES", p_lines),
     ]
@@ -453,23 +465,32 @@ SAMPLE_CSV_TEMPLATE = "id,lat,lon,area_ha,sst_mean,depth,wave_energy\nKK-INVESTO
 
 st.markdown('<div class="google-accent-bar"></div>', unsafe_allow_html=True)
 st.markdown(
-    f"<h1 style='font-weight: 700; margin-bottom: 0;'><span style='color:#4285F4;'>B</span><span style='color:#EA4335;'>L</span><span style='color:#FBBC04;'>U</span><span style='color:#34A853;'>E</span> <span style='color:#4285F4;'>42</span> <span style='color:#E8EAED; font-weight: 300;'>| The Kelp Contender</span> {leaf_info('The Kelp Contender turns satellite ocean data, subsea cable maps, and GAAP accounting into a simple investment dashboard to evaluate safe ocean kelp sites (Kelp Kandidates).')}</h1>",
+    f"<h1 style='font-weight: 800; margin-bottom: 0;'><span style='color:#4285F4;'>B</span><span style='color:#EA4335;'>L</span><span style='color:#FBBC04;'>U</span><span style='color:#34A853;'>E</span> <span style='color:#4285F4;'>42</span> <span style='color:#FFFFFF !important; font-weight: 500;'>| The Kelp Contender</span> {leaf_info('The Kelp Contender turns satellite ocean data, subsea cable maps, and GAAP accounting into a simple investment dashboard to evaluate safe ocean kelp sites (Kelp Kandidates).')}</h1>",
     unsafe_allow_html=True,
 )
-st.markdown("<p style='color: #9AA0A6; font-size: 1.02rem; margin-top: -8px;'><span class='blinking'>●</span> INVESTOR DECISION ENGINE ACTIVE | 4 GLOBAL HOTSPOTS • 40-YR SATELLITE REPORT CARDS • ROV AI &amp; SUBSEA CABLE DECONFLICTION</p>", unsafe_allow_html=True)
+st.markdown("<p style='color: #D2E3FC !important; font-size: 1.05rem; font-weight: 600; margin-top: -6px;'><span class='blinking'>●</span> INVESTOR DECISION ENGINE ACTIVE | 4 GLOBAL HOTSPOTS • 40-YR SATELLITE REPORT CARDS • ROV AI &amp; SUBSEA CABLE DECONFLICTION</p>", unsafe_allow_html=True)
 
 st.markdown("""
-<div style="background: linear-gradient(90deg, rgba(66,133,244,0.12), rgba(52,168,83,0.10), rgba(251,188,4,0.08)); border: 1px solid #3C4043; border-left: 4px solid #4285F4; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px;">
-    <div style="font-size: 0.78rem; color: #8AB4F8; font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">🧭 How This App Works in 60 Seconds (Plain-English Investor Guide)</div>
-    <div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.81rem; color: #E8EAED; line-height: 1.45;">
-        <div style="flex: 1; min-width: 220px;"><b>1️⃣ Pick a Region &amp; Safe "Kelp Kandidate":</b> Green 3D columns are <b>Cleared &amp; Safe to Invest</b> (clear of shipping lanes, whale paths, storms, and <b>purple Subsea Internet/Power Cables</b>). Test custom GPS coordinates anytime.</div>
-        <div style="flex: 1; min-width: 220px;"><b>2️⃣ Check 40-Yr History, Species &amp; 4 Revenues:</b> Inspect 40-year satellite survival grades, match 5 kelp species, and model 4 income streams (<b>Carbon Credits + Bioplastics + Storm Rebates + Water Cleanup</b>).</div>
-        <div style="flex: 1; min-width: 220px;"><b>3️⃣ Lower Costs &amp; Download Signed PDFs:</b> Toggle farm cost-cutting levers, verify carbon via <b>Satellite + Drone + Underwater ROV AI + SMART Cables</b>, and download 1-click PDFs &amp; interactive HTML maps.</div>
+<div style="background-color: #1A1C20 !important; border: 2px solid #4285F4; border-left: 6px solid #4285F4; border-radius: 12px; padding: 16px 18px; margin-bottom: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.65);">
+    <div style="font-size: 0.96rem; color: #8AB4F8 !important; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px;">🧭 How This App Works in 60 Seconds (Plain-English Investor Guide)</div>
+    <div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.96rem; color: #FFFFFF !important; line-height: 1.55; font-weight: 500;">
+        <div style="flex: 1; min-width: 240px; background-color: #24272D !important; border: 1px solid #3C4043; border-top: 3px solid #34A853; border-radius: 8px; padding: 12px 14px; color: #FFFFFF !important;">
+            <span style="color: #81C995 !important; font-weight: 800; font-size: 1.0rem;">1️⃣ Pick a Region &amp; Safe "Kelp Kandidate":</span><br/>
+            Green 3D columns are <b style="color:#81C995 !important;">Cleared &amp; Safe to Invest</b> (clear of shipping lanes, whale paths, storms, and <b style="color:#E1BEE7 !important;">purple Subsea Internet/Power Cables</b>). Test custom GPS coordinates anytime.
+        </div>
+        <div style="flex: 1; min-width: 240px; background-color: #24272D !important; border: 1px solid #3C4043; border-top: 3px solid #4285F4; border-radius: 8px; padding: 12px 14px; color: #FFFFFF !important;">
+            <span style="color: #8AB4F8 !important; font-weight: 800; font-size: 1.0rem;">2️⃣ Check 40-Yr History, Species &amp; 4 Revenues:</span><br/>
+            Inspect 40-year satellite survival grades, match 5 kelp species, and model 4 income streams (<b style="color:#FDD663 !important;">Carbon Credits + Bioplastics + Storm Rebates + Water Cleanup</b>).
+        </div>
+        <div style="flex: 1; min-width: 240px; background-color: #24272D !important; border: 1px solid #3C4043; border-top: 3px solid #FBBC04; border-radius: 8px; padding: 12px 14px; color: #FFFFFF !important;">
+            <span style="color: #FDD663 !important; font-weight: 800; font-size: 1.0rem;">3️⃣ Lower Costs &amp; Download Signed PDFs:</span><br/>
+            Toggle farm cost-cutting levers, verify carbon via <b style="color:#8AB4F8 !important;">Satellite + Drone + Underwater ROV AI + SMART Cables</b>, and download 1-click PDFs &amp; interactive HTML maps.
+        </div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-st.sidebar.markdown(f"<h2 style='color:#8AB4F8; font-weight:600; display:flex; align-items:center;'>🧭 INVESTOR CONTROLS {leaf_info('Pick a global region, test your own GPS coordinates or CSV file, simulate extreme weather, and set your investment priorities.')}</h2>", unsafe_allow_html=True)
+st.sidebar.markdown(f"<h2 style='color:#8AB4F8; font-weight:700; display:flex; align-items:center;'>🧭 INVESTOR CONTROLS {leaf_info('Pick a global region, test your own GPS coordinates or CSV file, simulate extreme weather, and set your investment priorities.')}</h2>", unsafe_allow_html=True)
 
 sector = st.sidebar.selectbox("1. Choose Global Ocean Region", [
     "Northeast Pacific Coast (California / Channel Islands)",
@@ -480,12 +501,12 @@ sector = st.sidebar.selectbox("1. Choose Global Ocean Region", [
 sector_key = "British Columbia" if "British Columbia" in sector else ("Tasmania" if "Tasmania" in sector else ("Hawaii" if "Hawaiian" in sector else "Channel Islands"))
 
 region_notes = {
-    "Channel Islands": "Cold, nutrient-rich water from the <b>California Current</b> makes this a premier natural growth zone for <b>Giant Kelp</b> (<i>Macrocystis pyrifera</i>), growing up to 2 feet per day.",
-    "British Columbia": "Glacial fjords and subarctic upwelling along <b>British Columbia &amp; Haida Gwaii</b> support dense, heat-resilient forests of <b>Giant Kelp</b> and wave-hardy <b>Bull Kelp</b>.",
-    "Tasmania": "Home to Australia's <b>Great Southern Reef</b>, where Southern Ocean upwelling supports towering <b>Giant Kelp</b> and <b>Golden Kelp</b> (<i>Ecklonia radiata</i>) restoration corridors.",
-    "Hawaii": "Warm, high-sunlight tropical waters ideal for heat-tolerant <b>Red Ogo</b>, <b>Low-Methane Asparagopsis</b> cattle-feed kelp, and deep-water upwelling.",
+    "Channel Islands": "Cold, nutrient-rich water from the <b style='color:#81C995;'>California Current</b> makes this a premier natural growth zone for <b style='color:#FDD663;'>Giant Kelp</b> (<i>Macrocystis pyrifera</i>), growing up to 2 feet per day.",
+    "British Columbia": "Glacial fjords and subarctic upwelling along <b style='color:#81C995;'>British Columbia &amp; Haida Gwaii</b> support dense, heat-resilient forests of <b style='color:#FDD663;'>Giant Kelp</b> and wave-hardy <b style='color:#8AB4F8;'>Bull Kelp</b>.",
+    "Tasmania": "Home to Australia's <b style='color:#81C995;'>Great Southern Reef</b>, where Southern Ocean upwelling supports towering <b style='color:#FDD663;'>Giant Kelp</b> and <b style='color:#8AB4F8;'>Golden Kelp</b> (<i>Ecklonia radiata</i>) restoration corridors.",
+    "Hawaii": "Warm, high-sunlight tropical waters ideal for heat-tolerant <b style='color:#FDD663;'>Red Ogo</b>, <b style='color:#81C995;'>Low-Methane Asparagopsis</b> cattle-feed kelp, and deep-water upwelling.",
 }
-st.sidebar.markdown(f"<div style='background:#1E1F20;border:1px solid #3C4043;border-left:4px solid #4285F4;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:0.79rem;color:#E8EAED;'><b>Why Investors Love This Region:</b><br>{region_notes[sector_key]}</div>", unsafe_allow_html=True)
+st.sidebar.markdown(f"<div style='background-color:#1E1F20 !important;border:1.5px solid #4285F4;border-left:5px solid #4285F4;border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:0.92rem;line-height:1.5;color:#FFFFFF !important;'><b style='color:#8AB4F8 !important;'>Why Investors Love This Region:</b><br>{region_notes[sector_key]}</div>", unsafe_allow_html=True)
 
 default_lat = round(SECTOR_CONFIG[sector_key]["lat"] + 0.05, 4)
 default_lon = round(SECTOR_CONFIG[sector_key]["lon"] + 0.35, 4)
@@ -653,20 +674,20 @@ with col_ops:
         s_payback_yrs = (s_capex_est / s_net_profit_yr) if s_net_profit_yr > 0 else 99.9
 
         verdict_badge = (
-            "<span style='background:rgba(52,168,83,0.2); border:1px solid #34A853; color:#81C995; padding:3px 8px; border-radius:6px; font-weight:700;'>✅ CLEARED — SAFE TO INVEST</span>"
+            "<span style='background:#1B3B2B !important; border:1.5px solid #34A853; color:#81C995 !important; padding:4px 10px; border-radius:6px; font-weight:800; font-size:0.88rem;'>✅ CLEARED — SAFE TO INVEST</span>"
             if is_sel_safe else
-            f"<span style='background:rgba(234,67,53,0.2); border:1px solid #EA4335; color:#F28B82; padding:3px 8px; border-radius:6px; font-weight:700;'>⛔ DO NOT INVEST ({site_data.get('status')})</span>"
+            f"<span style='background:#3B1B1B !important; border:1.5px solid #EA4335; color:#F28B82 !important; padding:4px 10px; border-radius:6px; font-weight:800; font-size:0.88rem;'>⛔ DO NOT INVEST ({site_data.get('status')})</span>"
         )
         st.markdown(f"""
-        <div style="background: #1E1F20; border: 1px solid #3C4043; border-left: 4px solid {'#34A853' if is_sel_safe else '#EA4335'}; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
-                <span style="font-size:0.82rem; font-weight:700; color:#8AB4F8;">💡 Plain-English Investor Snapshot: {sel_site}</span>{verdict_badge}
+        <div style="background-color: #1E1F20 !important; border: 1.5px solid #4A4E54; border-left: 5px solid {'#34A853' if is_sel_safe else '#EA4335'}; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; color: #FFFFFF !important;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+                <span style="font-size:0.95rem; font-weight:800; color:#8AB4F8 !important;">💡 Plain-English Investor Snapshot: {sel_site}</span>{verdict_badge}
             </div>
-            <div style="font-size:0.79rem; color:#E8EAED; line-height:1.5;">
-                • <b>Site Quality Score:</b> <b>{site_data.get('pareto_score', 0)} / 100</b> &nbsp;|&nbsp; <b>40-Yr Satellite Grade:</b> <b>{site_data.get('report_card_grade')}</b><br/>
-                • <b>Farm Footprint:</b> <b>{s_area_ha:.1f} Hectares</b> (approx. <b>{s_acres:.0f} Acres</b> or <b>{s_acres/1.32:.0f} Football Fields</b>)<br/>
-                • <b>Upfront Cost:</b> <b>${s_capex_est:,.0f}</b> &nbsp;|&nbsp; <b>Est. Net Profit:</b> <b style="color:#81C995;">${s_net_profit_yr:,.0f}/yr</b> &nbsp;|&nbsp; <b>Payback:</b> <b>~{s_payback_yrs:.1f} Yrs</b><br/>
-                • <b>Subsea Cable Check:</b> <b>{site_data.get('smart_cable_status')}</b>
+            <div style="font-size:0.93rem; color:#FFFFFF !important; line-height:1.6;">
+                • <b style="color:#8AB4F8;">Site Quality Score:</b> <b>{site_data.get('pareto_score', 0)} / 100</b> &nbsp;|&nbsp; <b style="color:#8AB4F8;">40-Yr Satellite Grade:</b> <b style="color:#FDD663;">{site_data.get('report_card_grade')}</b><br/>
+                • <b style="color:#8AB4F8;">Farm Footprint:</b> <b>{s_area_ha:.1f} Hectares</b> (approx. <b>{s_acres:.0f} Acres</b> or <b>{s_acres/1.32:.0f} Football Fields</b>)<br/>
+                • <b style="color:#8AB4F8;">Upfront Cost:</b> <b>${s_capex_est:,.0f}</b> &nbsp;|&nbsp; <b style="color:#8AB4F8;">Est. Net Profit:</b> <b style="color:#81C995 !important;">${s_net_profit_yr:,.0f}/yr</b> &nbsp;|&nbsp; <b style="color:#8AB4F8;">Payback:</b> <b>~{s_payback_yrs:.1f} Yrs</b><br/>
+                • <b style="color:#E1BEE7;">Subsea Cable Check:</b> <b>{site_data.get('smart_cable_status')}</b>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -688,15 +709,15 @@ with col_ops:
                 st.rerun()
 
 with col_map:
-    st.markdown(f"<h4 style='display:flex; align-items:center;'>🌊 3D Ocean Safety, Subsea Cable &amp; Site Map {leaf_info('Green columns are safe, high-profit Kelp Kandidates. Red/Orange/Yellow/Purple columns are automatically blocked due to sanctuaries, storms, shipping lanes, or Subsea Fiber/Power Cables. The glowing blue arc shows the boat route to the >1,000m deep carbon drop-off trench.')}</h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4 style='display:flex; align-items:center; color:#FFFFFF !important;'>🌊 3D Ocean Safety, Subsea Cable &amp; Site Map {leaf_info('Green columns are safe, high-profit Kelp Kandidates. Red/Orange/Yellow/Purple columns are automatically blocked due to sanctuaries, storms, shipping lanes, or Subsea Fiber/Power Cables. The glowing blue arc shows the boat route to the >1,000m deep carbon drop-off trench.')}</h4>", unsafe_allow_html=True)
     st.markdown("""
-    <div style="display: flex; flex-wrap: wrap; gap: 12px; background: rgba(30, 31, 32, 0.85); padding: 10px 14px; border-radius: 8px; border: 1px solid #3C4043; margin-bottom: 10px;">
-        <div style="display:flex; align-items:center; font-size:0.73rem; color:#E8EAED;"><span style="width:10px; height:10px; background:#34A853; border-radius:2px; margin-right:6px;"></span> ✅ Safe Kelp Kandidate</div>
-        <div style="display:flex; align-items:center; font-size:0.73rem; color:#E8EAED;"><span style="width:10px; height:10px; background:rgba(234,67,53,0.6); border:1px solid #EA4335; border-radius:2px; margin-right:6px;"></span> ⛔ Sanctuary (No-Go)</div>
-        <div style="display:flex; align-items:center; font-size:0.73rem; color:#E8EAED;"><span style="width:10px; height:10px; background:rgba(250,123,23,0.6); border:1px solid #FA7B17; border-radius:2px; margin-right:6px;"></span> 🌪️ Storm Zone</div>
-        <div style="display:flex; align-items:center; font-size:0.73rem; color:#E8EAED;"><span style="width:18px; height:3px; background:#FBBC04; margin-right:6px;"></span> 🚢 Shipping Lane</div>
-        <div style="display:flex; align-items:center; font-size:0.73rem; color:#E8EAED;"><span style="width:18px; height:3px; background:#AB47BC; margin-right:6px;"></span> ⚡ Subsea Fiber/Power Cable (1.5km Buffer)</div>
-        <div style="display:flex; align-items:center; font-size:0.73rem; color:#E8EAED;"><span style="width:10px; height:10px; background:#4285F4; border-radius:50%; margin-right:6px;"></span> 🐋 Whale Route / Deep Drop-Off Arc</div>
+    <div style="display: flex; flex-wrap: wrap; gap: 14px; background-color: #1E1F20 !important; padding: 12px 16px; border-radius: 8px; border: 1.5px solid #4A4E54; margin-bottom: 10px;">
+        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#FFFFFF !important;"><span style="width:12px; height:12px; background:#34A853; border-radius:2px; margin-right:6px;"></span> ✅ Safe Kelp Kandidate</div>
+        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#FFFFFF !important;"><span style="width:12px; height:12px; background:#EA4335; border-radius:2px; margin-right:6px;"></span> ⛔ Sanctuary (No-Go)</div>
+        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#FFFFFF !important;"><span style="width:12px; height:12px; background:#FA7B17; border-radius:2px; margin-right:6px;"></span> 🌪️ Storm Zone</div>
+        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#FFFFFF !important;"><span style="width:18px; height:4px; background:#FBBC04; margin-right:6px;"></span> 🚢 Shipping Lane</div>
+        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#FFFFFF !important;"><span style="width:18px; height:4px; background:#AB47BC; margin-right:6px;"></span> ⚡ Subsea Fiber/Power Cable (1.5km Buffer)</div>
+        <div style="display:flex; align-items:center; font-size:0.88rem; font-weight:600; color:#FFFFFF !important;"><span style="width:12px; height:12px; background:#4285F4; border-radius:50%; margin-right:6px;"></span> 🐋 Whale Route / Deep Drop-Off Arc</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -782,7 +803,7 @@ with col_ops:
         if site_data is not None:
             sst = site_data.get('effective_sst', site_data.get('sst_mean', 15.0))
             rec_strain = "Heat-Resistant Baja Kelp Seed (M. pyrifera)" if (sst > 16.0 or adopt_baja_strain) else "Standard Cold-Water Alaskan Kelp Seed (M. pyrifera)"
-            st.markdown(f"<div style='background:#1E1F20;border:1px solid #3C4043;border-left:4px solid #4285F4;padding:10px 12px;border-radius:8px;margin-bottom:12px;'><div style='font-size:0.72rem;color:#8AB4F8;font-weight:600;'>🧬 RECOMMENDED SEED — {sel_site}</div><div style='font-size:0.98rem;color:#E8EAED;font-weight:700;'>{rec_strain}</div><div style='font-size:0.78rem;color:#9AA0A6;'>Water Temp: <b>{sst:.1f}°C</b> | Sunlight (PAR): <b>{site_data.get('par_light')} mol/m²/d</b> | Keeps <b>{site_data.get('stress_retention_pct', 100):.0f}%</b> of harvest</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='background-color:#1E1F20 !important;border:1.5px solid #4285F4;border-left:5px solid #4285F4;padding:12px 14px;border-radius:8px;margin-bottom:12px;color:#FFFFFF !important;'><div style='font-size:0.86rem;color:#8AB4F8 !important;font-weight:800;'>🧬 RECOMMENDED SEED — {sel_site}</div><div style='font-size:1.04rem;color:#FFFFFF !important;font-weight:800;'>{rec_strain}</div><div style='font-size:0.90rem;color:#E8EAED !important;'>Water Temp: <b style='color:#FDD663;'>{sst:.1f}°C</b> | Sunlight (PAR): <b style='color:#8AB4F8;'>{site_data.get('par_light')} mol/m²/d</b> | Keeps <b style='color:#81C995;'>{site_data.get('stress_retention_pct', 100):.0f}%</b> of harvest</div></div>", unsafe_allow_html=True)
 
             jobs = int(site_data.get('jobs_created', 0))
             st.markdown(f"""
@@ -959,7 +980,7 @@ with col_ops:
                 rc3.metric("🐟 Marine Species (ROV AI)", f"{rov_fish} species")
                 sensor_df = pd.DataFrame([
                     {"Verification Layer": "🛰️ Tier 1: Orbital Satellite (Landsat / Sentinel-2)", "Resolution": "10m – 30m", "What It Proves": "Tracks floating surface canopy area every 5 days", "Live Reading": f"{int(95 * (site_data['stress_retention_pct']/100.0))}% Canopy Index ({site_data['area_ha']} HA)"},
-                    {"Verification Layer": "🚁 Tier 2: Multispectral Coastal Drone (UAV)", "Resolution": "3cm Ultra-HD", "What It Proves": "Measures blade health, nitrogen uptake & sunlight", "Live Reading": f"PAR Sunlight: {rov_par:.1f} mol/m²/d | Health: {int(site_data.get('suitability', 0.88)*100)}%"},
+                    {"Verification Layer": "🚁 Tier 2: Multispectral Coastal Drone (UAV)", "Resolution": "3cm Ultra-HD", "What It Proves": "Measures blade health, nitrogen uptake & sunlight", "Live Reading": f"PAR Sunlight: {rov_par:.1f} mol/m²/d | Health: {int(site_data['suitability']*100)}%"},
                     {"Verification Layer": "🤖 Tier 3: Underwater ROV AI Vision (Sub-Surface)", "Resolution": "Sub-mm HD + Sonar", "What It Proves": "Counts underwater stalks, rock anchors & fish species", "Live Reading": f"{rov_stipes:.1f} stalks/m² | {rov_fish} species | {rov_sub}"},
                     {"Verification Layer": "⚡ Tier 4: SMART Subsea Cable Telemetry (Seafloor)", "Resolution": "24/7 Optical/Benthic", "What It Proves": "Verifies >1.5km safe cable clearance + live seafloor O₂/Temp", "Live Reading": site_data.get("smart_cable_status", "✅ Safe Clearance")},
                 ])
