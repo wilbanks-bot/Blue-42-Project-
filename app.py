@@ -288,17 +288,30 @@ def export_to_kml(df: pd.DataFrame) -> bytes:
 # =========================================================
 # 3. GLOBAL HOTSPOTS, BIOPHYSICAL NICHE & SUBSEA CABLE ENGINE
 # =========================================================
-ee_connected, model = False, None
+ee_connected = False
 if EE_AVAILABLE:
     try:
-        ee.Initialize()
-        ee_connected = True
+        if "EARTHENGINE_TOKEN" in st.secrets:
+            creds = service_account.Credentials.from_service_account_info(
+                json.loads(st.secrets["EARTHENGINE_TOKEN"])
+            ).with_scopes(['https://www.googleapis.com/auth/earthengine'])
+            ee.Initialize(credentials=creds)
+            ee_connected = True
     except Exception:
         pass
-if GENAI_AVAILABLE and "GEMINI_API_KEY" in st.secrets:
+
+model = None
+if GENAI_AVAILABLE:
     try:
-        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        if "GEMINI_API_KEY" in st.secrets:
+            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+            avail = [m.name for m in genai.list_models()]
+            target = (
+                'gemini-2.5-flash' if 'models/gemini-2.5-flash' in avail else
+                ('gemini-1.5-flash' if 'models/gemini-1.5-flash' in avail else
+                 ('gemini-1.5-pro' if 'models/gemini-1.5-pro' in avail else avail[0].replace('models/', '')))
+            )
+            model = genai.GenerativeModel(target)
     except Exception:
         pass
 
@@ -332,7 +345,7 @@ def build_site_record(site_id: str, lat: float, lon: float, area: float, sst_mea
     }
 
 @st.cache_data(ttl=3600)
-def get_scientific_kelp_data(sector: str):
+def get_scientific_kelp_data_v3(sector: str, live_gee: bool = False):
     cfg = SECTOR_CONFIG.get(sector, SECTOR_CONFIG["Channel Islands"])
     rng = random.Random(cfg["seed"])
     base_lat, base_lon = cfg["lat"], cfg["lon"]
@@ -347,7 +360,7 @@ def get_scientific_kelp_data(sector: str):
     ]
 
 @st.cache_data(ttl=3600)
-def get_hazard_vectors(sector: str):
+def get_hazard_vectors_v3(sector: str):
     cfg = SECTOR_CONFIG.get(sector, SECTOR_CONFIG["Channel Islands"])
     rng = random.Random(cfg["h_seed"])
     base_lat, base_lon = cfg["lat"], cfg["lon"]
@@ -522,14 +535,21 @@ weight_equity = st.sidebar.slider("🤝 Local Coastal Jobs & Community", 0.0, 1.
 # =========================================================
 # 5. PHYSICS STRESS TEST, CARBON WATERFALL & PARETO SCORING
 # =========================================================
-raw_sites = copy.deepcopy(get_scientific_kelp_data(sector_key))
+raw_sites = copy.deepcopy(get_scientific_kelp_data_v3(sector_key, ee_connected))
 for c_site in st.session_state.custom_sites:
     if c_site.get("sector", sector_key) == sector_key:
         raw_sites.append(copy.deepcopy(c_site))
 
-vessels_df, shipping_lanes_df, mammals_df, weather_data, restricted_data, allowed_data, subsea_cables_df, cable_pts_df = get_hazard_vectors(sector_key)
+vessels_df, shipping_lanes_df, mammals_df, weather_data, restricted_data, allowed_data, subsea_cables_df, cable_pts_df = get_hazard_vectors_v3(sector_key)
 
 for site in raw_sites:
+    site.setdefault("par_light", 34.5)
+    site.setdefault("hist_persistence_40yr", 88)
+    site.setdefault("report_card_grade", "A (High Persistence)")
+    site.setdefault("substrate_type", "Consolidated Rocky Reef (Optimal Holdfast)")
+    site.setdefault("rov_stipe_density", 14.5)
+    site.setdefault("rov_wildlife_species", 36)
+    site.setdefault("suitability", 0.88)
     base_sst, wave_kw, depth_m = site['sst_mean'], site['wave_energy'], site['depth']
     site['storm_shear_hazard'] = False
     if stress_scenario == "Nominal (Baseline)":
@@ -939,7 +959,7 @@ with col_ops:
                 rc3.metric("🐟 Marine Species (ROV AI)", f"{rov_fish} species")
                 sensor_df = pd.DataFrame([
                     {"Verification Layer": "🛰️ Tier 1: Orbital Satellite (Landsat / Sentinel-2)", "Resolution": "10m – 30m", "What It Proves": "Tracks floating surface canopy area every 5 days", "Live Reading": f"{int(95 * (site_data['stress_retention_pct']/100.0))}% Canopy Index ({site_data['area_ha']} HA)"},
-                    {"Verification Layer": "🚁 Tier 2: Multispectral Coastal Drone (UAV)", "Resolution": "3cm Ultra-HD", "What It Proves": "Measures blade health, nitrogen uptake & sunlight", "Live Reading": f"PAR Sunlight: {rov_par:.1f} mol/m²/d | Health: {int(site_data['suitability']*100)}%"},
+                    {"Verification Layer": "🚁 Tier 2: Multispectral Coastal Drone (UAV)", "Resolution": "3cm Ultra-HD", "What It Proves": "Measures blade health, nitrogen uptake & sunlight", "Live Reading": f"PAR Sunlight: {rov_par:.1f} mol/m²/d | Health: {int(site_data.get('suitability', 0.88)*100)}%"},
                     {"Verification Layer": "🤖 Tier 3: Underwater ROV AI Vision (Sub-Surface)", "Resolution": "Sub-mm HD + Sonar", "What It Proves": "Counts underwater stalks, rock anchors & fish species", "Live Reading": f"{rov_stipes:.1f} stalks/m² | {rov_fish} species | {rov_sub}"},
                     {"Verification Layer": "⚡ Tier 4: SMART Subsea Cable Telemetry (Seafloor)", "Resolution": "24/7 Optical/Benthic", "What It Proves": "Verifies >1.5km safe cable clearance + live seafloor O₂/Temp", "Live Reading": site_data.get("smart_cable_status", "✅ Safe Clearance")},
                 ])
