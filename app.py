@@ -456,7 +456,7 @@ CURATED_KELP_NEWS = [
 
 @st.cache_data(ttl=1800)
 def fetch_what_the_kelp_news(topic_filter: str = "All Kelp News") -> tuple:
-    """Fetches real-time kelp & ocean sustainability headlines from Google News RSS (zero API key required), with a rich curated fallback."""
+    """Fetches real-time kelp & ocean sustainability headlines from Google News RSS, with a rich curated fallback."""
     query_map = {
         "All Kelp News": "kelp forest OR seaweed aquaculture OR marine carbon removal",
         "💨 Marine Carbon & Climate": "kelp carbon sequestration OR marine carbon dioxide removal seaweed",
@@ -795,11 +795,11 @@ weight_nitrogen = st.sidebar.slider("💧 Water Pollution, Oil & Trash Cleanup",
 weight_equity = st.sidebar.slider("🤝 Local Coastal Jobs & Community", 0.0, 1.0, 0.8)
 
 st.sidebar.markdown("---")
-st.sidebar.markdown(f"<h3 style='color:#1A73E8; font-size:1rem; display:flex; align-items:center;'>4. Google Maps 3D Layer {leaf_info('Uses native Google Maps Terrain, Satellite Hybrid, or Standard Daylight tiles—100% Google-powered with zero Carto API key required!')}</h3>", unsafe_allow_html=True)
-google_map_mode = st.sidebar.selectbox("Choose Google Maps Basemap:", [
-    "🗺️ Google Maps Terrain & Ocean Relief (Default)",
-    "🛰️ Google Earth Satellite Hybrid",
-    "☀️ Google Maps Clean Daylight Standard",
+st.sidebar.markdown(f"<h3 style='color:#1A73E8; font-size:1rem; display:flex; align-items:center;'>4. Map View Style {leaf_info('Switch between Ocean Terrain Relief, Satellite Hybrid imagery, or Standard Daylight map view.')}</h3>", unsafe_allow_html=True)
+google_map_mode = st.sidebar.selectbox("Choose Map Style:", [
+    "🗺️ Ocean Terrain & Coastal Relief",
+    "🛰️ Satellite Hybrid Imagery",
+    "☀️ Clean Daylight Standard",
 ])
 google_tile_url = (
     "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
@@ -810,7 +810,7 @@ google_tile_url = (
 st.sidebar.markdown("""
 <div style="background-color:#F0FDF4 !important; border:1.5px solid #86EFAC; border-left:5px solid #188038; border-radius:8px; padding:10px 12px; margin-top:10px; font-size:0.84rem; color:#0F172A !important; line-height:1.45;">
     <b style="color:#166534 !important;">🏅 Google Sustainability Challenge Compliant:</b><br/>
-    • <b>100% Google Stack:</b> Google Maps Tiles + Google Earth Engine + Google Gemini AI + Google News RSS (Zero Carto API key needed)<br/>
+    • <b>Google AI &amp; Geospatial Stack:</b> Google Maps + Google Earth Engine + Google Gemini AI + Google News<br/>
     • <b>Anti-Greenwashing MRV:</b> Deducts boat fuel, 5% deep-sea loss &amp; 10–15% buffer + caps seafloor ΔO₂ at &lt;2%
 </div>
 """, unsafe_allow_html=True)
@@ -1013,7 +1013,7 @@ with col_ops:
             st.success(f"🤝 **Lease Acquisition Initiated for {sel_site}!** Fast-track BOEM, NOAA & Coastal Commission permit pack ready.")
 
 with col_map:
-    st.markdown(f"<h4 style='display:flex; align-items:center; color:#0F172A !important;'>🌊 3D Google Maps Ocean Safety, Oil Spill, Trash &amp; Subsea Cable View {leaf_info('Powered by Google Maps Tiles (zero Carto API key needed). Green columns are safe, high-yield Kelp Kandidates; other colors are automatically blocked due to sanctuaries, storms, shipping lanes, Reported Oil Spills (brown), Ocean Trash Gyres (teal), or Subsea Cables (purple).')}</h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4 style='display:flex; align-items:center; color:#0F172A !important;'>🌊 3D Ocean Safety, Oil Spill, Ocean Trash &amp; Subsea Cable Map {leaf_info('Green columns are safe, high-yield Kelp Kandidates; other colors are automatically blocked due to sanctuaries, storms, shipping lanes, Reported Oil Spills (brown), Ocean Trash Gyres (teal), or Subsea Cables (purple).')}</h4>", unsafe_allow_html=True)
     st.markdown("""
     <div style="display: flex; flex-wrap: wrap; gap: 12px; background-color: #FFFFFF !important; padding: 12px 16px; border-radius: 8px; border: 1.5px solid #CBD5E1; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(15,23,42,0.04);">
         <div style="display:flex; align-items:center; font-size:0.86rem; font-weight:600; color:#0F172A !important;"><span style="width:12px; height:12px; background:#34A853; border-radius:2px; margin-right:6px;"></span> ✅ Safe Kelp Kandidate</div>
@@ -1070,7 +1070,7 @@ with col_map:
 
     if site_data is not None:
         gmaps_pin_url = f"https://www.google.com/maps/search/?api=1&query={float(site_data['lat']):.4f},{float(site_data['lon']):.4f}"
-        st.markdown(f"<div style='display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; background:#FFFFFF; border:1px solid #CBD5E1; border-radius:8px; padding:8px 12px; margin-top:6px; font-size:0.86rem;'><span>🗺️ <b>Google Maps Engine Active:</b> `{google_map_mode}` (Zero Carto API Key Required)</span><a href='{gmaps_pin_url}' target='_blank' style='color:#1A73E8; font-weight:700; text-decoration:none;'>📍 Open {sel_site} ({float(site_data['lat']):.4f}, {float(site_data['lon']):.4f}) in Google Maps ↗</a></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='display:flex; justify-content:flex-end; align-items:center; background:#FFFFFF; border:1px solid #CBD5E1; border-radius:8px; padding:8px 12px; margin-top:6px; font-size:0.86rem;'><a href='{gmaps_pin_url}' target='_blank' style='color:#1A73E8; font-weight:700; text-decoration:none;'>📍 Open {sel_site} ({float(site_data['lat']):.4f}, {float(site_data['lon']):.4f}) in Google Maps ↗</a></div>", unsafe_allow_html=True)
 
 with col_ops:
     t_mission, t_news, t1, t2, t_mrv, t3 = st.tabs([
@@ -1100,7 +1100,7 @@ with col_ops:
             </div>
             """, unsafe_allow_html=True)
             g_comp_rows = [
-                {"Google Sustainability Challenge Pillar": "1. 100% Google AI & Geospatial Stack", "How Blue 42 Complies": "Google Maps Tiles (Terrain/Satellite) + Google Earth Engine + Google Gemini AI + Google News RSS (Zero Carto API key needed)"},
+                {"Google Sustainability Challenge Pillar": "1. 100% Google AI & Geospatial Stack", "How Blue 42 Complies": "Google Maps (Terrain/Satellite) + Google Earth Engine + Google Gemini AI + Google News RSS"},
                 {"Google Sustainability Challenge Pillar": "2. Anti-Greenwashing & Conservative MRV", "How Blue 42 Complies": "Deducts boat fuel, 5% deep-sea loss & 10–15% buffer pool before issuing any carbon credit"},
                 {"Google Sustainability Challenge Pillar": "3. Ecological Do-No-Harm Guardrails", "How Blue 42 Complies": "Blocks whale corridors, sanctuaries, oil spills (<0.05 ppm PAH), trash gyres, and caps seafloor ΔO₂ at <2%"},
                 {"Google Sustainability Challenge Pillar": "4. Real-World Scalability & Accessibility", "How Blue 42 Complies": "Plain-English UI, 1-click Google Earth (.KML) / PDF exports, and 4 global ocean corridors built in"},
@@ -1143,7 +1143,7 @@ with col_ops:
                 g_c2.download_button("🧭 Raw GIS (.GeoJSON)", data=export_to_geojson(safe_df), file_name="Blue42_Kelp_Kandidates.geojson", mime="application/octet-stream", use_container_width=True)
 
     with t_news:
-        st.markdown(f"<h5 style='display:flex; align-items:center;'>📰 What the Kelp? — Live Ocean, Kelp &amp; Climate News {leaf_info('Pulls live kelp, seaweed aquaculture, marine carbon removal, and ocean cleanup news via Google News RSS (zero API key required), plus plain-English takeaways for your selected Kelp Kandidate!')}</h5>", unsafe_allow_html=True)
+        st.markdown(f"<h5 style='display:flex; align-items:center;'>📰 What the Kelp? — Live Ocean, Kelp &amp; Climate News {leaf_info('Pulls live kelp, seaweed aquaculture, marine carbon removal, and ocean cleanup news via Google News RSS, plus plain-English takeaways for your selected Kelp Kandidate!')}</h5>", unsafe_allow_html=True)
         nc1, nc2 = st.columns([7, 3])
         news_topic = nc1.selectbox("Filter 'What the Kelp?' News Topic:", [
             "All Kelp News",
@@ -1431,12 +1431,12 @@ with col_ops:
                         f"- **1. Anchor Strike Protection:** Under **ICPC** rules, dropping a 10-ton kelp anchor within **1.5 km** of an undersea fiber-optic or power cable is strictly prohibited (`\\$1.5M–\\$5.0M` repair cost).\n"
                         f"- **2. SMART Cable Synergy:** Sites safely **1.5 km – 9.0 km** outside the cable buffer can tap into **ITU/UNESCO SMART Subsea Cable** seafloor sensors for 24/7 bottom temperature, wave pressure, and deep-sea oxygen monitoring!"
                     )
-                if any(k in q_low for k in ["news", "what the kelp", "article", "headline", "google", "carto", "sustainability", "nobel"]):
+                if any(k in q_low for k in ["news", "what the kelp", "article", "headline", "google", "sustainability", "nobel"]):
                     news_list, _ = fetch_what_the_kelp_news("All Kelp News")
                     top_headlines = "\n".join([f"  - **[{a['title']}]({a['link']})** (*{a['source']}*) — {a['action_takeaway']}" for a in news_list[:3]])
                     return (
                         f"### 📰 What the Kelp? Live News & Google Sustainability Compliance — **{s_id}**\n"
-                        f"- **100% Google Stack (Zero Carto API Key Required):** Blue 42 renders native **Google Maps Terrain & Satellite Hybrid tiles** (`mt1.google.com`), **Google Earth Engine** 40-yr satellite data, **Google Gemini AI**, and **Google News RSS**.\n"
+                        f"- **100% Google Stack:** Blue 42 uses **Google Maps** (`Ocean Terrain & Satellite Hybrid`), **Google Earth Engine** 40-yr satellite data, **Google Gemini AI**, and **Google News RSS**.\n"
                         f"- **Top 'What the Kelp?' Headlines Right Now:**\n{top_headlines}\n"
                         f"- **Planetary Impact at {s_id}:** Removes **`{net_c:.1f} MT CO₂e/yr`**, creates a **`{s_data.get('halo_ha', 0)} HA`** Shellfish De-Acidification Halo (`+0.12 pH`), and skims **`{trash_mt:.1f} MT/yr`** of ocean plastics."
                     )
