@@ -222,7 +222,7 @@ if "messages" not in st.session_state:
         "role": "assistant",
         "content": (
             "👋 **Welcome! I am your Blue 42 Ocean Advisor.**\n\n"
-            "I translate satellite ocean data, **Oil Spill & Ocean Trash screening**, **Subsea Cable safety**, and **10-Year Farm Economics** into plain English. "
+            "I translate satellite ocean data, **Oil Spill & Ocean Trash screening**, **Subsea Cable safety**, and **10-Year Farm Economics** into clear, actionable insights. "
             "**Tap any 1-Click Question button above** or ask me anything about the selected **Kelp Kandidate**!"
         ),
     }]
@@ -456,7 +456,7 @@ CURATED_KELP_NEWS = [
 
 @st.cache_data(ttl=1800)
 def fetch_what_the_kelp_news(topic_filter: str = "All Kelp News") -> tuple:
-    """Fetches real-time kelp & ocean sustainability headlines from Google News RSS, with a rich curated fallback."""
+    """Fetches real-time kelp & ocean sustainability headlines from Google News RSS (zero API key required), with a rich curated fallback."""
     query_map = {
         "All Kelp News": "kelp forest OR seaweed aquaculture OR marine carbon removal",
         "💨 Marine Carbon & Climate": "kelp carbon sequestration OR marine carbon dioxide removal seaweed",
@@ -925,7 +925,7 @@ col3.markdown(make_flip_card(f"Storm & Trash Cleanup {leaf_info('Thick kelp fore
 col4.markdown(make_flip_card(f"Annual Portfolio Revenue {leaf_info('Combined yearly revenue across all safe sites from carbon credits, bioplastics kelp, fertilizer cleanup, and ocean plastic cleanup credits.')}", f"${v_roi:,.0f}", "5 Revenue Streams / Year", "(Carbon × $150) + (Kelp × $300)<br><span class='math-op'>+</span> <span class='math-var'>Nitrogen ($2k) + Trash ($850/MT)</span><br><span class='math-hl'>= Total Annual Portfolio Revenue</span>", "#D93025", "#D93025"), unsafe_allow_html=True)
 
 # =========================================================
-# 7. 3D MAP (OIL SPILLS, OCEAN TRASH & SUBSEA CABLES) & 6 TABS
+# 7. 3D MAP (OIL SPILLS, OCEAN TRASH & SUBSEA CABLES) & 5 TABS
 # =========================================================
 col_map, col_ops = st.columns([6, 4], gap="large")
 
@@ -976,9 +976,9 @@ with col_ops:
         ])
 
         bottom_line_txt = (
-            f"<b>Plain-English Bottom Line:</b> <b>{sel_site}</b> is 100% clear of all ocean hazards. For an upfront setup cost of <b>${s_capex_est:,.0f}</b>, it generates an estimated <b>${s_net_profit_yr:,.0f}/yr in net profit</b> (paying for itself in <b>~{s_payback_yrs:.1f} years</b>) while removing carbon equal to <b>{cars_off_road} gas cars/yr</b> and skimming <b>~{bottles_cleared:,} plastic bottles/yr</b> from the ocean."
+            f"<b>Bottom Line:</b> <b>{sel_site}</b> is 100% clear of all ocean hazards. For an upfront setup cost of <b>${s_capex_est:,.0f}</b>, it generates an estimated <b>${s_net_profit_yr:,.0f}/yr in net profit</b> (paying for itself in <b>~{s_payback_yrs:.1f} years</b>) while removing carbon equal to <b>{cars_off_road} gas cars/yr</b> and skimming <b>~{bottles_cleared:,} plastic bottles/yr</b> from the ocean."
             if is_sel_safe else
-            f"<b>Plain-English Bottom Line:</b> <b>Do NOT build at {sel_site}</b> — our satellite safety engine automatically blocked this site due to <b>{stat_str.replace('HAZARD: ', '')}</b>. Click <b>⭐ Pick #1 Best Site</b> above to jump to a safe green site!"
+            f"<b>Bottom Line:</b> <b>Do NOT build at {sel_site}</b> — our satellite safety engine automatically blocked this site due to <b>{stat_str.replace('HAZARD: ', '')}</b>. Click <b>⭐ Pick #1 Best Site</b> above to jump to a safe green site!"
         )
 
         verdict_badge = (
@@ -1103,7 +1103,7 @@ with col_ops:
                 {"Google Sustainability Challenge Pillar": "1. 100% Google AI & Geospatial Stack", "How Blue 42 Complies": "Google Maps (Terrain/Satellite) + Google Earth Engine + Google Gemini AI + Google News RSS"},
                 {"Google Sustainability Challenge Pillar": "2. Anti-Greenwashing & Conservative MRV", "How Blue 42 Complies": "Deducts boat fuel, 5% deep-sea loss & 10–15% buffer pool before issuing any carbon credit"},
                 {"Google Sustainability Challenge Pillar": "3. Ecological Do-No-Harm Guardrails", "How Blue 42 Complies": "Blocks whale corridors, sanctuaries, oil spills (<0.05 ppm PAH), trash gyres, and caps seafloor ΔO₂ at <2%"},
-                {"Google Sustainability Challenge Pillar": "4. Real-World Scalability & Accessibility", "How Blue 42 Complies": "Plain-English UI, 1-click Google Earth (.KML) / PDF exports, and 4 global ocean corridors built in"},
+                {"Google Sustainability Challenge Pillar": "4. Real-World Scalability & Accessibility", "How Blue 42 Complies": "Intuitive UI, 1-click Google Earth (.KML) / PDF exports, and 4 global ocean corridors built in"},
             ]
             st.dataframe(pd.DataFrame(g_comp_rows), use_container_width=True, hide_index=True)
 
@@ -1143,7 +1143,7 @@ with col_ops:
                 g_c2.download_button("🧭 Raw GIS (.GeoJSON)", data=export_to_geojson(safe_df), file_name="Blue42_Kelp_Kandidates.geojson", mime="application/octet-stream", use_container_width=True)
 
     with t_news:
-        st.markdown(f"<h5 style='display:flex; align-items:center;'>📰 What the Kelp? — Live Ocean, Kelp &amp; Climate News {leaf_info('Pulls live kelp, seaweed aquaculture, marine carbon removal, and ocean cleanup news via Google News RSS, plus plain-English takeaways for your selected Kelp Kandidate!')}</h5>", unsafe_allow_html=True)
+        st.markdown(f"<h5 style='display:flex; align-items:center;'>📰 What the Kelp? — Live Ocean, Kelp &amp; Climate News {leaf_info('Pulls live kelp, seaweed aquaculture, marine carbon removal, and ocean cleanup news via Google News RSS (zero API key required), plus strategic takeaways for your selected Kelp Kandidate!')}</h5>", unsafe_allow_html=True)
         nc1, nc2 = st.columns([7, 3])
         news_topic = nc1.selectbox("Filter 'What the Kelp?' News Topic:", [
             "All Kelp News",
@@ -1296,11 +1296,11 @@ with col_ops:
 
             with st.expander("🍩 Where Does the Money Come From? (5 Annual Revenue Streams Explained)", expanded=True):
                 rev_streams = [
-                    {"Revenue Stream": "💨 1. Verified Carbon Credits", "Annual Income ($)": f"${eff_co2 * carbon_price:,.0f}/yr", "How It Works (Plain English)": f"Selling {eff_co2:.1f} MT of net deep-sea carbon credits at ${carbon_price}/MT"},
-                    {"Revenue Stream": "🧴 2. Clean Kelp Harvest (Bioplastics & Feed)", "Annual Income ($)": f"${bio_rev_yr:,.0f}/yr", "How It Works (Plain English)": "Sold to bioplastics, fertilizer & low-methane cattle feed buyers (halted if oil >0.05 ppm)"},
-                    {"Revenue Stream": "🌊 3. Coastal Storm Protection Rebate", "Annual Income ($)": f"${wave_reb:,.0f}/yr", "How It Works (Plain English)": "Insurance & municipal coastal resilience rebate for dampening storm waves"},
-                    {"Revenue Stream": "💧 4. Fertilizer Nitrogen Water Cleanup", "Annual Income ($)": f"${site_data['nitrogen_tons'] * 2000:,.0f}/yr", "How It Works (Plain English)": f"Removes {site_data['nitrogen_tons']} MT/yr of agricultural nitrogen runoff at $2,000/MT"},
-                    {"Revenue Stream": "🗑️ 5. Ocean Plastic & Ghost-Net Credit", "Annual Income ($)": f"${trash_credit_yr:,.0f}/yr", "How It Works (Plain English)": f"Perimeter Trash Boom skims {site_data.get('plastic_trash_tons', 0):.1f} MT/yr of plastics at $850/MT"},
+                    {"Revenue Stream": "💨 1. Verified Carbon Credits", "Annual Income ($)": f"${eff_co2 * carbon_price:,.0f}/yr", "How It Works": f"Selling {eff_co2:.1f} MT of net deep-sea carbon credits at ${carbon_price}/MT"},
+                    {"Revenue Stream": "🧴 2. Clean Kelp Harvest (Bioplastics & Feed)", "Annual Income ($)": f"${bio_rev_yr:,.0f}/yr", "How It Works": "Sold to bioplastics, fertilizer & low-methane cattle feed buyers (halted if oil >0.05 ppm)"},
+                    {"Revenue Stream": "🌊 3. Coastal Storm Protection Rebate", "Annual Income ($)": f"${wave_reb:,.0f}/yr", "How It Works": "Insurance & municipal coastal resilience rebate for dampening storm waves"},
+                    {"Revenue Stream": "💧 4. Fertilizer Nitrogen Water Cleanup", "Annual Income ($)": f"${site_data['nitrogen_tons'] * 2000:,.0f}/yr", "How It Works": f"Removes {site_data['nitrogen_tons']} MT/yr of agricultural nitrogen runoff at $2,000/MT"},
+                    {"Revenue Stream": "🗑️ 5. Ocean Plastic & Ghost-Net Credit", "Annual Income ($)": f"${trash_credit_yr:,.0f}/yr", "How It Works": f"Perimeter Trash Boom skims {site_data.get('plastic_trash_tons', 0):.1f} MT/yr of plastics at $850/MT"},
                 ]
                 st.dataframe(pd.DataFrame(rev_streams), use_container_width=True, hide_index=True)
 
