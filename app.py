@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import pydeck as pdk
 import pandas as pd
 import numpy as np
@@ -9,9 +8,6 @@ import random
 import hashlib
 import copy
 import re
-import io
-import wave
-import base64
 import textwrap
 from datetime import datetime, timezone
 
@@ -166,41 +162,6 @@ def kelp_animation():
 
 def handshake_animation():
     st.markdown("""<style>@keyframes shakeHand { 0%{transform:translate(-50%,-50%) scale(0);opacity:0;} 20%{opacity:1;transform:translate(-50%,-50%) scale(1.4);} 50%{transform:translate(-50%,-50%) rotate(12deg) scale(1.5);} 100%{opacity:0;transform:translate(-50%,-50%) scale(0);} } .hs-ov {position:fixed;top:50%;left:50%;z-index:9999999;font-size:6.5rem;pointer-events:none;animation:shakeHand 2.2s ease-in-out forwards;}</style><div class="hs-ov">🌊🤝🌿</div>""", unsafe_allow_html=True)
-
-@st.cache_data(ttl=3600)
-def build_soothing_ocean_wav_b64() -> str:
-    """Synthesizes a soft, soothing 10-second seamless ocean wave & breeze ambient audio loop."""
-    sr = 22050
-    dur = 10.0
-    t = np.linspace(0, dur, int(sr * dur), endpoint=False)
-    rng = np.random.default_rng(42)
-    white = rng.standard_normal(len(t))
-    # Smooth brown/pink surf filter via moving average
-    k_surf = np.ones(48) / 48.0
-    surf = np.convolve(white, k_surf, mode="same")
-    # Slow rolling wave envelope (10-second gentle tide cycle + secondary swell)
-    env = 0.50 + 0.38 * np.sin(2 * np.pi * t / 10.0 - np.pi / 2) + 0.12 * np.sin(2 * np.pi * t / 5.0)
-    # Soft warm harmonic ambient pad (C major 9th gentle ocean drone, very low level)
-    pad = (
-        0.018 * np.sin(2 * np.pi * 130.81 * t) +
-        0.014 * np.sin(2 * np.pi * 196.00 * t) +
-        0.011 * np.sin(2 * np.pi * 246.94 * t) +
-        0.009 * np.sin(2 * np.pi * 293.66 * t)
-    ) * (0.65 + 0.35 * np.sin(2 * np.pi * t / 10.0))
-    sig = (surf * env * 0.14) + pad
-    # Seamless crossfade at loop boundaries
-    fade_n = int(sr * 0.4)
-    fade_in = np.linspace(0.0, 1.0, fade_n)
-    sig[:fade_n] = sig[:fade_n] * fade_in + sig[-fade_n:] * (1.0 - fade_in)
-    sig = np.clip(sig, -0.95, 0.95)
-    pcm = (sig * 32767).astype(np.int16)
-    buf = io.BytesIO()
-    with wave.open(buf, "wb") as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)
-        wf.setframerate(sr)
-        wf.writeframes(pcm.tobytes())
-    return base64.b64encode(buf.getvalue()).decode("ascii")
 
 if "library" not in st.session_state:
     st.session_state.library = []
@@ -576,7 +537,7 @@ def run_mcda_deconfliction(sites, vessels_df, mammals_df, weather_data, restrict
     return pd.DataFrame(processed)
 
 # =========================================================
-# 4. HEADER, WAVE ANIMATION & SIDEBAR CONTROLS (WITH SOOTHING OCEAN AUDIO)
+# 4. HEADER, WAVE ANIMATION & SIDEBAR CONTROLS
 # =========================================================
 st.markdown('<div class="google-accent-bar"></div>', unsafe_allow_html=True)
 st.markdown(
@@ -625,49 +586,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-st.sidebar.markdown(f"<h2 style='color:#1A73E8; font-weight:700; display:flex; align-items:center;'>🧭 CONTROLS {leaf_info('Toggle soothing ocean sounds, pick a global region, and simulate extreme weather or oil spills.')}</h2>", unsafe_allow_html=True)
-
-# SOOTHING OCEAN AMBIENT SOUND CONTROL (WITH OPTION TO TURN OFF)
-with st.sidebar.expander("🎵 Soothing Ocean Ambient Sound", expanded=True):
-    enable_ocean_sound = st.toggle("🌊 Play Soft Ocean Waves Background Sound", value=True, key="sb_ocean_audio_toggle")
-    ocean_vol_pct = st.slider("🔉 Softness / Volume (%)", min_value=2, max_value=40, value=12, step=2, key="sb_ocean_vol")
-    if enable_ocean_sound:
-        wav_b64 = build_soothing_ocean_wav_b64()
-        vol_float = round(ocean_vol_pct / 100.0, 3)
-        components.html(
-            f"""
-            <div style="font-family:'Plus Jakarta Sans',sans-serif; display:flex; align-items:center; justify-content:space-between; background:#FFFFFF; border:1px solid #93C5FD; border-radius:8px; padding:6px 10px; color:#0F172A; font-size:12px;">
-                <span>🌊 <b>Soft Ocean Surf</b> ({ocean_vol_pct}% vol)</span>
-                <audio id="b42OceanAudio" loop autoplay controls style="height:26px; width:145px;">
-                    <source src="data:audio/wav;base64,{wav_b64}" type="audio/wav">
-                </audio>
-            </div>
-            <script>
-                (function() {{
-                    var aud = document.getElementById("b42OceanAudio");
-                    if (aud) {{
-                        aud.volume = {vol_float};
-                        var p = aud.play();
-                        if (p !== undefined) {{
-                            p.catch(function() {{
-                                var startAudio = function() {{
-                                    aud.volume = {vol_float};
-                                    aud.play();
-                                    window.parent.document.removeEventListener('click', startAudio);
-                                }};
-                                try {{
-                                    window.parent.document.addEventListener('click', startAudio, {{ once: true }});
-                                }} catch(e) {{}}
-                            }});
-                        }}
-                    }}
-                }})();
-            </script>
-            """,
-            height=48,
-        )
-    else:
-        st.caption("🔇 Ocean background sound is turned off.")
+st.sidebar.markdown(f"<h2 style='color:#1A73E8; font-weight:700; display:flex; align-items:center;'>🧭 CONTROLS {leaf_info('Pick a global region, simulate extreme weather or oil spills, and set your project priorities.')}</h2>", unsafe_allow_html=True)
 
 sector = st.sidebar.selectbox("1. Choose Global Ocean Region", [
     "Northeast Pacific Coast (California / Channel Islands)",
