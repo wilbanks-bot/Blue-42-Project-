@@ -41,9 +41,12 @@ except ImportError:
 st.set_page_config(layout="wide", page_title="Blue 42 | The Kelp Contender", page_icon="🌊", initial_sidebar_state="expanded")
 
 st.markdown("""
+<meta name="color-scheme" content="light only">
+<meta name="darkreader-lock">
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap');
     :root {
+        color-scheme: light only !important;
         --g-blue: #1A73E8; --g-blue-dark: #174EA6; --g-red: #D93025; --g-red-dark: #A50E0E;
         --g-yellow: #F9AB00; --g-yellow-dark: #B06000; --g-green: #188038; --g-green-dark: #0D652D;
         --g-bg: #F8FAFC; --g-surface: #FFFFFF; --g-surface-elevated: #F1F5F9; --g-border: #CBD5E1;
@@ -53,6 +56,8 @@ st.markdown("""
         font-family: 'Google Sans', 'Plus Jakarta Sans', -apple-system, sans-serif !important;
         background-color: #F8FAFC !important;
         color: #0F172A !important;
+        color-scheme: light only !important;
+        forced-color-adjust: none !important;
     }
     [data-testid="stSidebar"], [data-testid="stSidebar"] > div:first-child {
         background-color: #F1F5F9 !important;
@@ -79,9 +84,16 @@ st.markdown("""
         background-color: #E0F2FE !important;
         color: #1A73E8 !important;
     }
-    [data-testid="stExpanderDetails"] {
+    [data-testid="stExpanderDetails"], [data-testid="stExpanderDetails"] > div {
         background-color: #FFFFFF !important;
         color: #0F172A !important;
+    }
+    code, pre, .stMarkdown code, .stMarkdown pre, [data-testid="stMarkdownContainer"] code, [data-testid="stMarkdownContainer"] pre {
+        background-color: #F1F5F9 !important;
+        color: #0F172A !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 4px !important;
+        padding: 1px 5px !important;
     }
     .block-container { padding-top: 1rem; padding-bottom: 2rem; max-width: 98%; }
     .stMarkdown, .element-container { overflow: visible !important; }
@@ -1464,31 +1476,35 @@ with col_ops:
             trench_d = int(site_data.get("trench_depth_m", 2400))
             db_gain = float(site_data.get("bioacoustic_db_gain", 10.2))
             tau_yrs = int(site_data.get("abyssal_residence_yrs", 680))
-            st.markdown(f"""
-            <div style="background:linear-gradient(180deg,#F0F9FF 0%,#E0F2FE 50%,#BAE6FD 100%);border-radius:12px;padding:12px 14px;color:#0F172A !important;border:1.5px solid #7DD3FC;margin-bottom:8px;box-shadow:0 2px 10px rgba(2,132,199,0.08);">
-                <div style="font-size:0.76rem;font-weight:800;color:#0369A1 !important;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">
-                    ☀️ Sunlit Ocean Depth Profile — Surface Canopy to Abyssal Carbon Lock ({sel_site})
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;color:#0F172A !important;font-size:0.81rem;font-weight:700;background:#FFFFFF !important;padding:7px 11px;border-radius:8px;border:1px solid #BAE6FD;border-left:5px solid #0284C7;margin-bottom:7px;">
-                    <span style="color:#0F172A !important;">🛰️ <b>0m Surface Photonic Zone</b> ({'Pelagic Sargassum Skimming + Turtle Escape Grid' if is_sargassum_mode else 'Cultivated Canopy + +0.12 pH Halo + Trash Boom'})</span>
-                    <span style="color:#15803D !important;background:#DCFCE7;padding:2px 8px;border-radius:999px;font-weight:800;">PAR: {site_data.get('par_light', 38.0)} mol/m²/d | Ω_arag {site_data.get('omega_aragonite', 2.85):.2f}</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;color:#0F172A !important;font-size:0.81rem;font-weight:700;background:#FEFCE8 !important;padding:7px 11px;border-radius:8px;border:1px solid #FDE047;border-left:5px solid #D97706;margin-bottom:7px;">
-                    <span style="color:#78350F !important;">🫧 <b>{crush_d}m Hydrostatic Crush Zone</b> (~20 Bar Pressure Threshold)</span>
-                    <span style="color:#92400E !important;background:#FEF3C7;padding:2px 8px;border-radius:999px;font-weight:800;">Gas Bladders Collapse → Natural Negative Buoyancy</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;color:#0F172A !important;font-size:0.81rem;font-weight:700;background:#ECFDF5 !important;padding:7px 11px;border-radius:8px;border:1px solid #86EFAC;border-left:5px solid #16A34A;">
-                    <span style="color:#064E3B !important;">⚓ <b>{trench_d:,}m Abyssal Basin Floor</b> (SMART Cable Verified • {tau_yrs}-Yr Residence)</span>
-                    <span style="color:#166534 !important;background:#DCFCE7;padding:2px 8px;border-radius:999px;font-weight:800;">ΔO₂ {site_data.get('benthic_o2_delta_pct', -0.9)}% | CH₄ = 0.00 g/m²/yr</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            surf_desc = "Pelagic Sargassum Skimming + Turtle Escape Grid" if is_sargassum_mode else "Cultivated Canopy + +0.12 pH Halo + Trash Boom"
+            depth_html = (
+                f"<div style='background-color:#F8FAFC !important;border-radius:12px;padding:12px 14px;color:#0F172A !important;border:2px solid #93C5FD;margin-bottom:8px;box-shadow:0 2px 8px rgba(15,23,42,0.05);'>"
+                f"<div style='font-size:0.78rem;font-weight:800;color:#1A73E8 !important;background-color:transparent !important;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;'>"
+                f"☀️ Sunlit Ocean Depth Profile — Surface Canopy to Abyssal Carbon Lock ({sel_site})"
+                f"</div>"
+                f"<div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;background-color:#FFFFFF !important;color:#0F172A !important;font-size:0.83rem;font-weight:700;padding:8px 12px;border-radius:8px;border:1.5px solid #CBD5E1;border-left:5px solid #1A73E8;margin-bottom:7px;'>"
+                f"<span style='color:#0F172A !important;background-color:#FFFFFF !important;'>🛰️ <b style='color:#1A73E8 !important;background-color:#FFFFFF !important;'>0m Surface Photonic Zone</b> <span style='color:#0F172A !important;background-color:#FFFFFF !important;'>({surf_desc})</span></span>"
+                f"<span style='color:#166534 !important;background-color:#DCFCE7 !important;border:1px solid #86EFAC;padding:2px 9px;border-radius:999px;font-weight:800;'>PAR: {site_data.get('par_light', 38.0)} mol/m²/d | Ω_arag {site_data.get('omega_aragonite', 2.85):.2f}</span>"
+                f"</div>"
+                f"<div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;background-color:#FFFFFF !important;color:#0F172A !important;font-size:0.83rem;font-weight:700;padding:8px 12px;border-radius:8px;border:1.5px solid #CBD5E1;border-left:5px solid #D97706;margin-bottom:7px;'>"
+                f"<span style='color:#0F172A !important;background-color:#FFFFFF !important;'>🫧 <b style='color:#B45309 !important;background-color:#FFFFFF !important;'>{crush_d}m Hydrostatic Crush Zone</b> <span style='color:#0F172A !important;background-color:#FFFFFF !important;'>(~20 Bar Pressure Threshold)</span></span>"
+                f"<span style='color:#1E40AF !important;background-color:#EFF6FF !important;border:1px solid #93C5FD;padding:2px 9px;border-radius:999px;font-weight:800;'>Gas Bladders Collapse → Natural Negative Buoyancy</span>"
+                f"</div>"
+                f"<div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;background-color:#FFFFFF !important;color:#0F172A !important;font-size:0.83rem;font-weight:700;padding:8px 12px;border-radius:8px;border:1.5px solid #CBD5E1;border-left:5px solid #188038;'>"
+                f"<span style='color:#0F172A !important;background-color:#FFFFFF !important;'>⚓ <b style='color:#188038 !important;background-color:#FFFFFF !important;'>{trench_d:,}m Abyssal Basin Floor</b> <span style='color:#0F172A !important;background-color:#FFFFFF !important;'>(SMART Cable Verified • {tau_yrs}-Yr Residence)</span></span>"
+                f"<span style='color:#166534 !important;background-color:#DCFCE7 !important;border:1px solid #86EFAC;padding:2px 9px;border-radius:999px;font-weight:800;'>ΔO₂ {site_data.get('benthic_o2_delta_pct', -0.9)}% | CH₄ = 0.00 g/m²/yr</span>"
+                f"</div>"
+                f"</div>"
+            )
+            st.markdown(depth_html, unsafe_allow_html=True)
             aud_html = f"""
-            <div style="font-family:'Inter',sans-serif;background:#F8FAFC;border:1px solid #CBD5E1;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-                <div style="font-size:12px;color:#0F172A;font-weight:700;">🔊 Hydrophone Reef Soundscape (+{db_gain:.1f} dB Recovery)</div>
+            <meta name="color-scheme" content="light only">
+            <meta name="darkreader-lock">
+            <div style="font-family:'Inter',sans-serif;background-color:#FFFFFF !important;border:1.5px solid #CBD5E1;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;color:#0F172A !important;">
+                <div style="font-size:12px;color:#0F172A !important;background-color:#FFFFFF !important;font-weight:700;">🔊 Hydrophone Reef Soundscape (+{db_gain:.1f} dB Recovery)</div>
                 <div style="display:flex;gap:6px;">
-                    <button onclick="playOcean(false)" style="background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:700;cursor:pointer;">🔇 Degraded Baseline</button>
-                    <button onclick="playOcean(true)" style="background:#DCFCE7;color:#166534;border:1px solid #86EFAC;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:700;cursor:pointer;">🎶 Restored Reef (+{db_gain:.1f} dB)</button>
+                    <button onclick="playOcean(false)" style="background-color:#FEE2E2 !important;color:#991B1B !important;border:1px solid #FCA5A5;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:700;cursor:pointer;">🔇 Degraded Baseline</button>
+                    <button onclick="playOcean(true)" style="background-color:#DCFCE7 !important;color:#166534 !important;border:1px solid #86EFAC;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:700;cursor:pointer;">🎶 Restored Reef (+{db_gain:.1f} dB)</button>
                 </div>
             </div>
             <script>
