@@ -63,6 +63,26 @@ st.markdown("""
     [data-testid="stExpander"] summary p, [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {
         color: #0F172A !important;
     }
+    [data-testid="stExpander"], [data-testid="stExpander"] details {
+        background-color: #FFFFFF !important;
+        border: 1.5px solid #BAE6FD !important;
+        border-radius: 10px !important;
+        color: #0F172A !important;
+    }
+    [data-testid="stExpander"] summary {
+        background-color: #F0F9FF !important;
+        color: #0F172A !important;
+        border-radius: 8px !important;
+        font-weight: 700 !important;
+    }
+    [data-testid="stExpander"] summary:hover {
+        background-color: #E0F2FE !important;
+        color: #1A73E8 !important;
+    }
+    [data-testid="stExpanderDetails"] {
+        background-color: #FFFFFF !important;
+        color: #0F172A !important;
+    }
     .block-container { padding-top: 1rem; padding-bottom: 2rem; max-width: 98%; }
     .stMarkdown, .element-container { overflow: visible !important; }
     .google-accent-bar {
@@ -1439,23 +1459,27 @@ with col_ops:
             handshake_animation()
             st.success(f"🤝 **Permit & Community Protocol Initiated for {sel_site}!** Fast-track NOAA, London Protocol / EPA & Coastal Commission pack ready.")
 
-        with st.expander("🌊🔊 Interactive Ocean Depth Cross-Section & Reef Bioacoustic Soundscape", expanded=False):
+        with st.expander("🌊🔊 Interactive Ocean Depth Cross-Section & Reef Bioacoustic Soundscape", expanded=True):
             crush_d = int(site_data.get("pneumatocyst_crush_depth_m", 190)) if is_sargassum_mode else 200
             trench_d = int(site_data.get("trench_depth_m", 2400))
             db_gain = float(site_data.get("bioacoustic_db_gain", 10.2))
+            tau_yrs = int(site_data.get("abyssal_residence_yrs", 680))
             st.markdown(f"""
-            <div style="background:linear-gradient(180deg,#E0F2FE 0%,#BAE6FD 22%,#0284C7 58%,#0F172A 100%);border-radius:10px;padding:12px 14px;color:#FFFFFF !important;border:1.5px solid #38BDF8;margin-bottom:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;color:#0F172A !important;font-size:0.80rem;font-weight:800;background:rgba(255,255,255,0.88);padding:4px 10px;border-radius:6px;margin-bottom:6px;">
-                    <span>🛰️ 0m Surface Photonic Zone ({'Pelagic Sargassum Skimming + Turtle TED Grid' if is_sargassum_mode else 'Cultivated Canopy + pH Halo + Trash Boom'})</span>
-                    <span style="color:#15803D !important;">PAR: {site_data.get('par_light', 38.0)} mol/m²/d</span>
+            <div style="background:linear-gradient(180deg,#F0F9FF 0%,#E0F2FE 50%,#BAE6FD 100%);border-radius:12px;padding:12px 14px;color:#0F172A !important;border:1.5px solid #7DD3FC;margin-bottom:8px;box-shadow:0 2px 10px rgba(2,132,199,0.08);">
+                <div style="font-size:0.76rem;font-weight:800;color:#0369A1 !important;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">
+                    ☀️ Sunlit Ocean Depth Profile — Surface Canopy to Abyssal Carbon Lock ({sel_site})
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;color:#FEF08A !important;font-size:0.80rem;font-weight:800;background:rgba(15,23,42,0.55);padding:5px 10px;border-radius:6px;border-left:4px solid #FACC15;margin-bottom:6px;">
-                    <span>🫧 {crush_d}m Hydrostatic Crush Threshold (~20 Bar Pressure)</span>
-                    <span>Pneumatocysts Collapse -> Negative Buoyancy</span>
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;color:#0F172A !important;font-size:0.81rem;font-weight:700;background:#FFFFFF !important;padding:7px 11px;border-radius:8px;border:1px solid #BAE6FD;border-left:5px solid #0284C7;margin-bottom:7px;">
+                    <span style="color:#0F172A !important;">🛰️ <b>0m Surface Photonic Zone</b> ({'Pelagic Sargassum Skimming + Turtle Escape Grid' if is_sargassum_mode else 'Cultivated Canopy + +0.12 pH Halo + Trash Boom'})</span>
+                    <span style="color:#15803D !important;background:#DCFCE7;padding:2px 8px;border-radius:999px;font-weight:800;">PAR: {site_data.get('par_light', 38.0)} mol/m²/d | Ω_arag {site_data.get('omega_aragonite', 2.85):.2f}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;color:#E0F2FE !important;font-size:0.80rem;font-weight:800;background:rgba(15,23,42,0.82);padding:5px 10px;border-radius:6px;border-left:4px solid #34A853;">
-                    <span>⚓ {trench_d:,}m Abyssal Trench Floor (SMART Cable Verified)</span>
-                    <span style="color:#4ADE80 !important;">ΔO₂ {site_data.get('benthic_o2_delta_pct', -0.9)}% | CH₄ = 0.00 g/m²/yr</span>
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;color:#0F172A !important;font-size:0.81rem;font-weight:700;background:#FEFCE8 !important;padding:7px 11px;border-radius:8px;border:1px solid #FDE047;border-left:5px solid #D97706;margin-bottom:7px;">
+                    <span style="color:#78350F !important;">🫧 <b>{crush_d}m Hydrostatic Crush Zone</b> (~20 Bar Pressure Threshold)</span>
+                    <span style="color:#92400E !important;background:#FEF3C7;padding:2px 8px;border-radius:999px;font-weight:800;">Gas Bladders Collapse → Natural Negative Buoyancy</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;color:#0F172A !important;font-size:0.81rem;font-weight:700;background:#ECFDF5 !important;padding:7px 11px;border-radius:8px;border:1px solid #86EFAC;border-left:5px solid #16A34A;">
+                    <span style="color:#064E3B !important;">⚓ <b>{trench_d:,}m Abyssal Basin Floor</b> (SMART Cable Verified • {tau_yrs}-Yr Residence)</span>
+                    <span style="color:#166534 !important;background:#DCFCE7;padding:2px 8px;border-radius:999px;font-weight:800;">ΔO₂ {site_data.get('benthic_o2_delta_pct', -0.9)}% | CH₄ = 0.00 g/m²/yr</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
