@@ -1568,7 +1568,7 @@ with col_map:
 
 with col_ops:
     t_mission, t_news, t1, t2, t_mrv, t3 = st.tabs([
-        "🚀 Start Here & Glossary",
+        "🏛️ About Blue 42, Mission & Glossary",
         "📰 What the Kelp?",
         "📈 Site Health, Remote Sensing & Biodiversity",
         "💰 10-Yr ROI & Cost Levers",
@@ -1577,7 +1577,28 @@ with col_ops:
     ])
 
     with t_mission:
-        st.info("**Why Blue 42 Is a Dual-Mission Planetary Ocean OS:** Traditional ocean tools only show isolated pieces of the puzzle. **Blue 42 | The Kelp Contender** unites **Mode 1 (Stationary Kelp Restoration & Cultivation)** and **Mode 2 (Pelagic *Sargassum* Bloom Interception & Methane Avoidance)** with **Multi-Sensor Satellite/SAR/PACE Telemetry**, **IUCN & eDNA Biodiversity Verification**, **Arsenic & Oil Spill Screening**, **Subsea Cable Safety**, **10-Year Economics**, and **SHA-256 Carbon & Methane Certificates**.")
+        st.markdown("""
+        <div style="background:linear-gradient(135deg,#EFF6FF 0%,#F0FDF4 100%);border:1.5px solid #93C5FD;border-left:5px solid #1A73E8;border-radius:10px;padding:14px 16px;margin-bottom:10px;color:#0F172A !important;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
+                <span style="font-size:1.0rem;font-weight:800;color:#1E3A8A !important;">🏛️ About Blue 42 | The Kelp Contender — Mission &amp; Market Readiness</span>
+                <span style="background:#DCFCE7;color:#166534;border:1px solid #86EFAC;padding:2px 9px;border-radius:999px;font-size:0.74rem;font-weight:800;">✅ 100% Google Sustainability Compliant</span>
+            </div>
+            <div style="font-size:0.89rem;color:#1E293B !important;line-height:1.55;">
+                <b>The Mission:</b> Turn coastal macroalgae restoration and pelagic <i>Sargassum</i> interception from fragmented science into a <b>verifiable, audit-ready, and commercially self-sustaining ocean asset class</b>.<br/>
+                • <b>🌲 Mode 1 (Stationary Kelp Restoration &amp; Cultivation):</b> Rebuilds temperate &amp; tropical kelp forests across known leases, untapped frontier corridors, and historic ghost forests—generating <b>&gt;1,000m Abyssal Carbon Removal</b>, <b>+0.12 pH Shellfish Protection</b>, <b>PHA Bioplastics</b>, and <b>Zero-Methane Cattle Feed</b>.<br/>
+                • <b>🚨 Mode 2 (Pelagic <i>Sargassum</i> Interception &amp; Methane Avoidance):</b> Tracks and intercepts invasive Atlantic/Caribbean <i>Sargassum</i> megarafts offshore before they smother coral reefs and rot anaerobically on beaches—preventing <b>Coastal Methane (CH₄) &amp; Toxic H₂S Emissions</b>, sinking biomass below the <b>&gt;200m Pneumatocyst Crush Threshold</b>, and mineralizing high-arsenic biomass safely into <b><i>Sargablock</i> Hurricane Bio-Bricks</b>.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        with st.expander("🏗️ 4-Layer Platform Architecture & Feature Matrix (How Blue 42 Works End-to-End)", expanded=True):
+            arch_rows = [
+                {"Architecture Layer": "🛰️ Layer 1: Orbital & Subsea Telemetry (100% Google Stack)", "Core Features & Scientific Engines": "Sentinel-2/3 NDKI & FAI + 3-Endmember Sub-Pixel Unmixing + Sentinel-1 C-Band SAR + NASA PACE Chl-a + AlphaEarth Embeddings + ITU SMART Cables", "Market & Audit Value": "Eliminates cloud/glint blind spots (±% CI) & verifies 24/7 seafloor permanence"},
+                {"Architecture Layer": "🛡️ Layer 2: 6-Point Risk, Safety & Toxicity Gate", "Core Features & Scientific Engines": "ICPC 1.5km Subsea Cable Buffer + Shipping/Whale Exclusion + Arsenic (<3 ppm) & PAH (<0.05 ppm) Gate + Sea-Turtle TED Grid + <8% NO₃⁻ Cap", "Market & Audit Value": "Prevents $1.5M–$5M cable strikes, toxic food contamination & marine bycatch"},
+                {"Architecture Layer": "⚖️ Layer 3: Conservative Carbon, Methane & Redox MRV", "Core Features & Scientific Engines": "Revelle Air-Sea CO₂ Lag Deduction (84–93%) + Dynamic Counterfactual + >200m Crush Physics + Full Redox Guardrail (ΔO₂<2%, N₂O=0, CH₄=0)", "Market & Audit Value": "Zero-greenwashing compliance under Isometric, Verra VM0033 & MethaneSAT"},
+                {"Architecture Layer": "🏦 Layer 4: Institutional Offtake, Insurance & Disclosure", "Core Features & Scientific Engines": "Frontier/Alphabet CDR RFP Scorer + Supply-Chain Offtake Matcher + Swiss Re Parametric Reef Insurance + 1-Click TNFD (LEAP) & EU CSRD Export", "Market & Audit Value": "68–78% non-carbon revenue subsidy brings net CDR breakeven below $50/MT CO₂e"},
+            ]
+            st.dataframe(pd.DataFrame(arch_rows), use_container_width=True, hide_index=True)
 
         with st.expander("🏅 Google Geo 2030 'MAP' Charter & Sustainability Grand Challenge Scorecard", expanded=True):
             tot_net_co2 = float(safe_df['net_bankable_co2'].sum()) if not safe_df.empty else 0.0
@@ -1611,6 +1632,7 @@ with col_ops:
                 {"Capability": "Methane (CH₄) Avoidance & Zero-Methanogenesis Guardrail", "Satellite-Only Viewers": "❌ No", "Biology-Only Models": "❌ No", "Standalone Cost / ROV Tools": "❌ No", "BLUE 42 (Kelp Contender)": "✅ Yes (Beach-Rot/Enteric CH₄ + ΔO₂ < 2%)"},
                 {"Capability": "Inorganic Arsenic (As), Oil Spill (PAH) & Trash Screening", "Satellite-Only Viewers": "❌ No", "Biology-Only Models": "❌ No", "Standalone Cost / ROV Tools": "❌ No", "BLUE 42 (Kelp Contender)": "✅ Yes (Arsenic Gate + PAH + Trash Boom)"},
                 {"Capability": "Shipping, Whale & Subsea Cable Safety Blocking", "Satellite-Only Viewers": "❌ No", "Biology-Only Models": "❌ No", "Standalone Cost / ROV Tools": "❌ No", "BLUE 42 (Kelp Contender)": "✅ Yes (ICPC 1.5km Buffer + SMART)"},
+                {"Capability": "Frontier RFP Scorer, Swiss Re Insurance & TNFD/CSRD", "Satellite-Only Viewers": "❌ No", "Biology-Only Models": "❌ No", "Standalone Cost / ROV Tools": "❌ No", "BLUE 42 (Kelp Contender)": "✅ Yes (68–78% Co-Product Subsidy + CSV)"},
                 {"Capability": "Live 'What the Kelp?' News + 1-Click Signed PDFs", "Satellite-Only Viewers": "❌ No", "Biology-Only Models": "❌ No", "Standalone Cost / ROV Tools": "❌ No", "BLUE 42 (Kelp Contender)": "✅ Yes (Google News RSS + PDF/KML)"},
             ]
             st.dataframe(pd.DataFrame(bench_rows), use_container_width=True, hide_index=True)
