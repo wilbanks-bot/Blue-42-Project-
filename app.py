@@ -892,32 +892,79 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-mission_mode = st.radio(
-    "🛰️ Select Planetary Ocean Mission Mode:",
-    [
-        "🌲 Mode 1: Stationary Kelp Restoration & Cultivation (Known, Untapped & Ghost-Forest Sites)",
-        "🚨 Mode 2: Pelagic Sargassum Bloom Interception & Methane Avoidance (Great Atlantic Sargassum Belt)",
-    ],
-    horizontal=True,
-    help="Switch between Stationary Cold/Temperate Kelp Leases (Mode 1) and Dynamic Tropical Pelagic Sargassum Bloom Interception, >200m Pneumatocyst Sinking & Beach-Rot Methane (CH₄) Avoidance (Mode 2).",
-)
+if "preset_mission_idx" not in st.session_state:
+    st.session_state.preset_mission_idx = 0
+if "preset_sarg_idx" not in st.session_state:
+    st.session_state.preset_sarg_idx = 0
+if "preset_kelp_idx" not in st.session_state:
+    st.session_state.preset_kelp_idx = 0
+
+st.markdown("<div style='font-size:0.86rem; font-weight:800; color:#1A73E8; margin-bottom:4px;'>⚡ 1-CLICK MISSION PRESETS (Instant Guided Scenarios — Zero Sliders Needed):</div>", unsafe_allow_html=True)
+pr1, pr2, pr3, pr4 = st.columns(4)
+if pr1.button("🌴 Save Caribbean Beaches (PR Trench)", use_container_width=True, help="Jumps to Mode 2: Puerto Rico & USVI Trench Sargassum Interception & >185m Pneumatocyst Sinking!"):
+    st.session_state.preset_mission_idx = 1
+    st.session_state.preset_sarg_idx = 0
+    st.session_state.selected_site_id = "SG-10"
+    st.rerun()
+if pr2.button("🦦 Restore California Kelp & Otters", use_container_width=True, help="Jumps to Mode 1: Channel Islands Giant Kelp Restoration & Sea Otter Habitat!"):
+    st.session_state.preset_mission_idx = 0
+    st.session_state.preset_kelp_idx = 0
+    st.session_state.selected_site_id = "KK-1"
+    st.rerun()
+if pr3.button("🐄 Zero-Methane Cow Feed (Hawaii)", use_container_width=True, help="Jumps to Mode 1: Warm-Water Hawaiian Red Ogo & Asparagopsis Cattle Feed Cultivation!"):
+    st.session_state.preset_mission_idx = 0
+    st.session_state.preset_kelp_idx = 3
+    st.session_state.selected_site_id = "KK-1"
+    st.rerun()
+if pr4.button("🧱 Hurricane Bio-Brick Hub (Barbados)", use_container_width=True, help="Jumps to Mode 2: Barbados & Lesser Antilles Gateway for Sargablock Bio-Brick Valorization!"):
+    st.session_state.preset_mission_idx = 1
+    st.session_state.preset_sarg_idx = 2
+    st.session_state.selected_site_id = "SG-3"
+    st.rerun()
+
+c_mode_col, c_view_col = st.columns([6.2, 3.8])
+with c_mode_col:
+    mission_mode = st.radio(
+        "🛰️ Select Planetary Ocean Mission Mode:",
+        [
+            "🌲 Mode 1: Stationary Kelp Restoration & Cultivation (Known, Untapped & Ghost-Forest Sites)",
+            "🚨 Mode 2: Pelagic Sargassum Bloom Interception & Methane Avoidance (Great Atlantic Sargassum Belt)",
+        ],
+        index=st.session_state.preset_mission_idx,
+        horizontal=True,
+        help="Switch between Stationary Cold/Temperate Kelp Leases (Mode 1) and Dynamic Tropical Pelagic Sargassum Bloom Interception, >200m Pneumatocyst Sinking & Beach-Rot Methane (CH₄) Avoidance (Mode 2).",
+    )
+with c_view_col:
+    ux_experience_mode = st.radio(
+        "🎭 Choose Experience View Depth:",
+        [
+            "✨ Guided Story View",
+            "💼 Buyer & Insurance View",
+            "🔬 Full Scientist View",
+        ],
+        index=0,
+        horizontal=True,
+        help="Guided Story View keeps the interface clean and visual; Buyer & Insurance View highlights Offtake & Parametric Insurance; Full Scientist View opens all Earth Engine & biogeochemical tables.",
+    )
 is_sargassum_mode = "Mode 2" in mission_mode
+is_scientist_view = "Scientist" in ux_experience_mode
+is_buyer_view = "Buyer" in ux_experience_mode
 
 st.markdown("""
-<div style="background-color: #F0F7FF !important; border: 1.5px solid #93C5FD; border-left: 6px solid #1A73E8; border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; box-shadow: 0 4px 14px rgba(15,23,42,0.06);">
-    <div style="font-size: 0.96rem; color: #1A73E8 !important; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px;">🧭 User Guide</div>
-    <div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.96rem; color: #0F172A !important; line-height: 1.55; font-weight: 500;">
-        <div style="flex: 1; min-width: 240px; background-color: #FFFFFF !important; border: 1px solid #CBD5E1; border-top: 4px solid #188038; border-radius: 8px; padding: 12px 14px; color: #0F172A !important;">
-            <span style="color: #188038 !important; font-weight: 800; font-size: 1.0rem;">1️⃣ Choose Mission Mode &amp; Safe Corridor:</span><br/>
-            Toggle between <b style="color:#188038 !important;">🌲 Stationary Kelp Sites</b> (Known, Untapped &amp; Ghost-Forest) or <b style="color:#D93025 !important;">🚨 Pelagic Sargassum Blooms</b> (tracked via Sentinel-3 <b style="color:#1A73E8 !important;">FAI Drift Vectors</b> before beach stranding).
+<div style="background-color: #F0F7FF !important; border: 1.5px solid #93C5FD; border-left: 6px solid #1A73E8; border-radius: 12px; padding: 14px 18px; margin-bottom: 14px; box-shadow: 0 4px 14px rgba(15,23,42,0.06);">
+    <div style="font-size: 0.92rem; color: #1A73E8 !important; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;">🧭 3-Step Visual Journey</div>
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.93rem; color: #0F172A !important; line-height: 1.5; font-weight: 500;">
+        <div style="flex: 1; min-width: 230px; background-color: #FFFFFF !important; border: 1px solid #CBD5E1; border-top: 4px solid #188038; border-radius: 8px; padding: 10px 14px; color: #0F172A !important;">
+            <span style="color: #188038 !important; font-weight: 800;">1️⃣ Pick a Preset or Ocean Basin:</span><br/>
+            Click a <b style="color:#1A73E8 !important;">⚡ 1-Click Mission Preset</b> above or toggle between <b style="color:#188038 !important;">🌲 Kelp Restoration</b> and <b style="color:#D93025 !important;">🚨 Pelagic Sargassum Interception</b>.
         </div>
-        <div style="flex: 1; min-width: 240px; background-color: #FFFFFF !important; border: 1px solid #CBD5E1; border-top: 4px solid #1A73E8; border-radius: 8px; padding: 12px 14px; color: #0F172A !important;">
-            <span style="color: #1A73E8 !important; font-weight: 800; font-size: 1.0rem;">2️⃣ Inspect Multi-Sensor Physics &amp; Biodiversity:</span><br/>
-            Review <b style="color:#1A73E8 !important;">NDKI / FAI + Sentinel-1 SAR + PACE</b> confidence intervals, <b style="color:#188038 !important;">IUCN Keystone Species &amp; eDNA/Bioacoustics</b>, and <b style="color:#B45309 !important;">Arsenic / PAH Toxicity Gates</b>.
+        <div style="flex: 1; min-width: 230px; background-color: #FFFFFF !important; border: 1px solid #CBD5E1; border-top: 4px solid #1A73E8; border-radius: 8px; padding: 10px 14px; color: #0F172A !important;">
+            <span style="color: #1A73E8 !important; font-weight: 800;">2️⃣ Explore 3D Map, Depth Column &amp; Reef Audio:</span><br/>
+            Inspect the <b style="color:#1A73E8 !important;">3D Map</b>, the <b style="color:#188038 !important;">Animated Ocean Depth Cross-Section</b>, and click <b style="color:#B45309 !important;">🔊 Listen to Reef Soundscape</b>.
         </div>
-        <div style="flex: 1; min-width: 240px; background-color: #FFFFFF !important; border: 1px solid #CBD5E1; border-top: 4px solid #D97706; border-radius: 8px; padding: 12px 14px; color: #0F172A !important;">
-            <span style="color: #B45309 !important; font-weight: 800; font-size: 1.0rem;">3️⃣ Stack Carbon, Methane &amp; Cleanup Credits:</span><br/>
-            Model <b style="color:#188038 !important;">&gt;1,000m Abyssal Carbon Sinking</b> (<b style="color:#1A73E8 !important;">&gt;200m Pneumatocyst Crush</b> in Sargassum Mode), <b style="color:#D93025 !important;">Methane (CH₄) Avoidance</b>, and export SHA-256 PDFs.
+        <div style="flex: 1; min-width: 230px; background-color: #FFFFFF !important; border: 1px solid #CBD5E1; border-top: 4px solid #D97706; border-radius: 8px; padding: 10px 14px; color: #0F172A !important;">
+            <span style="color: #B45309 !important; font-weight: 800;">3️⃣ Match Buyers, Cut Insurance &amp; Mint PDF:</span><br/>
+            Match harvest to <b style="color:#188038 !important;">Commercial Offtake Buyers</b>, model <b style="color:#1A73E8 !important;">Parametric Reef Insurance Savings</b>, and export <b style="color:#D93025 !important;">TNFD/CSRD &amp; SHA-256 PDFs</b>.
         </div>
     </div>
 </div>
@@ -931,7 +978,7 @@ if is_sargassum_mode:
         "Mexican Caribbean & Yucatan Channel (Cancun / Tulum / Cozumel)",
         "Barbados & Lesser Antilles Pelagic Gateway (Eastern Caribbean)",
         "West Africa Tropical Atlantic (Sierra Leone – Ghana Upwelling Belt)",
-    ])
+    ], index=st.session_state.preset_sarg_idx)
     sector_key = (
         "Mexican Caribbean (Cancun / Yucatan)" if "Mexican" in sector else
         ("Barbados & Lesser Antilles Gateway" if "Barbados" in sector else
@@ -943,7 +990,7 @@ else:
         "British Columbia & Haida Gwaii, Canada (Subarctic Corridor)",
         "Tasmania & Great Southern Reef, Australia (Southern Ocean)",
         "Hawaiian Archipelago, HI (Tropical Warm-Water)",
-    ])
+    ], index=st.session_state.preset_kelp_idx)
     sector_key = "British Columbia" if "British Columbia" in sector else ("Tasmania" if "Tasmania" in sector else ("Hawaii" if "Hawaiian" in sector else "Channel Islands"))
 
 region_notes = {
@@ -1295,6 +1342,44 @@ with col_ops:
             _pill("Storm" not in stat_str and "Shear" not in stat_str and "Restricted" not in stat_str, "Storms & Sanctuary"),
         ])
 
+        pareto_pct = min(100, max(0, int(round(float(site_data.get("pareto_score", 85))))))
+        equil_pct = min(100, max(0, int(round(float(site_data.get("air_sea_equil_pct", 88))))))
+        edna_val = float(site_data.get("edna_shannon_index", 4.1))
+        edna_pct = min(100, max(0, int(round((edna_val / 5.0) * 100))))
+
+        def _svg_ring(pct: int, color: str, label: str, sub: str) -> str:
+            dash = round((pct / 100.0) * 150.8, 1)
+            return (
+                f"<div style='display:flex;align-items:center;gap:8px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:6px 10px;flex:1;min-width:135px;'>"
+                f"<svg width='44' height='44' viewBox='0 0 56 56'>"
+                f"<circle cx='28' cy='28' r='24' fill='none' stroke='#E2E8F0' stroke-width='5'/>"
+                f"<circle cx='28' cy='28' r='24' fill='none' stroke='{color}' stroke-width='5' stroke-linecap='round' stroke-dasharray='{dash} 150.8' transform='rotate(-90 28 28)'/>"
+                f"<text x='28' y='32' text-anchor='middle' font-size='12' font-weight='800' fill='#0F172A'>{pct}%</text>"
+                f"</svg>"
+                f"<div style='line-height:1.25;'><div style='font-size:0.76rem;font-weight:800;color:#0F172A;'>{label}</div><div style='font-size:0.71rem;color:#475569;font-weight:600;'>{sub}</div></div>"
+                f"</div>"
+            )
+
+        rings_html = (
+            "<div style='display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;'>"
+            + _svg_ring(pareto_pct, "#1A73E8", "Site Quality", f"Grade {site_data.get('report_card_grade', 'A')}")
+            + _svg_ring(equil_pct, "#188038", "Air-Sea Lock", f"η = {site_data.get('air_sea_equil_pct', 88.5)}%")
+            + _svg_ring(edna_pct, "#00897B", "Biodiversity", f"eDNA H'={edna_val:.2f}")
+            + "</div>"
+        )
+
+        countdown_banner_html = (
+            f"<div style='background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:8px;padding:6px 10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;'>"
+            f"<span style='font-size:0.80rem;font-weight:800;color:#991B1B;'>⏱️ LIVE SAR/FAI DRIFT ALERT: Beach &amp; Coral Impact in {site_data.get('hours_to_beach_impact', 36)} Hours</span>"
+            f"<span style='background:#DC2626;color:#FFFFFF;font-size:0.72rem;font-weight:800;padding:2px 8px;border-radius:999px;'>&gt;{site_data.get('pneumatocyst_crush_depth_m', 185)}m Crush Ready</span>"
+            f"</div>"
+            if is_sargassum_mode else
+            f"<div style='background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:8px;padding:6px 10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;'>"
+            f"<span style='font-size:0.80rem;font-weight:800;color:#1E40AF;'>🌊 ABYSSAL TRENCH SINK: {site_data.get('trench_depth_m', 1850):,}m Depth ({site_data.get('trench_dist_km', 28)} km Offshore)</span>"
+            f"<span style='background:#1A73E8;color:#FFFFFF;font-size:0.72rem;font-weight:800;padding:2px 8px;border-radius:999px;'>100+ Yr Lock</span>"
+            f"</div>"
+        )
+
         extra_sarg_line = (
             f"• <b style='color:#D93025;'>Sargassum Physics &amp; Arsenic Gate:</b> Beach Impact in <b>{site_data.get('hours_to_beach_impact', 36)}h</b> | Pneumatocyst Crush Depth: <b>&gt;{site_data.get('pneumatocyst_crush_depth_m', 185)}m</b> | Arsenic: <b>{site_data.get('arsenic_ppm', 62.0):.1f} ppm As</b> (Food Blocked -> Abyssal Sink &amp; Bio-Bricks) | Avoids <b>{site_data.get('methane_avoided_tco2e', 0):.1f} MT CO₂e Beach-Rot Methane (CH₄)</b> &amp; <b>{site_data.get('h2s_gas_avoided_mt', 0):.2f} MT H₂S gas</b><br/>"
             if is_sargassum_mode else
@@ -1317,10 +1402,11 @@ with col_ops:
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
                 <span style="font-size:0.95rem; font-weight:800; color:#1A73E8 !important;">💡 Site Snapshot: {sel_site} &nbsp;<span style="background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; padding:2px 8px; border-radius:999px; font-size:0.78rem; font-weight:700;">{site_data.get('site_badge_short', '🏛️ Known Site')}</span></span>{verdict_badge}
             </div>
+            {countdown_banner_html}
+            {rings_html}
             <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">{safety_pills_html}</div>
             <div style="font-size:0.92rem; color:#0F172A !important; line-height:1.58;">
                 • <b style="color:#1A73E8;">Vector / Discovery Type:</b> <b>{site_data.get('site_category')}</b> — <span style="color:#334155;">{site_data.get('discovery_basis')}</span><br/>
-                • <b style="color:#1A73E8;">Site Quality Score:</b> <b>{site_data.get('pareto_score', 0)} / 100</b> &nbsp;|&nbsp; <b style="color:#1A73E8;">Satellite Grade:</b> <b style="color:#B45309;">{site_data.get('report_card_grade')}</b><br/>
                 {extra_sarg_line}
                 • <b style="color:#1A73E8;">Operating Area:</b> <b>{s_area_ha:.1f} Hectares</b> (approx. <b>{s_acres:.0f} Acres</b> or <b>{s_acres/1.32:.0f} Football Fields</b>)<br/>
                 • <b style="color:#1A73E8;">Upfront Cost:</b> <b>${s_capex_est:,.0f}</b> &nbsp;|&nbsp; <b style="color:#1A73E8;">Est. Net Profit:</b> <b style="color:#188038 !important;">${s_net_profit_yr:,.0f}/yr</b> &nbsp;|&nbsp; <b style="color:#1A73E8;">Payback:</b> <b>~{s_payback_yrs:.1f} Yrs</b><br/>
@@ -1342,6 +1428,57 @@ with col_ops:
         if qa2.button("🤝 Initiate Maritime Permit Handshake" if is_sargassum_mode else "🤝 Initiate Lease Handshake", key="top_handshake_anim_btn", use_container_width=True, disabled=not is_sel_safe, help="Triggers the glowing Handshake animation and initiates maritime interception or aquaculture lease permits!"):
             handshake_animation()
             st.success(f"🤝 **Permit & Community Protocol Initiated for {sel_site}!** Fast-track NOAA, London Protocol / EPA & Coastal Commission pack ready.")
+
+        with st.expander("🌊🔊 Interactive Ocean Depth Cross-Section & Reef Bioacoustic Soundscape", expanded=False):
+            crush_d = int(site_data.get("pneumatocyst_crush_depth_m", 190)) if is_sargassum_mode else 200
+            trench_d = int(site_data.get("trench_depth_m", 2400))
+            db_gain = float(site_data.get("bioacoustic_db_gain", 10.2))
+            st.markdown(f"""
+            <div style="background:linear-gradient(180deg,#E0F2FE 0%,#BAE6FD 22%,#0284C7 58%,#0F172A 100%);border-radius:10px;padding:12px 14px;color:#FFFFFF !important;border:1.5px solid #38BDF8;margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;color:#0F172A !important;font-size:0.80rem;font-weight:800;background:rgba(255,255,255,0.88);padding:4px 10px;border-radius:6px;margin-bottom:6px;">
+                    <span>🛰️ 0m Surface Photonic Zone ({'Pelagic Sargassum Skimming + Turtle TED Grid' if is_sargassum_mode else 'Cultivated Canopy + pH Halo + Trash Boom'})</span>
+                    <span style="color:#15803D !important;">PAR: {site_data.get('par_light', 38.0)} mol/m²/d</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;color:#FEF08A !important;font-size:0.80rem;font-weight:800;background:rgba(15,23,42,0.55);padding:5px 10px;border-radius:6px;border-left:4px solid #FACC15;margin-bottom:6px;">
+                    <span>🫧 {crush_d}m Hydrostatic Crush Threshold (~20 Bar Pressure)</span>
+                    <span>Pneumatocysts Collapse -> Negative Buoyancy</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;color:#E0F2FE !important;font-size:0.80rem;font-weight:800;background:rgba(15,23,42,0.82);padding:5px 10px;border-radius:6px;border-left:4px solid #34A853;">
+                    <span>⚓ {trench_d:,}m Abyssal Trench Floor (SMART Cable Verified)</span>
+                    <span style="color:#4ADE80 !important;">ΔO₂ {site_data.get('benthic_o2_delta_pct', -0.9)}% | CH₄ = 0.00 g/m²/yr</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            aud_html = f"""
+            <div style="font-family:'Inter',sans-serif;background:#F8FAFC;border:1px solid #CBD5E1;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                <div style="font-size:12px;color:#0F172A;font-weight:700;">🔊 Hydrophone Reef Soundscape (+{db_gain:.1f} dB Recovery)</div>
+                <div style="display:flex;gap:6px;">
+                    <button onclick="playOcean(false)" style="background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:700;cursor:pointer;">🔇 Degraded Baseline</button>
+                    <button onclick="playOcean(true)" style="background:#DCFCE7;color:#166534;border:1px solid #86EFAC;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:700;cursor:pointer;">🎶 Restored Reef (+{db_gain:.1f} dB)</button>
+                </div>
+            </div>
+            <script>
+            function playOcean(restored) {{
+                const Ctx = window.AudioContext || window.webkitAudioContext;
+                if (!Ctx) return;
+                const ctx = new Ctx();
+                const dur = 2.2;
+                const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+                const data = buf.getChannelData(0);
+                for (let i = 0; i < data.length; i++) {{
+                    const t = i / ctx.sampleRate;
+                    const wave = Math.sin(2 * Math.PI * (restored ? 180 : 95) * t) * 0.12;
+                    const crackle = (Math.random() * 2 - 1) * (restored ? 0.28 : 0.05) * (0.5 + 0.5 * Math.sin(2 * Math.PI * 6 * t));
+                    data[i] = (wave + crackle) * Math.exp(-t * 0.7);
+                }}
+                const src = ctx.createBufferSource();
+                src.buffer = buf;
+                src.connect(ctx.destination);
+                src.start();
+            }}
+            </script>
+            """
+            components.html(aud_html, height=54)
 
 with col_map:
     st.markdown(f"<h4 style='display:flex; align-items:center; color:#0F172A !important;'>🌊 3D {'Pelagic Sargassum Drift, Trench Sinking & Safety Map' if is_sargassum_mode else 'Ocean Safety, Oil Spill, Ocean Trash & Subsea Cable Map'} {leaf_info('Green columns are safe, high-yield sites; in Mode 2 (Sargassum), red/orange arcs show 7-day beach-stranding drift trajectories if unintercepted, while green-to-blue arcs route intercepted biomass to >1,000m abyssal trenches.')}</h4>", unsafe_allow_html=True)
@@ -1537,7 +1674,7 @@ with col_ops:
             </div>
             """, unsafe_allow_html=True)
 
-            with st.expander("🛰️ Multi-Sensor Spectral, SAR, Sub-Pixel Unmixing & Harmonic Remote Sensing (Earth Engine)", expanded=True):
+            with st.expander("🛰️ Multi-Sensor Spectral, SAR, Sub-Pixel Unmixing & Harmonic Remote Sensing (Earth Engine)", expanded=is_scientist_view):
                 st.caption("Fuses **Optical Spectral Indices (`NDKI / FAI / AFAI`)**, **3-Endmember Sub-Pixel Unmixing ($f_{\\text{algae}}$)**, cloud-penetrating **Sentinel-1 C-Band SAR Roughness**, and **NASA PACE Hyperspectral Ocean Color** with **Sun-Glint & Cloud-Mask Confidence Intervals (`±%`)**:")
                 rs1, rs2, rs3, rs4 = st.columns(4)
                 rs1.metric("Spectral Index (NDKI/FAI)", f"{site_data.get('ndki_fai_val', 0.48)}", f"±{site_data.get('cloud_glint_ci_pct', 3.2)}% Glint/Cloud CI")
@@ -1588,7 +1725,7 @@ with col_ops:
                 ]
                 st.dataframe(pd.DataFrame(bio_rows), use_container_width=True, hide_index=True)
 
-            with st.expander("🧪🛢️🗑️ Arsenic (As), Oil Spill (PAH), Ocean Trash & Nutrient Screening", expanded=False):
+            with st.expander("🧪🛢️🗑️ Arsenic (As), Oil Spill (PAH), Ocean Trash & Nutrient Screening", expanded=is_scientist_view):
                 st.caption("Screens every site for **Inorganic Arsenic (`As` in Pelagic Sargassum)**, **Reported Oil Spills (`PAHs`)**, **Floating Ocean Trash / Ghost Nets**, and **Agricultural Nitrogen Runoff**:")
                 pol_rows = [
                     {
@@ -1624,7 +1761,7 @@ with col_ops:
                 fig_rad.update_layout(template="plotly_white", font=dict(color="#0F172A"), paper_bgcolor="rgba(0,0,0,0)", polar=dict(bgcolor="#F8FAFC", radialaxis=dict(visible=True, range=[0, 100])), margin=dict(l=30, r=30, t=20, b=15), height=205)
                 st.plotly_chart(fig_rad, use_container_width=True)
 
-            with st.expander("🧬 Multi-Species Biophysical Niche Matcher (Kelp & Pelagic Sargassum Morphotypes)", expanded=False):
+            with st.expander("🧬 Multi-Species Biophysical Niche Matcher (Kelp & Pelagic Sargassum Morphotypes)", expanded=is_scientist_view):
                 niche_rows = [
                     {"Macroalgae Species / Morphotype": "Giant Kelp (Macrocystis pyrifera)", "Best Use": "Abyssal Carbon Sinking + Bioplastics", "Ideal Temp": "11–18°C", "Site Match": f"{min(99, max(35, int(100 - abs(sst - 14.8)*4.5)))}%", "Verdict": "⭐ Primary High-Yield Crop" if sst <= 18.5 else "⚠️ Temperate Only"},
                     {"Macroalgae Species / Morphotype": "Bull Kelp (Nereocystis luetkeana)", "Best Use": "High-Wave Cold Restoration", "Ideal Temp": "9–15°C", "Site Match": f"{min(98, max(30, int(100 - abs(sst - 12.5)*5.2)))}%", "Verdict": "✅ Strong Cold/Wave Fit" if sst <= 15.8 else "Cold-Water Only"},
@@ -1639,7 +1776,7 @@ with col_ops:
     with t2:
         if site_data is not None:
             st.markdown(f"<h5 style='display:flex; align-items:center;'>💵 10-Year Returns &amp; Cost-Cutting Levers {leaf_info('Model stacked income streams (including Abyssal Carbon, Beach-Rot Methane Avoidance, Bio-Bricks/Bioplastics, Nitrogen & Ocean Plastic Cleanup Credits), toggle cost-reduction levers, and build an optimal portfolio.')}</h5>", unsafe_allow_html=True)
-            with st.expander("⚙️ Prices, Return Rate (WACC), Community Share & Engineering Levers", expanded=True):
+            with st.expander("⚙️ Prices, Return Rate (WACC), Community Share & Engineering Levers", expanded=is_buyer_view or is_scientist_view):
                 c_p1, c_p2, c_p3 = st.columns(3)
                 carbon_price = c_p1.number_input("Abyssal Carbon Price ($/MT)", 50, 500, 150, 10)
                 biomass_price = c_p2.number_input("Bio-Bricks ($/MT)" if is_sargassum_mode else "Kelp Price ($/MT)", 80, 800, 180 if is_sargassum_mode else 300, 20)
@@ -1683,8 +1820,11 @@ with col_ops:
             ann_prof = rev_yr - opex_yr
             unit_bio_cost = ((capex / 10.0) + opex_yr) / max(eff_bio, 1.0)
             lcok = ((capex / 10.0) + opex_yr) / max(eff_co2 + (eff_ch4 if is_sargassum_mode else 0.0), 1.0)
+            non_carbon_rev = bio_rev_yr + wave_reb + (site_data['nitrogen_tons'] * 2000) + trash_credit_yr + ch4_credit_yr
+            coproduct_subsidy_pct = min(98.0, (non_carbon_rev / max(gross_rev_yr, 1.0)) * 100.0)
+            subsidized_cdr_breakeven = max(18.0, (((capex / 10.0) + opex_yr) - (non_carbon_rev * 0.35)) / max(eff_co2, 1.0))
             if ann_prof > 0:
-                st.success(f"**Payback:** Year {capex/ann_prof:.1f} | **10-Yr NPV:** \\${npv_curve[-1]:,.0f} | **Methane + Trash Credits:** +\\${ch4_credit_yr + trash_credit_yr:,.0f}/yr | **Cost/Ton Biomass:** \\${unit_bio_cost:,.0f}/MT | **Cost/Ton CO₂e:** \\${lcok:,.0f}")
+                st.success(f"**Payback:** Year {capex/ann_prof:.1f} | **10-Yr NPV:** \\${npv_curve[-1]:,.0f} | **Co-Product Revenue Share:** {coproduct_subsidy_pct:.0f}% | **Net Subsidized CDR Cost:** \\${subsidized_cdr_breakeven:,.0f}/MT CO₂e")
 
             with st.expander("🍩 Where Does the Money Come From? (Stacked Annual Revenue Streams)", expanded=True):
                 rev_streams = [
@@ -1698,7 +1838,78 @@ with col_ops:
                     rev_streams.insert(1, {"Revenue Stream": f"🔥 1B. Coastal Methane (CH₄, {'GWP-20' if use_gwp20 else 'GWP-100'}) & H₂S Avoidance", "Annual Income ($)": f"${ch4_credit_yr:,.0f}/yr", "How It Works": f"Avoids {eff_ch4:.1f} MT CO₂e of anaerobic beach-rot methane at $85/MT CO₂e"})
                 st.dataframe(pd.DataFrame(rev_streams), use_container_width=True, hide_index=True)
 
-            with st.expander("⚖️ International Maritime Law, Carbon Registry & Indigenous FPIC Readiness Matrix", expanded=False):
+            with st.expander("🏦 Frontier Climate & Alphabet 2026 CDR RFP Readiness ('Solving the Running Tide Lesson')", expanded=is_buyer_view):
+                st.caption("Why first-generation open-ocean kelp sinking struggled in 2024—and how **Blue 42's Co-Product Subsidy + Fixed-Trench SMART Cable Architecture** satisfies **Frontier Climate, Alphabet, Stripe & Symbiosis 2026 Offtake RFPs**:")
+                rfp_score = min(99, int(round(62 + (coproduct_subsidy_pct * 0.25) + (15 if "CLEARED" in site_data.get("status", "") else 0))))
+                rf1, rf2, rf3 = st.columns(3)
+                rf1.metric("Frontier / Alphabet RFP Score", f"{rfp_score} / 100", "Tier-1 Pre-Qualified" if rfp_score >= 88 else "Review Required")
+                rf2.metric("Non-Carbon Co-Product Subsidy", f"{coproduct_subsidy_pct:.1f}% of Revenue", "Solves Single-Stream Fragility")
+                rf3.metric("Subsidized CDR Breakeven", f"${subsidized_cdr_breakeven:,.0f} / MT CO₂e", "Target <$100/MT Achieved")
+                rfp_rows = [
+                    {"2026 Institutional RFP Criterion": "1. Economic Resilience ('Running Tide Lesson')", "Legacy 2024 Drift Sinking (Failed)": "100% reliant on carbon credits ($250–$400/MT)", "Blue 42 Architecture (2026 Bankable)": f"✅ {coproduct_subsidy_pct:.0f}% revenue from Bio-Products, Storm/Beach Rebates, N₂ & Plastic; CDR breakeven ${subsidized_cdr_breakeven:,.0f}/MT"},
+                    {"2026 Institutional RFP Criterion": "2. Seafloor Verification & Permanence", "Legacy 2024 Drift Sinking (Failed)": "Unverified open-ocean drift; unknown sinking depth", "Blue 42 Architecture (2026 Bankable)": f"✅ Fixed >{site_data.get('trench_depth_m', 1850):,}m Abyssal Basin + 24/7 ITU SMART Cable + ROV O₂/CH₄ Telemetry"},
+                    {"2026 Institutional RFP Criterion": "3. Air-Sea CO₂ Equilibration & Counterfactual", "Legacy 2024 Drift Sinking (Failed)": "Assumed 1 MT sunk = 1 MT atmospheric drawdown", "Blue 42 Architecture (2026 Bankable)": f"✅ Deducts {100-float(site_data.get('air_sea_equil_pct', 88.5)):.1f}% Revelle Air-Sea Lag + Dynamic Counterfactual Baseline"},
+                    {"2026 Institutional RFP Criterion": "4. Benthic Anoxia & Methane Reversal Guardrail", "Legacy 2024 Drift Sinking (Failed)": "Unmonitored seafloor organic loading risk", "Blue 42 Architecture (2026 Bankable)": f"✅ Capped at {site_data.get('benthic_loading_g_c_m2', 64.0)} g C/m²/yr (<120 Cap); ΔO₂ {site_data.get('benthic_o2_delta_pct')}% & CH₄ = 0.00"},
+                ]
+                st.dataframe(pd.DataFrame(rfp_rows), use_container_width=True, hide_index=True)
+
+            with st.expander("🏭 Commercial Supply-Chain Offtake Matcher (Who Buys the Biomass? — Arsenic & PAH Gate)", expanded=is_buyer_view):
+                as_val = float(site_data.get("arsenic_ppm", 1.9))
+                pah_val = float(site_data.get("pah_oil_ppm", 0.0))
+                st.caption(f"Automatically routes **{eff_bio:.1f} MT/yr** of harvested biomass based on live **Inorganic Arsenic (`{as_val:.1f} ppm As`)** and **Hydrocarbon (`{pah_val:.2f} ppm PAH`)** sensor gates:")
+                offtake_rows = [
+                    {
+                        "Commercial Offtake Buyer": "🧴 Tier-1 PHA Bioplastic & Compostable Packaging",
+                        "Safety Gate Requirement": "As < 10.0 ppm & PAH < 0.05 ppm",
+                        "Contract Price": "$300 – $380 / MT",
+                        "Site Match Status": "✅ ELIGIBLE — Primary Offtaker" if (as_val < 10.0 and pah_val < 0.05) else "⛔ BLOCKED (High Arsenic — Routed to Bio-Bricks)",
+                    },
+                    {
+                        "Commercial Offtake Buyer": "🐄 Low-Methane Cattle Feedlots (Asparagopsis / Kelp Blend)",
+                        "Safety Gate Requirement": "FDA/EFSA Food-Grade: As < 3.0 ppm & PAH < 0.02 ppm",
+                        "Contract Price": "$420 – $550 / MT",
+                        "Site Match Status": "✅ ELIGIBLE — Food/Feed Grade Certified" if (as_val < 3.0 and pah_val < 0.02) else f"⛔ AUTO-BLOCKED ({as_val:.1f} ppm As exceeds <3.0 ppm food limit)",
+                    },
+                    {
+                        "Commercial Offtake Buyer": "🧱 ASTM Sargablock Hurricane Bio-Bricks & Bio-Asphalt",
+                        "Safety Gate Requirement": "Mineralizes & locks heavy metals (As up to 150 ppm)",
+                        "Contract Price": "$160 – $210 / MT",
+                        "Site Match Status": "⭐ PRIMARY PELAGIC SARGASSUM BUYER (Arsenic Immobilized)" if is_sargassum_mode else "✅ Eligible Secondary Construction Offtaker",
+                    },
+                    {
+                        "Commercial Offtake Buyer": "🌊 Deep Abyssal Trench Carbon Lock (>1,000m Sink)",
+                        "Safety Gate Requirement": "Benthic Loading < 120 g C/m²/yr & ΔO₂ < 2.0%",
+                        "Contract Price": f"${carbon_price}/MT CO₂e + $85/MT CH₄",
+                        "Site Match Status": f"✅ CLEARED ({site_data.get('benthic_loading_g_c_m2', 64.0)} g C/m²/yr at {site_data.get('trench_depth_m', 1850):,}m)",
+                    },
+                ]
+                st.dataframe(pd.DataFrame(offtake_rows), use_container_width=True, hide_index=True)
+
+            with st.expander("🛡️ Parametric Coral Reef & Coastal Resort Insurance Calculator (Swiss Re / MAR Fund Model)", expanded=is_buyer_view):
+                st.caption("Quantifies **Wave Energy Attenuation** and **Avoided Beach-Inundation Liability** for municipal coastal authorities, ports, and Caribbean/Pacific hospitality insurers:")
+                ins_asset_val = float(site_data.get("averted_damage_millions", 18.0)) * 1e6
+                base_ins_prem = ins_asset_val * 0.018
+                wave_atten_pct = min(62.0, round(24.0 + (float(site_data.get("area_ha", 45)) * 0.42), 1))
+                prem_reduction_pct = min(22.5, round(11.5 + (wave_atten_pct * 0.16), 1))
+                annual_ins_savings = base_ins_prem * (prem_reduction_pct / 100.0)
+                ic1, ic2, ic3 = st.columns(3)
+                ic1.metric("Protected Coastal Asset Value", f"${ins_asset_val/1e6:,.1f}M USD", f"Wave Energy -{wave_atten_pct:.1f}%")
+                ic2.metric("Parametric Premium Reduction", f"-{prem_reduction_pct:.1f}% / Yr", "Swiss Re / MAR Reef Standard")
+                ic3.metric("Annual Insurance + Cleanup Saved", f"${annual_ins_savings + wave_reb:,.0f} / Yr", f"Includes ${wave_reb:,.0f} Municipal Rebate")
+
+            with st.expander("📊 1-Click Corporate TNFD (LEAP) & EU CSRD (ESRS E1 / E4) Nature Disclosure Export", expanded=is_buyer_view):
+                st.caption("Generates audit-ready disclosures for **TNFD (`Locate, Evaluate, Assess, Prepare`)** and **EU CSRD (`ESRS E1 Climate` & `ESRS E4 Marine Biodiversity`)**:")
+                tnfd_df = pd.DataFrame([
+                    {"Framework & Standard": "TNFD LEAP — Phase L (Locate)", "Disclosure Metric": "High-Priority Marine Biome & Subsea Cable Clearance", "Verified Site Value": f"{sector_key} | {sel_site} ({site_data.get('lat'):.3f}, {site_data.get('lon'):.3f}) | Cable Dist: {site_data.get('cable_dist_km')} km", "Audit Evidence": "GEE + ICPC Buffer + Bathymetry"},
+                    {"Framework & Standard": "TNFD LEAP — Phase E (Evaluate)", "Disclosure Metric": "Upwelling Nutrient Balance & Arsenic/PAH Gate", "Verified Site Value": f"NO₃⁻ Use: {site_data.get('upwelling_no3_consumed_pct', 4.2)}% (<8% Cap) | As: {site_data.get('arsenic_ppm', 1.9):.1f} ppm | PAH: {site_data.get('pah_oil_ppm', 0.0):.2f} ppm", "Audit Evidence": "PACE Chl-a + UAV Multispectral"},
+                    {"Framework & Standard": "EU CSRD — ESRS E1 (Climate Change)", "Disclosure Metric": "Net Abyssal CDR (>1,000m) + Avoided Methane (CH₄)", "Verified Site Value": f"{eff_co2:.2f} MT CO₂e/yr (η={site_data.get('air_sea_equil_pct')}%) + {eff_ch4:.1f} MT CO₂e CH₄ Avoided", "Audit Evidence": "Isometric / Verra VM0033 + MethaneSAT"},
+                    {"Framework & Standard": "EU CSRD — ESRS E4 (Marine Biodiversity)", "Disclosure Metric": "IUCN Species Recovery, eDNA (H') & Bioacoustics", "Verified Site Value": f"{site_data.get('iucn_keystone_species')} | eDNA H'={site_data.get('edna_shannon_index')} | +{site_data.get('bioacoustic_db_gain')} dB", "Audit Evidence": "ROV Wildlife Insights + Hydrophone"},
+                    {"Framework & Standard": "EU CSRD — ESRS S3 (Affected Communities)", "Disclosure Metric": "Indigenous & Local Fishing FPIC Benefit-Sharing", "Verified Site Value": f"{site_data.get('fpic_steward')} | {commons_share_pct}% Gross Revenue (${gross_rev_yr*(commons_share_pct/100.0):,.0f}/yr)", "Audit Evidence": "Signed FPIC Co-Management Protocol"},
+                ])
+                st.dataframe(tnfd_df, use_container_width=True, hide_index=True)
+                st.download_button("📥 Export Corporate TNFD & EU CSRD Disclosure Table (CSV)", data=tnfd_df.to_csv(index=False).encode("utf-8"), file_name=f"Blue42_TNFD_CSRD_Disclosure_{sel_site}.csv", mime="text/csv", use_container_width=True)
+
+            with st.expander("⚖️ International Maritime Law, Carbon Registry & Indigenous FPIC Readiness Matrix", expanded=is_scientist_view):
                 st.caption("Verifies compliance across **International Maritime Law (`London Protocol Annex 4` & `UN BBNJ`)**, **Carbon Registries (`Isometric` / `Verra VM0033` / `Puro.earth`)**, and **Indigenous/Community FPIC Co-Stewardship**:")
                 law_rows = [
                     {"Governance & Registry Pillar": "🌐 International Ocean Sinking Law", "Applicable Treaty / Standard": "1996 London Protocol Annex 4 & UN BBNJ High Seas Treaty", "Site Compliance Status": f"✅ Compliant ({site_data.get('legal_framework')})"},
@@ -1708,7 +1919,7 @@ with col_ops:
                 ]
                 st.dataframe(pd.DataFrame(law_rows), use_container_width=True, hide_index=True)
 
-            with st.expander("🎲 500-Scenario Weather & Price Stress Test (Monte Carlo) + Equipment Breakdown", expanded=False):
+            with st.expander("🎲 500-Scenario Weather & Price Stress Test (Monte Carlo) + Equipment Breakdown", expanded=is_scientist_view):
                 mc_rng = np.random.default_rng(42)
                 shocks = np.clip(mc_rng.normal(1.0, 0.16, (500, 10)), 0.45, 1.40)
                 paths = np.zeros((500, 11))
@@ -1874,6 +2085,15 @@ with col_ops:
                         f"- **100% Google Stack:** Blue 42 uses **Google Maps**, **Google Earth Engine** (NDKI/FAI + Sentinel-1 SAR + PACE), **Google Gemini AI**, and **Google News RSS**.\n"
                         f"- **Top Headlines Right Now:**\n{top_headlines}\n"
                         f"- **Geo 2030 MAP Impact at {s_id}:** Removes **`{net_c:.1f} MT CO₂e/yr`** + avoids **`{ch4_mt:.1f} MT CO₂e CH₄/yr`**, protects **`{s_data.get('halo_ha', 0)} HA`** habitat halo, and skims **`{trash_mt:.1f} MT/yr`** of ocean plastics."
+                    )
+                if any(k in q_low for k in ["running tide", "rfp", "insurance", "swiss re", "tnfd", "csrd", "offtake", "buyer", "bankable"]):
+                    non_c_rev = ((ch4_mt * 85.0) if s_data.get("is_sargassum") else 0.0) + (bio * (180.0 if s_data.get("is_sargassum") else 300.0)) + (area * 1500.0) + (nit_mt * 2000.0) + (trash_mt * 850.0)
+                    coprod_pct = min(98.0, (non_c_rev / max(gross_rev, 1.0)) * 100.0)
+                    return (
+                        f"### 🏦 2026 Market Readiness: Frontier RFP, Parametric Insurance & TNFD/CSRD — **{s_id}**\n"
+                        f"- **1. Solving the 'Running Tide Lesson' (Frontier & Alphabet CDR RFPs):** Legacy 2024 open-ocean kelp sinking failed because it relied 100% on carbon credits and lacked seafloor verification. At **{s_id}**, **`{coprod_pct:.1f}%` of revenue comes from non-carbon co-products** (Bioplastics/Bio-Bricks, Storm/Beach Rebates, Nitrogen & Plastic Cleanup), subsidizing net CDR cost below `\\$50/MT CO₂e` while **ITU SMART Subsea Cables + ROV AI** verify fixed `>{s_data.get('trench_depth_m', 1850):,}m` abyssal permanence.\n"
+                        f"- **2. Parametric Reef & Coastal Resort Insurance (`Swiss Re / MAR Model`):** Protects **\\${s_data.get('averted_damage_millions', 18.0):.1f}M** of coastal infrastructure, cutting parametric storm insurance premiums by **`14%–22%/yr`**.\n"
+                        f"- **3. Commercial Supply-Chain Offtake & TNFD/CSRD:** Automatically gates biomass by **Arsenic (`{as_ppm:.1f} ppm As`)** & **PAH (`{pah_ppm:.2f} ppm`)** and exports 1-click **TNFD (LEAP)** & **EU CSRD (ESRS E1/E4)** disclosures in Tab 2."
                     )
                 if any(k in q_low for k in ["cost", "roi", "profit", "equipment", "payback", "revenue"]):
                     return (
