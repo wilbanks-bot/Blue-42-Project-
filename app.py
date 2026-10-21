@@ -1507,6 +1507,8 @@ with col_ops:
         </div>
         """, unsafe_allow_html=True)
 
+        commons_share_pct = int(st.session_state.get("commons_share_slider", 8))
+        permit_months = max(12, 36 - int(commons_share_pct * 2))
         qa1, qa2 = st.columns(2)
         if qa1.button("🚨 Intercept Sargassum & Mint Credits" if is_sargassum_mode else "🌿 Grow Kelp & Mint Credits", key="top_kelp_anim_btn", use_container_width=True, disabled=not is_sel_safe, help="Triggers activity-matched animation (Sargassum interception & >200m crush sinking in Mode 2; Kelp canopy growth in Mode 1) and simulates live non-demo credit minting!"):
             if is_sargassum_mode:
@@ -1974,7 +1976,7 @@ with col_ops:
                 carbon_price = c_p1.number_input("Abyssal Carbon Price ($/MT)", 50, 500, 150, 10)
                 biomass_price = c_p2.number_input("Bio-Bricks ($/MT)" if is_sargassum_mode else "Kelp Price ($/MT)", 80, 800, 180 if is_sargassum_mode else 300, 20)
                 base_wacc_rate = c_p3.slider("Base Commercial WACC (%)", 2.0, 15.0, 8.0, 0.5) / 100.0
-                commons_share_pct = st.slider("🤝 Local Fishing, Caribbean & Indigenous Community Share (% Gross Rev)", 0, 15, 8, 1)
+                commons_share_pct = st.slider("🤝 Local Fishing, Caribbean & Indigenous Community Share (% Gross Rev)", 0, 15, 8, 1, key="commons_share_slider")
                 st.markdown("**🔧 Offshore Engineering, Blended Finance & Ocean Cleanup Levers:**")
                 cl1, cl2 = st.columns(2)
                 lever_auto_harvest = cl1.checkbox("🤖 Twin-Hull Pelagic Interceptor Barge (-18% OPEX)" if is_sargassum_mode else "🤖 Automated Harvester Barge (-18% OPEX)", value=False)
