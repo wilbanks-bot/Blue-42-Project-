@@ -1038,17 +1038,20 @@ weight_nitrogen = st.sidebar.slider("💧 Water Pollution, Oil & Trash Cleanup",
 weight_equity = st.sidebar.slider("🤝 Local Coastal Jobs & Community", 0.0, 1.0, 0.8)
 
 st.sidebar.markdown("---")
-st.sidebar.markdown(f"<h3 style='color:#1A73E8; font-size:1rem; display:flex; align-items:center;'>4. Map View Style {leaf_info('Switch between Ocean Terrain Relief, Satellite Hybrid imagery, or Standard Daylight map view.')}</h3>", unsafe_allow_html=True)
-google_map_mode = st.sidebar.selectbox("Choose Map Style:", [
-    "🗺️ Ocean Terrain & Coastal Relief",
-    "🛰️ Satellite Hybrid Imagery",
+st.sidebar.markdown(f"<h3 style='color:#1A73E8; font-size:1rem; display:flex; align-items:center;'>4. Map View Style {leaf_info('Switch between Ocean Terrain & Bathymetry Relief, 3D Orbital Satellite Imagery, Deep-Ocean SAR Radar Dark Mode, or Clean Daylight Standard.')}</h3>", unsafe_allow_html=True)
+MAP_STYLE_OPTIONS = [
+    "🗺️ Ocean Terrain & Bathymetry Relief",
+    "🛰️ Satellite Hybrid Imagery (3D Orbital)",
+    "🌑 Deep-Ocean Night / SAR Radar Mode",
     "☀️ Clean Daylight Standard",
-])
-google_tile_url = (
-    "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
-    if "Satellite" in google_map_mode else
-    ("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}" if "Standard" in google_map_mode else "https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}")
+]
+google_map_mode = st.sidebar.selectbox("Choose Map Style:", MAP_STYLE_OPTIONS, index=0)
+selected_pdk_map_style = (
+    "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+    if ("Satellite" in google_map_mode or "Night" in google_map_mode) else
+    ("https://basemaps.cartocdn.com/gl/positron-gl-style/style.json" if "Standard" in google_map_mode else "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json")
 )
+map_style_slug = "sat" if "Satellite" in google_map_mode else ("night" if "Night" in google_map_mode else ("std" if "Standard" in google_map_mode else "terrain"))
 
 st.sidebar.markdown("""
 <div style="background-color:#F0FDF4 !important; border:1.5px solid #86EFAC; border-left:5px solid #188038; border-radius:8px; padding:10px 12px; margin-top:10px; font-size:0.84rem; color:#0F172A !important; line-height:1.45;">
@@ -1496,14 +1499,24 @@ with col_map:
     </div>
     """, unsafe_allow_html=True)
 
-    layers = [
-        pdk.Layer("TileLayer", data=google_tile_url, min_zoom=0, max_zoom=19, tile_size=256),
+    sec_lat = float(SECTOR_CONFIG[sector_key]["lat"])
+    sec_lon = float(SECTOR_CONFIG[sector_key]["lon"])
+    bbox_w, bbox_s, bbox_e, bbox_n = sec_lon - 0.85, sec_lat - 0.60, sec_lon + 0.85, sec_lat + 0.60
+    layers = []
+    if "Satellite" in google_map_mode:
+        sat_img_url = f"https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox={bbox_w},{bbox_s},{bbox_e},{bbox_n}&bboxSR=4326&imageSR=4326&size=1200,900&format=jpg&f=image"
+        layers.append(pdk.Layer("BitmapLayer", id=f"sat_bmp_{sector_key}", data=None, image=sat_img_url, bounds=[bbox_w, bbox_s, bbox_e, bbox_n], opacity=0.92))
+    elif "Terrain" in google_map_mode:
+        ocean_img_url = f"https://services.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/export?bbox={bbox_w},{bbox_s},{bbox_e},{bbox_n}&bboxSR=4326&imageSR=4326&size=1200,900&format=jpg&f=image"
+        layers.append(pdk.Layer("BitmapLayer", id=f"ocean_bmp_{sector_key}", data=None, image=ocean_img_url, bounds=[bbox_w, bbox_s, bbox_e, bbox_n], opacity=0.45))
+
+    layers.extend([
         pdk.Layer("PolygonLayer", data=restricted_data, get_polygon="polygon", get_fill_color="[234, 67, 53, 35]", get_line_color="[217, 48, 37, 230]", line_width_min_pixels=2),
         pdk.Layer("PolygonLayer", data=allowed_data, get_polygon="polygon", get_fill_color="[52, 168, 83, 28]", get_line_color="[24, 128, 56, 220]", line_width_min_pixels=2),
         pdk.Layer("PolygonLayer", data=weather_data, get_polygon="polygon", get_fill_color="[250, 123, 23, 35]", get_line_color="[250, 123, 23, 220]", line_width_min_pixels=2),
         pdk.Layer("PolygonLayer", data=oil_spill_data, get_polygon="polygon", get_fill_color="[141, 110, 99, 65]", get_line_color="[93, 64, 55, 240]", line_width_min_pixels=2),
         pdk.Layer("PolygonLayer", data=trash_gyre_data, get_polygon="polygon", get_fill_color="[0, 137, 123, 55]", get_line_color="[0, 105, 92, 240]", line_width_min_pixels=2),
-    ]
+    ])
     if not subsea_cables_df.empty:
         layers.append(pdk.Layer("PathLayer", data=subsea_cables_df, get_path="path", get_color="[142, 36, 170, 235]", width_scale=18, width_min_pixels=3, get_width=4, pickable=False))
     if not shipping_lanes_df.empty:
@@ -1511,7 +1524,7 @@ with col_map:
     if not mammals_df.empty:
         layers.append(pdk.Layer("ScatterplotLayer", data=mammals_df, get_position="[lon, lat]", get_color="[26, 115, 232, 180]", get_radius=4000, pickable=False))
     if not kelp_df.empty:
-        lbl_color = "[255, 255, 255, 255]" if "Satellite" in google_map_mode else "[15, 23, 42, 245]"
+        lbl_color = "[255, 255, 255, 255]" if ("Satellite" in google_map_mode or "Night" in google_map_mode) else "[15, 23, 42, 245]"
         layers.append(pdk.Layer("ColumnLayer", id="kelp_columns", data=kelp_df, get_position="[lon, lat]", get_elevation="biomass_tons * 100", elevation_scale=1, radius=1500, get_fill_color="color", pickable=True, auto_highlight=True))
         layers.append(pdk.Layer("TextLayer", data=kelp_df, get_position="[lon, lat]", get_text="id", get_color=lbl_color, get_size=15, get_alignment_baseline="'bottom'"))
         if is_sargassum_mode:
@@ -1533,15 +1546,21 @@ with col_map:
         "Arsenic: <b>{arsenic_ppm} ppm As</b> | Trash Cleared: <b>{plastic_trash_tons} MT/yr</b><br/>"
         "Subsea Cable Clearance: <b>{cable_dist_km} km</b><br/><span style='color:#188038;'>Verdict: <b>{status}</b></span></div>"
     )
-    deck_obj = pdk.Deck(layers=layers, initial_view_state=pdk.ViewState(latitude=SECTOR_CONFIG[sector_key]["lat"], longitude=SECTOR_CONFIG[sector_key]["lon"], zoom=8.5, pitch=55, bearing=15), map_style=None, tooltip={"html": tt_html})
+    deck_obj = pdk.Deck(
+        layers=layers,
+        initial_view_state=pdk.ViewState(latitude=sec_lat, longitude=sec_lon, zoom=8.5, pitch=55, bearing=15),
+        map_style=selected_pdk_map_style,
+        tooltip={"html": tt_html},
+    )
+    deck_widget_key = f"blue42_deck_{sector_key[:8]}_{map_style_slug}"
     try:
-        deck_event = st.pydeck_chart(deck_obj, use_container_width=True, height=600, on_select="rerun", selection_mode="single-object")
+        deck_event = st.pydeck_chart(deck_obj, use_container_width=True, height=600, on_select="rerun", selection_mode="single-object", key=deck_widget_key)
         picked = deck_event.selection.get("objects", {}).get("kelp_columns", []) if hasattr(deck_event, "selection") and deck_event.selection else []
         if picked and picked[0].get("id") and picked[0]["id"] != st.session_state.selected_site_id:
             st.session_state.selected_site_id = picked[0]["id"]
             st.rerun()
     except TypeError:
-        st.pydeck_chart(deck_obj, use_container_width=True, height=600)
+        st.pydeck_chart(deck_obj, use_container_width=True, height=600, key=deck_widget_key)
 
     if site_data is not None:
         gmaps_pin_url = f"https://www.google.com/maps/search/?api=1&query={float(site_data['lat']):.4f},{float(site_data['lon']):.4f}"
