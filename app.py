@@ -1556,14 +1556,34 @@ with col_ops:
         )
         st.markdown(smart_card_html, unsafe_allow_html=True)
 
-        with st.expander("🌊🔊 Interactive Ocean Depth Cross-Section & Reef Bioacoustic Soundscape", expanded=True):
+        with st.expander("🌊 Interactive Ocean Depth Cross-Section & Before/After Impact Profile", expanded=True):
             crush_d = int(site_data.get("pneumatocyst_crush_depth_m", 190)) if is_sargassum_mode else 200
             trench_d = int(site_data.get("trench_depth_m", 2400))
-            db_gain = float(site_data.get("bioacoustic_db_gain", 10.2))
             tau_yrs = int(site_data.get("abyssal_residence_yrs", 680))
             surf_desc = "Pelagic Sargassum Skimming + Turtle Escape Grid" if is_sargassum_mode else "Cultivated Canopy + +0.12 pH Halo + Trash Boom"
+            tot_bio_site = max(float(site_data.get("biomass_tons", 100.0)), 1.0)
+            sunk_mt_site = float(site_data.get("abyssal_sunk_mt", tot_bio_site * 0.65))
+            circ_mt_site = float(site_data.get("circular_surface_mt", tot_bio_site * 0.35))
+            sunk_pct = min(85, max(15, int(round((sunk_mt_site / tot_bio_site) * 100))))
+            circ_pct = 100 - sunk_pct
+            fate_left_lbl = f"⚓ {sunk_pct}% Abyssal Trench Sinking ({sunk_mt_site:.0f} MT → >{trench_d:,}m)"
+            fate_right_lbl = (
+                f"🧱 {circ_pct}% ASTM Bio-Bricks ({circ_mt_site:.0f} MT • Arsenic Locked)"
+                if is_sargassum_mode else
+                f"🧴 {circ_pct}% Bioplastics, Feed & Living Halo ({circ_mt_site:.0f} MT)"
+            )
+            without_b42 = (
+                f"Rots on beach in ~{int(site_data.get('hours_to_beach_impact', 36))}h • Emits <b>{site_data.get('methane_avoided_tco2e')} MT CO₂e CH₄</b> • Toxic H₂S &gt;85 ppb • <b>${site_data.get('averted_damage_millions')}M</b> reef/tourism loss"
+                if is_sargassum_mode else
+                f"0 MT carbon lock • Coastal acidification (pH 7.98) • Unabated storm wave damage (<b>${site_data.get('averted_damage_millions')}M/yr</b> at risk)"
+            )
+            with_b42 = (
+                f"Intercepted offshore • <b>{site_data.get('net_bankable_co2')} MT CO₂e</b> locked ({tau_yrs} yrs) • H₂S &lt;{site_data.get('shoreline_h2s_ppb', 1.8):.1f} ppb (WHO Safe) • <b>+{site_data.get('avoided_respiratory_visits_yr', 140)}</b> clinic visits avoided/yr"
+                if is_sargassum_mode else
+                f"<b>{site_data.get('net_bankable_co2')} MT CO₂e</b> locked ({tau_yrs} yrs) • +0.12 pH Halo (Ω_arag {site_data.get('omega_aragonite', 2.85):.2f}) • <b>{site_data.get('plastic_trash_tons', 0):.1f} MT</b> plastic removed/yr"
+            )
             depth_html = (
-                f"<div style='background-color:#F8FAFC !important;border-radius:12px;padding:12px 14px;color:#0F172A !important;border:2px solid #93C5FD;margin-bottom:8px;box-shadow:0 2px 8px rgba(15,23,42,0.05);'>"
+                f"<div style='background-color:#F8FAFC !important;border-radius:12px;padding:12px 14px;color:#0F172A !important;border:2px solid #93C5FD;margin-bottom:4px;box-shadow:0 2px 8px rgba(15,23,42,0.05);'>"
                 f"<div style='font-size:0.78rem;font-weight:800;color:#1A73E8 !important;background-color:transparent !important;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;'>"
                 f"☀️ Sunlit Ocean Depth Profile — Surface Canopy to Abyssal Carbon Lock ({sel_site})"
                 f"</div>"
@@ -1575,45 +1595,31 @@ with col_ops:
                 f"<span style='color:#0F172A !important;background-color:#FFFFFF !important;'>🫧 <b style='color:#B45309 !important;background-color:#FFFFFF !important;'>{crush_d}m Hydrostatic Crush Zone</b> <span style='color:#0F172A !important;background-color:#FFFFFF !important;'>(~20 Bar Pressure Threshold)</span></span>"
                 f"<span style='color:#1E40AF !important;background-color:#EFF6FF !important;border:1px solid #93C5FD;padding:2px 9px;border-radius:999px;font-weight:800;'>Gas Bladders Collapse → Natural Negative Buoyancy</span>"
                 f"</div>"
-                f"<div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;background-color:#FFFFFF !important;color:#0F172A !important;font-size:0.83rem;font-weight:700;padding:8px 12px;border-radius:8px;border:1.5px solid #CBD5E1;border-left:5px solid #188038;'>"
+                f"<div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;background-color:#FFFFFF !important;color:#0F172A !important;font-size:0.83rem;font-weight:700;padding:8px 12px;border-radius:8px;border:1.5px solid #CBD5E1;border-left:5px solid #188038;margin-bottom:9px;'>"
                 f"<span style='color:#0F172A !important;background-color:#FFFFFF !important;'>⚓ <b style='color:#188038 !important;background-color:#FFFFFF !important;'>{trench_d:,}m Abyssal Basin Floor</b> <span style='color:#0F172A !important;background-color:#FFFFFF !important;'>(SMART Cable Verified • {tau_yrs}-Yr Residence)</span></span>"
                 f"<span style='color:#166534 !important;background-color:#DCFCE7 !important;border:1px solid #86EFAC;padding:2px 9px;border-radius:999px;font-weight:800;'>ΔO₂ {site_data.get('benthic_o2_delta_pct', -0.9)}% | CH₄ = 0.00 g/m²/yr</span>"
+                f"</div>"
+                f"<div style='background-color:#FFFFFF !important;color:#0F172A !important;border:1.5px solid #CBD5E1;border-radius:8px;padding:8px 12px;margin-bottom:8px;'>"
+                f"<div style='display:flex;justify-content:space-between;font-size:0.76rem;font-weight:800;color:#0F172A !important;background-color:#FFFFFF !important;margin-bottom:4px;'>"
+                f"<span style='color:#1E40AF !important;background-color:#FFFFFF !important;'>{fate_left_lbl}</span>"
+                f"<span style='color:#166534 !important;background-color:#FFFFFF !important;'>{fate_right_lbl}</span>"
+                f"</div>"
+                f"<div style='width:100%;height:10px;background-color:#DCFCE7 !important;border-radius:999px;overflow:hidden;display:flex;border:1px solid #86EFAC;'>"
+                f"<div style='width:{sunk_pct}%;height:100%;background:linear-gradient(90deg,#1A73E8,#0284C7);'></div>"
+                f"<div style='width:{circ_pct}%;height:100%;background:linear-gradient(90deg,#16A34A,#22C55E);'></div>"
+                f"</div>"
+                f"</div>"
+                f"<div style='display:grid;grid-template-columns:1fr 1fr;gap:8px;'>"
+                f"<div style='background-color:#FEF2F2 !important;color:#0F172A !important;border:1px solid #FECACA;border-left:4px solid #D93025;border-radius:8px;padding:7px 10px;font-size:0.78rem;line-height:1.4;'>"
+                f"<b style='color:#991B1B !important;background-color:transparent !important;'>⛔ Without Blue 42 (Status Quo):</b><br/><span style='color:#0F172A !important;background-color:transparent !important;'>{without_b42}</span>"
+                f"</div>"
+                f"<div style='background-color:#F0FDF4 !important;color:#0F172A !important;border:1px solid #BBF7D0;border-left:4px solid #188038;border-radius:8px;padding:7px 10px;font-size:0.78rem;line-height:1.4;'>"
+                f"<b style='color:#166534 !important;background-color:transparent !important;'>✅ With Blue 42 Intervention:</b><br/><span style='color:#0F172A !important;background-color:transparent !important;'>{with_b42}</span>"
+                f"</div>"
                 f"</div>"
                 f"</div>"
             )
             st.markdown(depth_html, unsafe_allow_html=True)
-            aud_html = f"""
-            <meta name="color-scheme" content="light only">
-            <meta name="darkreader-lock">
-            <div style="font-family:'Inter',sans-serif;background-color:#FFFFFF !important;border:1.5px solid #CBD5E1;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;color:#0F172A !important;">
-                <div style="font-size:12px;color:#0F172A !important;background-color:#FFFFFF !important;font-weight:700;">🔊 Hydrophone Reef Soundscape (+{db_gain:.1f} dB Recovery)</div>
-                <div style="display:flex;gap:6px;">
-                    <button onclick="playOcean(false)" style="background-color:#FEE2E2 !important;color:#991B1B !important;border:1px solid #FCA5A5;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:700;cursor:pointer;">🔇 Degraded Baseline</button>
-                    <button onclick="playOcean(true)" style="background-color:#DCFCE7 !important;color:#166534 !important;border:1px solid #86EFAC;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:700;cursor:pointer;">🎶 Restored Reef (+{db_gain:.1f} dB)</button>
-                </div>
-            </div>
-            <script>
-            function playOcean(restored) {{
-                const Ctx = window.AudioContext || window.webkitAudioContext;
-                if (!Ctx) return;
-                const ctx = new Ctx();
-                const dur = 2.2;
-                const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
-                const data = buf.getChannelData(0);
-                for (let i = 0; i < data.length; i++) {{
-                    const t = i / ctx.sampleRate;
-                    const wave = Math.sin(2 * Math.PI * (restored ? 180 : 95) * t) * 0.12;
-                    const crackle = (Math.random() * 2 - 1) * (restored ? 0.28 : 0.05) * (0.5 + 0.5 * Math.sin(2 * Math.PI * 6 * t));
-                    data[i] = (wave + crackle) * Math.exp(-t * 0.7);
-                }}
-                const src = ctx.createBufferSource();
-                src.buffer = buf;
-                src.connect(ctx.destination);
-                src.start();
-            }}
-            </script>
-            """
-            components.html(aud_html, height=54)
 
 with col_map:
     st.markdown(f"<h4 style='display:flex; align-items:center; color:#0F172A !important;'>🌊 3D {'Pelagic Sargassum Drift, Trench Sinking & Safety Map' if is_sargassum_mode else 'Ocean Safety, Oil Spill, Ocean Trash & Subsea Cable Map'} {leaf_info('Green columns are safe, high-yield sites; in Mode 2 (Sargassum), red/orange arcs show 7-day beach-stranding drift trajectories if unintercepted, while green-to-blue arcs route intercepted biomass to >1,000m abyssal trenches.')}</h4>", unsafe_allow_html=True)
