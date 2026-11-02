@@ -1814,14 +1814,6 @@ with col_ops:
                 • <b>🧴 Zero-Plastic &amp; Clean Water (UN SDG 12):</b> Skims <b>{v_trash:,.1f} MT/yr of ocean plastics &amp; ghost nets</b> (~<b>{int(round(v_trash*50000)):,} plastic bottles/yr</b>) and cleans <b>{safe_df['nitrogen_tons'].sum() if not safe_df.empty else 0:.1f} MT/yr</b> of agricultural nitrogen.
             </div>
             """, unsafe_allow_html=True)
-            g_comp_rows = [
-                {"Google Sustainability Expert Pillar": "1. Geo 2030 MAP Alignment (Karin Tuxen-Bettman)", "How Blue 42 Complies": "Quantifies publishable Mitigation (CO₂ + CH₄), Adaptation ($ surge/beach protection), and Protection (30x30 HA)"},
-                {"Google Sustainability Expert Pillar": "2. Multi-Sensor Remote Sensing (Nicholas Clinton & Katelyn Tarrio)", "How Blue 42 Complies": "Fuses Sentinel-2/3 NDKI & FAI optical indices + Sentinel-1 C-Band SAR (cloud-penetrating) + NASA PACE hyperspectral + ±% Glint CI"},
-                {"Google Sustainability Expert Pillar": "3. IUCN, eDNA & Bioacoustic Nature Protection (Tanya Birch)", "How Blue 42 Complies": "Tracks IUCN Red List keystone species, eDNA Shannon Index (H'), passive bioacoustic dB gain, and blocks monocultures"},
-                {"Google Sustainability Expert Pillar": "4. Methane (CH₄) & Biogeochemical Guardrail (Alicia Sullivan)", "How Blue 42 Complies": "Quantifies avoided beach-rot/enteric CH₄, enforces seafloor ΔO₂ < 2% & oxic current >4.5 cm/s so seafloor CH₄ flux = 0"},
-                {"Google Sustainability Expert Pillar": "5. Dual-Mission Kelp + Pelagic Sargassum Engine", "How Blue 42 Complies": "Handles both Stationary Kelp Leases (Mode 1) and Pelagic Sargassum Interception, >200m Pneumatocyst Sinking & Arsenic Gating (Mode 2)"},
-            ]
-            st.dataframe(pd.DataFrame(g_comp_rows), use_container_width=True, hide_index=True)
 
         with st.expander("🏆 Why Blue 42 Beats Single-Purpose Ocean Tools (Side-by-Side Comparison)", expanded=False):
             bench_rows = [
@@ -1836,21 +1828,6 @@ with col_ops:
                 {"Capability": "Live 'What the Kelp?' News + 1-Click Signed PDFs", "Satellite-Only Viewers": "❌ No", "Biology-Only Models": "❌ No", "Standalone Cost / ROV Tools": "❌ No", "BLUE 42 (Kelp Contender)": "✅ Yes (Google News RSS + PDF/KML)"},
             ]
             st.dataframe(pd.DataFrame(bench_rows), use_container_width=True, hide_index=True)
-
-        with st.expander("✅ 10-Point Market-Readiness & Production Verification Audit (Mock-Up to Live Deployment)", expanded=False):
-            mr_rows = [
-                {"Market-Readiness Pillar": "1. Activity-Matched Micro-Interactions", "Mock-Up Verification Status": "✅ PASS", "Production Specification": "Mode 1 grows kelp canopy upward; Mode 2 intercepts floating Sargassum & sinks below >200m crush depth; Permit & Certificate buttons trigger dedicated Handshake & SHA-256 Registry Seal animations."},
-                {"Market-Readiness Pillar": "2. Simulated Non-Demo Info Smart Cards", "Mock-Up Verification Status": "✅ PASS", "Production Specification": "Every operational button includes a live Non-Demo Production Pipeline Smart Card detailing USV/vessel autopilot, TED exclusion grid, 4-tier sensor oracle, Registry REST API minting, and e-Permit/FPIC escrow."},
-                {"Market-Readiness Pillar": "3. Light/Dark Theme & Browser Contrast Lock", "Mock-Up Verification Status": "✅ PASS", "Production Specification": "Enforces color-scheme: light only, darkreader-lock, zero-indentation single-line HTML cards, and explicit #FFFFFF / #0F172A WCAG AAA contrast tokens."},
-                {"Market-Readiness Pillar": "4. Dual-Mission Biogeochemical & Physical Rigor", "Mock-Up Verification Status": "✅ PASS", "Production Specification": "Models Revelle air-sea CO₂ lag (10.8–14.2%), basin-specific abyssal residence time (τ_vent = 340–980 yrs), Aragonite saturation (Ω_arag), and >200m (~20 bar) pneumatocyst compression."},
-                {"Market-Readiness Pillar": "5. Toxicology, Public Health & Benthic Guardrails", "Mock-Up Verification Status": "✅ PASS", "Production Specification": "Auto-blocks food/ag when Arsenic > 3.0 ppm or PAH > 0.05 ppm; keeps coastal H₂S < 5 ppb (WHO standard) and seafloor ΔO₂ < 2% (CH₄ flux = 0.00 g/m²/yr)."},
-                {"Market-Readiness Pillar": "6. 4-Tier Orbital-to-Seafloor MRV Architecture", "Mock-Up Verification Status": "✅ PASS", "Production Specification": "Fuses Sentinel-2/3 NDKI & FAI + cloud-penetrating Sentinel-1 SAR + NASA PACE + 3cm UAV + ROV AI / eDNA (H') / Bioacoustics (+dB) + ITU SMART Subsea Cables."},
-                {"Market-Readiness Pillar": "7. Institutional Accounting & Blended Finance", "Mock-Up Verification Status": "✅ PASS", "Production Specification": "Verified biological lease schedules, TNFD v1.0 & CSRD ESRS E4 disclosures, UNFCCC Art. 6.4 ITMO serials, and -2.8% WACC Blended Finance + Parametric Reef Insurance."},
-                {"Market-Readiness Pillar": "8. Maritime Safety & Indigenous/Community FPIC", "Mock-Up Verification Status": "✅ PASS", "Production Specification": "Mandatory ICPC >1.5 km subsea cable buffer, AIS shipping lane exclusion, whale & Hawksbill sea-turtle TED exclusion grids, and 15% FPIC community revenue-share escrow."},
-                {"Market-Readiness Pillar": "9. IP/Trademark Cleanliness & Runtime Resilience", "Mock-Up Verification Status": "✅ PASS", "Production Specification": "100% vendor-neutral ASTM/ISO/UNFCCC terminology (zero university or third-party trademark infringement) + graceful try/except fallbacks for all optional libraries."},
-                {"Market-Readiness Pillar": "10. 1-Click Audit & Regulatory Deliverables", "Mock-Up Verification Status": "✅ PASS", "Production Specification": "Instant export of SHA-256 signed ITMO Certificates (PDF), Multi-Agency Permit Dossiers (PDF), KML/GeoJSON polygons, interactive HTML maps, and CSV ledgers."},
-            ]
-            st.dataframe(pd.DataFrame(mr_rows), use_container_width=True, hide_index=True)
 
         with st.expander("📖 Glossary (Kelp Restoration, Pelagic Sargassum, Remote Sensing & Methane Physics)", expanded=False):
             st.markdown(r"""
