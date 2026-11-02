@@ -36,6 +36,62 @@ except ImportError:
     PLOTLY_AVAILABLE = False
 
 # =========================================================
+# 0. NAN-IMMUNE NUMERIC & DICTIONARY SAFETY ENGINE
+# =========================================================
+def _is_missing(val) -> bool:
+    """Returns True if val is None, pd.NA, NaN float/numpy scalar, or string 'nan'."""
+    if val is None or val is pd.NA:
+        return True
+    if isinstance(val, (float, np.floating)):
+        return math.isnan(float(val))
+    if isinstance(val, str) and val.strip().lower() in ("nan", "none", "null", ""):
+        return True
+    return False
+
+def safe_float(val, default: float = 0.0) -> float:
+    """Bulletproof float conversion that never returns NaN or raises ValueError."""
+    if _is_missing(val):
+        return float(default)
+    try:
+        res = float(val)
+        return float(default) if math.isnan(res) or math.isinf(res) else res
+    except (ValueError, TypeError):
+        return float(default)
+
+def safe_int(val, default: int = 0) -> int:
+    """Bulletproof integer conversion that never raises ValueError on float NaN."""
+    return int(round(safe_float(val, float(default))))
+
+class SafeSiteRecord(dict):
+    """NaN-immune dictionary wrapper for site records and Pandas Series rows."""
+    def __init__(self, mapping=None, **kwargs):
+        super().__init__()
+        if mapping is not None:
+            items = mapping.to_dict().items() if hasattr(mapping, "to_dict") else (
+                mapping.items() if hasattr(mapping, "items") else mapping
+            )
+            for k, v in items:
+                if not _is_missing(v):
+                    super().__setitem__(k, v)
+        for k, v in kwargs.items():
+            if not _is_missing(v):
+                super().__setitem__(k, v)
+
+    def get(self, key, default=None):
+        val = super().get(key, default)
+        return default if _is_missing(val) else val
+
+    def __getitem__(self, key):
+        val = super().get(key, None)
+        if _is_missing(val):
+            return 0
+        return val
+
+    def to_dict(self) -> dict:
+        return {k: v for k, v in self.items() if not _is_missing(v)}
+
+
+# =========================================================
 # 1. UX SETUP, OCEAN ANIMATIONS & DAYLIGHT DESIGN SYSTEM
 # =========================================================
 st.set_page_config(layout="wide", page_title="Blue 42 | The Kelp Contender", page_icon="🌊", initial_sidebar_state="expanded")
@@ -382,11 +438,12 @@ def generate_sha256_signature(site_data: dict, timestamp: str) -> str:
     return hashlib.sha256((json.dumps(canonical, sort_keys=True, default=str) + "|" + timestamp).encode('utf-8')).hexdigest()
 
 def create_provenance_pdf(site: dict) -> bytes:
+    site = SafeSiteRecord(site)
     ts = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%SZ')
     sig = generate_sha256_signature(site, ts)
     sections = [
         (f"1. KELP KANDIDATE PROFILE: {site.get('id')} ({site.get('area_ha')} HA)", [
-            f"GPS: {site.get('lat'):.4f} N, {site.get('lon'):.4f} W | Score: {site.get('pareto_score')}/100 | Status: {site.get('status')}",
+            f"GPS: {safe_float(site.get('lat')):.4f} N, {safe_float(site.get('lon')):.4f} W | Score: {site.get('pareto_score')}/100 | Status: {site.get('status')}",
             f"40-Yr Canopy Persistence: {site.get('hist_persistence_40yr')}% ({site.get('report_card_grade')}) | PAR Sunlight: {site.get('par_light')} mol/m2/d",
             f"ROV Seafloor Substrate: {site.get('substrate_type')} | Stalk Density: {site.get('rov_stipe_density')} stipes/m2 | Wildlife: {site.get('rov_wildlife_species')} species",
             f"Subsea Cable Check: {site.get('smart_cable_status', 'Safe Clearance')}",
@@ -395,20 +452,21 @@ def create_provenance_pdf(site: dict) -> bytes:
         ("2. ENVIRONMENTAL, POLLUTION & ECONOMIC IMPACT METRICS", [
             f"Jobs Created: {site.get('jobs_created')} | Shellfish Acidification Halo: {site.get('halo_ha')} HA",
             f"Fertilizer Nitrogen Cleaned: {site.get('nitrogen_tons')} MT/yr | Ocean Trash & Ghost Nets Co-Harvested: {site.get('plastic_trash_tons', 0)} MT/yr",
-            f"Oil / PAH Sensor Reading: {site.get('pah_oil_ppm', 0.0):.2f} ppm ({site.get('crop_safety_verdict', 'Food & Bioplastic Safe')})",
+            f"Oil / PAH Sensor Reading: {safe_float(site.get('pah_oil_ppm', 0.0)):.2f} ppm ({site.get('crop_safety_verdict', 'Food & Bioplastic Safe')})",
             f"Safe Deep-Sea Sinking Quota: {site.get('abyssal_sunk_mt')} MT (Seafloor dO2: {site.get('benthic_o2_delta_pct')}%) | Bioplastics/Feed: {site.get('circular_surface_mt')} MT",
-            f"Distance to >1,000m Trench: {site.get('abyssal_dist_km')} km | Annual Boat & Fuel Cost: ${site.get('sinking_cost'):,.2f}/yr",
+            f"Distance to >1,000m Trench: {site.get('abyssal_dist_km')} km ({safe_int(site.get('trench_depth_m', 2400), 2400):,}m Basin • {safe_int(site.get('abyssal_residence_yrs', 680), 680)}-Yr Residence) | Annual Boat & Fuel Cost: ${safe_float(site.get('sinking_cost')):,.2f}/yr",
         ]),
     ]
     return build_pure_python_pdf("BLUE 42 | SITE FACT SHEET & SATELLITE PROVENANCE", "Multi-Scale Satellite, Drone, ROV AI, Subsea Cable & Pollution Verification", sections, [f"Timestamp: {ts} | SHA-256: {sig}"])
 
 def create_lca_brief(site: dict, ai_analysis: str, signature: str, timestamp: str) -> bytes:
-    capex = float(site.get("area_ha", 0)) * 15000.0
+    site = SafeSiteRecord(site)
+    capex = safe_float(site.get("area_ha", 0)) * 15000.0
     sections = [
         ("1. KELP KANDIDATE SAFETY, POLLUTION & SATELLITE METRICS", [
             f"ID: {site.get('id')} | Verdict: {site.get('status')} | Score: {site.get('pareto_score')}/100 | Size: {site.get('area_ha')} HA",
             f"Temp: {site.get('effective_sst')} C | Depth: {site.get('depth')} m | Wave Energy: {site.get('wave_energy')} kW/m | Cable Distance: {site.get('cable_dist_km', 10)} km",
-            f"Oil Spill / PAH Reading: {site.get('pah_oil_ppm', 0.0):.2f} ppm | Ocean Trash Co-Harvested: {site.get('plastic_trash_tons', 0)} MT/yr | Nitrogen Cleaned: {site.get('nitrogen_tons')} MT/yr",
+            f"Oil Spill / PAH Reading: {safe_float(site.get('pah_oil_ppm', 0.0)):.2f} ppm | Ocean Trash Co-Harvested: {site.get('plastic_trash_tons', 0)} MT/yr | Nitrogen Cleaned: {site.get('nitrogen_tons')} MT/yr",
         ]),
         ("2. GROSS-TO-NET CARBON & FARM INFRASTRUCTURE SUMMARY", [
             f"Gross Carbon: {site.get('co2_tons')} MT -> Net Sellable Credits: {site.get('net_bankable_co2')} MT CO2e/yr (after boat fuel, 5% deep loss & buffer)",
@@ -419,12 +477,13 @@ def create_lca_brief(site: dict, ai_analysis: str, signature: str, timestamp: st
     return build_pure_python_pdf("BLUE 42 | VERIFIED SITE SAFETY & ECONOMIC REPORT", "Carbon Waterfall, Pollution Screening & Spatial Safety Summary", sections, [f"Timestamp: {timestamp} | SHA-256: {signature}"])
 
 def create_lease_permit_pdf(site: dict, funded_sites: list, commons_share_pct: int, permit_months: int) -> bytes:
+    site = SafeSiteRecord(site)
     ts = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%SZ')
     sig = generate_sha256_signature(site, ts)
     p_lines = [f"- {f['Site ID']}: {f['Area (HA)']} HA | Score {f['Pareto']}/100 | Upfront Cost {f['Upfront Cost ($)']} | 10-Yr NPV {f['10-Yr NPV ($)']}" for f in funded_sites] or [f"- Lead Site: {site.get('id')} ({site.get('area_ha')} HA)"]
     sections = [
         ("1. GOVERNMENT AQUACULTURE LEASE & PERMIT FILING", [
-            f"Lead Site: {site.get('id')} ({site.get('lat'):.4f} N, {site.get('lon'):.4f} W) | Verdict: {site.get('status')}",
+            f"Lead Site: {site.get('id')} ({safe_float(site.get('lat')):.4f} N, {safe_float(site.get('lon')):.4f} W) | Verdict: {site.get('status')}",
             f"Community Revenue Share: {commons_share_pct}% Gross Revenue -> Fast-Track {permit_months}-Month Permit Timeline",
             f"Subsea Cable Protection Check (ICPC 1.5km Buffer): {site.get('smart_cable_status', 'Cleared')}",
             f"Oil Spill & Marine Debris Screening (NOAA / EPA): {site.get('pollution_status', 'Cleared')}",
@@ -434,11 +493,12 @@ def create_lease_permit_pdf(site: dict, funded_sites: list, commons_share_pct: i
     return build_pure_python_pdf("BLUE 42 | GOVERNMENT LEASE & PERMIT APPLICATION PACK", "BOEM / NOAA / Coastal Commission Pre-Cleared Filing", sections, [f"Timestamp: {ts} | SHA-256: {sig}"])
 
 def create_minted_credit_pdf(site: dict, itmo_serial: str, tx_hash: str, ts_now: str) -> bytes:
+    site = SafeSiteRecord(site)
     sections = [
         ("1. OFFICIAL CARBON & PLASTIC CLEANUP CERTIFICATE (PARIS ART. 6.4)", [
-            f"Serial Number: {itmo_serial} | Site: {site.get('id')} ({site.get('lat'):.4f} N, {site.get('lon'):.4f} W | {site.get('area_ha')} HA)",
-            f"Gross Absorbed: {site.get('co2_tons'):.2f} MT -> Less Boat Fuel (-{site.get('tow_emissions_co2'):.2f}), 5% Deep Loss (-{site.get('remin_discount_co2'):.2f}), Reserve (-{site.get('buffer_pool_co2'):.2f})",
-            f"NET SELLABLE CARBON CREDITS ISSUED: {site.get('net_bankable_co2'):.2f} MT CO2e/yr | Seafloor O2 Check: {site.get('benthic_o2_delta_pct')}% (PASSED)",
+            f"Serial Number: {itmo_serial} | Site: {site.get('id')} ({safe_float(site.get('lat')):.4f} N, {safe_float(site.get('lon')):.4f} W | {site.get('area_ha')} HA)",
+            f"Gross Absorbed: {safe_float(site.get('co2_tons')):.2f} MT -> Less Boat Fuel (-{safe_float(site.get('tow_emissions_co2')):.2f}), 5% Deep Loss (-{safe_float(site.get('remin_discount_co2')):.2f}), Reserve (-{safe_float(site.get('buffer_pool_co2')):.2f})",
+            f"NET SELLABLE CARBON CREDITS ISSUED: {safe_float(site.get('net_bankable_co2')):.2f} MT CO2e/yr | Seafloor O2 Check: {site.get('benthic_o2_delta_pct')}% (PASSED)",
             f"CO-BENEFIT CREDITS: {site.get('nitrogen_tons')} MT Fertilizer Nitrogen + {site.get('plastic_trash_tons', 0)} MT Ocean Trash & Ghost Nets Removed",
         ]),
     ]
@@ -641,47 +701,55 @@ if GENAI_AVAILABLE:
 SECTOR_CONFIG = {
     "Channel Islands": {
         "seed": 42, "h_seed": 777, "lat": 34.0, "lon": -119.8, "sst_range": (13.8, 17.5), "is_sargassum": False,
+        "trench_depth_m": 1950,
         "fpic_steward": "Chumash Heritage National Marine Sanctuary Co-Stewardship Council",
         "legal_framework": "US EPA MPRSA + NOAA BOEM + California Coastal Commission",
     },
     "British Columbia": {
         "seed": 64, "h_seed": 666, "lat": 52.1, "lon": -131.1, "sst_range": (10.8, 14.6), "is_sargassum": False,
+        "trench_depth_m": 2650,
         "fpic_steward": "Council of the Haida Nation & Coastal First Nations (Great Bear Sea FPIC)",
         "legal_framework": "Environment & Climate Change Canada (CEPA) + Haida Gwaii Marine Plan",
     },
     "Tasmania": {
         "seed": 88, "h_seed": 555, "lat": -42.85, "lon": 148.05, "sst_range": (12.5, 16.8), "is_sargassum": False,
+        "trench_depth_m": 3200,
         "fpic_steward": "Palawa / Tasmanian Aboriginal Centre Sea Country Co-Management",
         "legal_framework": "Australia Sea Installations Act + London Protocol Annex 4",
     },
     "Hawaii": {
         "seed": 108, "h_seed": 888, "lat": 21.3, "lon": -157.9, "sst_range": (18.2, 21.4), "is_sargassum": False,
+        "trench_depth_m": 4750,
         "fpic_steward": "Native Hawaiian Ahupuaʻa & Loko Iʻa Kūpuna Stewardship Council",
         "legal_framework": "US EPA MPRSA + Hawaii DLNR Conservation District Use Permit",
     },
     "Puerto Rico & USVI Trench": {
         "seed": 212, "h_seed": 911, "lat": 18.15, "lon": -65.85, "sst_range": (26.4, 29.4), "is_sargassum": True,
+        "trench_depth_m": 8376,
         "fpic_steward": "Asociación de Pescadores de Puerto Rico & USVI Artisanal Fisherfolk Co-op",
         "legal_framework": "US EPA MPRSA + Caribbean Fishery Management Council + London Protocol",
     },
     "Mexican Caribbean (Cancun / Yucatan)": {
         "seed": 224, "h_seed": 922, "lat": 20.65, "lon": -86.55, "sst_range": (26.8, 29.8), "is_sargassum": True,
+        "trench_depth_m": 2040,
         "fpic_steward": "Quintana Roo Mayan Coastal Cooperatives & Mesoamerican Reef Alliance",
         "legal_framework": "SEMARNAT / CONANP Maritime Protocol + Cartagena Convention",
     },
     "Barbados & Lesser Antilles Gateway": {
         "seed": 236, "h_seed": 933, "lat": 13.18, "lon": -59.25, "sst_range": (26.5, 29.2), "is_sargassum": True,
+        "trench_depth_m": 3450,
         "fpic_steward": "Barbados National Union of Fisherfolk Organisations (BARNUFO) & OECS",
         "legal_framework": "Cartagena Convention + UN BBNJ High Seas Treaty + Bridgetown Initiative",
     },
     "West Africa (Sierra Leone – Ghana Belt)": {
         "seed": 248, "h_seed": 944, "lat": 5.25, "lon": -1.85, "sst_range": (25.8, 28.9), "is_sargassum": True,
+        "trench_depth_m": 4100,
         "fpic_steward": "Ghana National Canoe Fishermen Council & Sierra Leone Artisanal Co-op",
         "legal_framework": "Abidjan Convention + UN BBNJ High Seas Treaty + London Protocol",
     },
 }
 
-def build_site_record(site_id: str, lat: float, lon: float, area: float, sst_mean: float, depth: float, wave_energy: float, nitrate_score: int, mhw_risk: str, salinity: float, biodiversity_score: int, abyssal_dist_km: float, equity_score: int, is_sargassum: bool = False, fpic_steward: str = "Local & Indigenous Coastal Stewardship Council", legal_framework: str = "London Protocol Annex 4 + Sovereign Maritime Permit") -> dict:
+def build_site_record(site_id: str, lat: float, lon: float, area: float, sst_mean: float, depth: float, wave_energy: float, nitrate_score: int, mhw_risk: str, salinity: float, biodiversity_score: int, abyssal_dist_km: float, equity_score: int, is_sargassum: bool = False, fpic_steward: str = "Local & Indigenous Coastal Stewardship Council", legal_framework: str = "London Protocol Annex 4 + Sovereign Maritime Permit", trench_depth_m: int = 2400) -> dict:
     biomass_tons = round(area * (24.0 if is_sargassum else 18.5) * 0.92, 1)
     sinking_cost = round((area * (95.0 if is_sargassum else 120.0)) + (biomass_tons * abyssal_dist_km * (0.28 if is_sargassum else 0.45)), 2)
     par_light = round(max(18.0, min(52.0, 46.0 - (depth * 0.45 if is_sargassum else depth * 0.65))), 1)
@@ -793,6 +861,8 @@ def build_site_record(site_id: str, lat: float, lon: float, area: float, sst_mea
         "benthic_n2o_flux": "0.000 g N₂O/m²/yr (Denitrification Blocked)",
         "sulfate_redox_status": "Porewater SO₄²⁻ Stable (>28 mM — Zero Benthic H₂S)",
         "abyssal_dist_km": round(abyssal_dist_km, 1),
+        "trench_dist_km": round(abyssal_dist_km, 1),
+        "trench_depth_m": safe_int(trench_depth_m, 2400),
         "sinking_cost": sinking_cost, "equity_score": int(equity_score),
         "hist_persistence_40yr": hist_persistence_40yr, "report_card_grade": report_card_grade,
         "substrate_type": substrate_type, "rov_stipe_density": round(18.5 + (nitrate_score / 10.0), 1) if is_sargassum else round(8.5 + (nitrate_score / 12.0), 1),
@@ -823,6 +893,7 @@ def get_scientific_kelp_data_v4(sector: str, live_gee: bool = False):
             is_sargassum=is_sarg,
             fpic_steward=cfg.get("fpic_steward", "Local & Indigenous Coastal Stewardship Council"),
             legal_framework=cfg.get("legal_framework", "London Protocol Annex 4 + Sovereign Maritime Permit"),
+            trench_depth_m=safe_int(cfg.get("trench_depth_m", 2400), 2400),
         ) for i in range(12)
     ]
 
@@ -879,9 +950,10 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 def run_mcda_deconfliction(sites, vessels_df, mammals_df, weather_data, restricted_data, allowed_data, cable_pts_df=None, oil_spill_data=None, trash_gyre_data=None):
     processed = []
-    for site in sites:
+    for raw_site in sites:
+        site = SafeSiteRecord(raw_site)
         site['status'], site['color'] = "CLEARED: Optimal", [52, 168, 83, 230]
-        lon, lat = site.get('lon', 0), site.get('lat', 0)
+        lon, lat = safe_float(site.get('lon', 0)), safe_float(site.get('lat', 0))
         min_cable_km = min([haversine_km(lat, lon, r['lat'], r['lon']) for _, r in cable_pts_df.iterrows()], default=99.9) if (cable_pts_df is not None and not cable_pts_df.empty) else 99.9
         site['cable_dist_km'] = round(min_cable_km, 2)
 
@@ -935,16 +1007,18 @@ def run_mcda_deconfliction(sites, vessels_df, mammals_df, weather_data, restrict
             site['pollution_status'] = "⛔ Inside High-Density Ocean Trash & Ghost-Net Gyre (Entanglement Risk)"
             site['crop_safety_verdict'] = "⛔ BLOCKED: Severe Ghost-Net Eddy"
         elif site.get('is_sargassum', False):
-            as_val = float(site.get('arsenic_ppm', 65.0))
-            site['pollution_status'] = f"🧪 Arsenic Gate ({as_val:.1f} ppm As) • Blocks Food/Ag -> Routed to >200m Abyssal Sink & Locked Bio-Bricks + {site.get('methane_avoided_tco2e', 0):.1f} MT CO₂e Methane Avoided"
+            as_val = safe_float(site.get('arsenic_ppm', 65.0), 65.0)
+            site['pollution_status'] = f"🧪 Arsenic Gate ({as_val:.1f} ppm As) • Blocks Food/Ag -> Routed to >200m Abyssal Sink & Locked Bio-Bricks + {safe_float(site.get('methane_avoided_tco2e', 0)):.1f} MT CO₂e Methane Avoided"
             site['crop_safety_verdict'] = f"🧱 Arsenic Gate ({as_val:.1f} ppm As): >200m Sink & Bio-Bricks Only (No Food/Feed)"
-        elif site.get('pah_oil_ppm', 0.0) >= 0.05:
-            site['pollution_status'] = f"⚠️ Drift Slick Alert ({site.get('pah_oil_ppm', 0.08):.2f} ppm PAH — Routed to Deep Carbon Sink Only + Trash Boom Active)"
+        elif safe_float(site.get('pah_oil_ppm', 0.0)) >= 0.05:
+            site['pollution_status'] = f"⚠️ Drift Slick Alert ({safe_float(site.get('pah_oil_ppm', 0.08)):.2f} ppm PAH — Routed to Deep Carbon Sink Only + Trash Boom Active)"
             site['crop_safety_verdict'] = "⚠️ Deep Carbon Sink Only (No Food/Feed Sale)"
         else:
-            site['pollution_status'] = f"✅ Clean Water (0.00 ppm Oil/PAH • Co-Harvests {site.get('plastic_trash_tons', 0):.1f} MT/yr Ocean Trash & {site.get('nitrogen_tons', 0):.2f} MT/yr Nitrogen)"
+            site['pollution_status'] = f"✅ Clean Water (0.00 ppm Oil/PAH • Co-Harvests {safe_float(site.get('plastic_trash_tons', 0)):.1f} MT/yr Ocean Trash & {safe_float(site.get('nitrogen_tons', 0)):.2f} MT/yr Nitrogen)"
             site['crop_safety_verdict'] = "✅ 100% Safe for Food, Cow Feed & Bioplastics"
-        processed.append(site)
+        site.setdefault("trench_depth_m", 2400)
+        site.setdefault("trench_dist_km", round(safe_float(site.get("abyssal_dist_km", 28.0), 28.0), 1))
+        processed.append(dict(site))
     processed.sort(key=lambda s: (1 if "CLEARED" in s.get("status", "") else 0, s.get("pareto_score", 0)), reverse=True)
     return pd.DataFrame(processed)
 
@@ -1045,8 +1119,8 @@ st.markdown("""
             Click a <b style="color:#1A73E8 !important;">⚡ 1-Click Mission Preset</b> above or toggle between <b style="color:#188038 !important;">🌲 Kelp Restoration</b> and <b style="color:#D93025 !important;">🚨 Pelagic Sargassum Interception</b>.
         </div>
         <div style="flex: 1; min-width: 230px; background-color: #FFFFFF !important; border: 1px solid #CBD5E1; border-top: 4px solid #1A73E8; border-radius: 8px; padding: 10px 14px; color: #0F172A !important;">
-            <span style="color: #1A73E8 !important; font-weight: 800;">2️⃣ Explore 3D Map, Depth Column &amp; Reef Audio:</span><br/>
-            Inspect the <b style="color:#1A73E8 !important;">3D Map</b>, the <b style="color:#188038 !important;">Animated Ocean Depth Cross-Section</b>, and click <b style="color:#B45309 !important;">🔊 Listen to Reef Soundscape</b>.
+            <span style="color: #1A73E8 !important; font-weight: 800;">2️⃣ Explore 14-Layer 3D Map, 200m Crush Profile &amp; Safety Gate:</span><br/>
+            Inspect the <b style="color:#1A73E8 !important;">3D Ocean Digital Twin</b>, the <b style="color:#188038 !important;">Sunlit-to-Abyssal Depth Cross-Section</b>, and click <b style="color:#B45309 !important;">🌿 Grow Kelp / 🚨 Intercept Sargassum</b>.
         </div>
         <div style="flex: 1; min-width: 230px; background-color: #FFFFFF !important; border: 1px solid #CBD5E1; border-top: 4px solid #D97706; border-radius: 8px; padding: 10px 14px; color: #0F172A !important;">
             <span style="color: #B45309 !important; font-weight: 800;">3️⃣ Match Buyers, Cut Insurance &amp; Mint PDF:</span><br/>
@@ -1162,14 +1236,14 @@ raw_sites = copy.deepcopy(get_scientific_kelp_data_v4(sector_key, ee_connected))
 
 if st.session_state.custom_site_cfg is not None:
     c_cfg = st.session_state.custom_site_cfg
-    c_lat = float(c_cfg.get("lat", SECTOR_CONFIG[sector_key]["lat"]))
-    c_lon = float(c_cfg.get("lon", SECTOR_CONFIG[sector_key]["lon"]))
-    c_area = float(c_cfg.get("area_ha", 16.0))
+    c_lat = safe_float(c_cfg.get("lat", SECTOR_CONFIG[sector_key]["lat"]), SECTOR_CONFIG[sector_key]["lat"])
+    c_lon = safe_float(c_cfg.get("lon", SECTOR_CONFIG[sector_key]["lon"]), SECTOR_CONFIG[sector_key]["lon"])
+    c_area = safe_float(c_cfg.get("area_ha", 16.0), 16.0)
     c_id = "SG-CUSTOM" if is_sargassum_mode else "KK-CUSTOM"
     sst_lo, sst_hi = SECTOR_CONFIG[sector_key]["sst_range"]
     lat_sst_est = round(max(8.5, min(30.5, 29.5 - (abs(c_lat) * 0.36))), 1)
     c_sst = round((lat_sst_est * 0.5) + (((sst_lo + sst_hi) / 2.0) * 0.5), 1)
-    c_depth = float(c_cfg.get("depth_m", 240.0 if is_sargassum_mode else 18.5))
+    c_depth = safe_float(c_cfg.get("depth_m", 240.0 if is_sargassum_mode else 18.5), 240.0 if is_sargassum_mode else 18.5)
     c_rec = build_site_record(
         site_id=c_id,
         lat=c_lat,
@@ -1187,11 +1261,13 @@ if st.session_state.custom_site_cfg is not None:
         is_sargassum=is_sargassum_mode,
         fpic_steward=SECTOR_CONFIG[sector_key].get("fpic_steward", "Local & Indigenous Coastal Stewardship Council"),
         legal_framework=SECTOR_CONFIG[sector_key].get("legal_framework", "London Protocol Annex 4 + Sovereign Maritime Permit"),
+        trench_depth_m=safe_int(SECTOR_CONFIG[sector_key].get("trench_depth_m", 2400), 2400),
     )
     c_rec["site_category"] = "📍 User-Defined Custom Coordinate Vector (On-Demand Screening)"
     c_rec["site_badge_short"] = "📍 Custom Lat/Lon"
     c_rec["discovery_basis"] = f"User-submitted custom ocean coordinates ({c_lat:.4f}°, {c_lon:.4f}°) across {c_area:.1f} HA—screened live against shipping lanes, whale corridors, sanctuaries, oil slicks, and ICPC >1.5km subsea cable buffers."
-    c_rec["trench_depth_m"] = SECTOR_CONFIG[sector_key].get("trench_depth_m", 2400)
+    c_rec["trench_depth_m"] = safe_int(SECTOR_CONFIG[sector_key].get("trench_depth_m", 2400), 2400)
+    c_rec["trench_dist_km"] = round(safe_float(c_rec.get("abyssal_dist_km", 18.5 if is_sargassum_mode else 28.0), 28.0), 1)
     raw_sites.insert(0, c_rec)
 
 for site in raw_sites:
@@ -1212,6 +1288,8 @@ for site in raw_sites:
     site.setdefault("pneumatocyst_crush_depth_m", 185 if is_sargassum_mode else 0)
     site.setdefault("hours_to_beach_impact", 36 if is_sargassum_mode else 0)
     site.setdefault("air_sea_equil_pct", 88.5)
+    site.setdefault("trench_depth_m", safe_int(SECTOR_CONFIG[sector_key].get("trench_depth_m", 2400), 2400))
+    site.setdefault("trench_dist_km", round(safe_float(site.get("abyssal_dist_km", 28.0), 28.0), 1))
     site.setdefault("methane_avoided_tco2e", round(site['biomass_tons'] * (1.18 if is_sargassum_mode else 0.38) * gwp_mult, 1))
     site.setdefault("h2s_gas_avoided_mt", round(site['biomass_tons'] * 0.045, 2) if is_sargassum_mode else 0.0)
 
@@ -1343,6 +1421,7 @@ with st.expander("🌐 Planetary 8-Basin Master Roll-Up (All 96 Global Sites & V
         global_rows.append({
             "Global Basin / Corridor": f"{'🚨' if b_cfg['is_sargassum'] else '🌲'} {b_name}",
             "Mission Mode": "Mode 2: Pelagic Sargassum" if b_cfg["is_sargassum"] else "Mode 1: Stationary Kelp",
+            "Abyssal Sink Depth": f">{safe_int(b_cfg.get('trench_depth_m', 2400), 2400):,}m",
             "Cleared Sites": f"{len(b_safe)}/12 ({b_ha:.1f} HA)",
             "Net Abyssal CO₂ (MT/yr)": b_net_c,
             "Avoided CH₄ GWP-100 (MT/yr)": round(b_ch4_100, 1),
@@ -1462,23 +1541,23 @@ with col_ops:
             format_func=lambda kid: f"{kid} [{kelp_df[kelp_df['id']==kid].iloc[0].get('site_badge_short', '🏛️ Known Site')}] — {'✅ CLEARED & SAFE' if 'CLEARED' in kelp_df[kelp_df['id']==kid].iloc[0]['status'] else '⛔ ' + kelp_df[kelp_df['id']==kid].iloc[0]['status']} (Score: {kelp_df[kelp_df['id']==kid].iloc[0]['pareto_score']}/100)",
         )
         st.session_state.selected_site_id = sel_site
-        site_data = kelp_df[kelp_df['id'] == sel_site].iloc[0]
+        site_data = SafeSiteRecord(kelp_df[kelp_df['id'] == sel_site].iloc[0])
 
         is_sel_safe = "CLEARED" in str(site_data.get("status", ""))
         stat_str = str(site_data.get("status", ""))
-        s_area_ha = float(site_data.get("area_ha", 0))
+        s_area_ha = safe_float(site_data.get("area_ha", 0))
         s_acres = s_area_ha * 2.47105
         s_capex_est = s_area_ha * (11500.0 if is_sargassum_mode else 15000.0) * (1.12 if adopt_baja_strain else 1.0)
-        s_opex_est = (s_area_ha * (1650.0 if is_sargassum_mode else 2000.0)) + float(site_data.get("sinking_cost", 0))
-        s_wave_reb = (s_area_ha * 1500.0) + (float(site_data.get("averted_damage_millions", 0)) * 1e6 * 0.0025)
-        s_ch4_rev = (float(site_data.get("methane_avoided_tco2e", 0)) * 85.0) if is_sargassum_mode else 0.0
-        s_bio_rev = 0.0 if float(site_data.get("pah_oil_ppm", 0.0)) >= 0.05 else (float(site_data.get("biomass_tons", 0)) * (180.0 if is_sargassum_mode else 300.0))
-        s_trash_rev = float(site_data.get("plastic_trash_tons", 0)) * 850.0
-        s_gross_rev = (float(site_data.get("net_bankable_co2", 0)) * 150.0) + s_ch4_rev + s_bio_rev + s_wave_reb + (float(site_data.get("nitrogen_tons", 0)) * 2000.0) + s_trash_rev
+        s_opex_est = (s_area_ha * (1650.0 if is_sargassum_mode else 2000.0)) + safe_float(site_data.get("sinking_cost", 0))
+        s_wave_reb = (s_area_ha * 1500.0) + (safe_float(site_data.get("averted_damage_millions", 0)) * 1e6 * 0.0025)
+        s_ch4_rev = (safe_float(site_data.get("methane_avoided_tco2e", 0)) * 85.0) if is_sargassum_mode else 0.0
+        s_bio_rev = 0.0 if safe_float(site_data.get("pah_oil_ppm", 0.0)) >= 0.05 else (safe_float(site_data.get("biomass_tons", 0)) * (180.0 if is_sargassum_mode else 300.0))
+        s_trash_rev = safe_float(site_data.get("plastic_trash_tons", 0)) * 850.0
+        s_gross_rev = (safe_float(site_data.get("net_bankable_co2", 0)) * 150.0) + s_ch4_rev + s_bio_rev + s_wave_reb + (safe_float(site_data.get("nitrogen_tons", 0)) * 2000.0) + s_trash_rev
         s_net_profit_yr = (s_gross_rev * 0.92) - s_opex_est
         s_payback_yrs = (s_capex_est / s_net_profit_yr) if s_net_profit_yr > 0 else 99.9
-        cars_off_road = int(round((float(site_data.get("net_bankable_co2", 0)) + (float(site_data.get("methane_avoided_tco2e", 0)) if is_sargassum_mode else 0.0)) / 4.6))
-        bottles_cleared = int(round(float(site_data.get("plastic_trash_tons", 0)) * 50000))
+        cars_off_road = safe_int((safe_float(site_data.get("net_bankable_co2", 0)) + (safe_float(site_data.get("methane_avoided_tco2e", 0)) if is_sargassum_mode else 0.0)) / 4.6)
+        bottles_cleared = safe_int(safe_float(site_data.get("plastic_trash_tons", 0)) * 50000)
 
         def _pill(ok: bool, label: str) -> str:
             bg, bd, fg, ic = ("#DCFCE7", "#86EFAC", "#166534", "✅") if ok else ("#FEE2E2", "#FCA5A5", "#991B1B", "⛔")
@@ -1488,15 +1567,15 @@ with col_ops:
             _pill("Shipping" not in stat_str, "Ships"),
             _pill("Mammal" not in stat_str, "Whales & Turtles"),
             _pill("Cable" not in stat_str, "Subsea Cables"),
-            _pill("Oil Spill" not in stat_str and float(site_data.get("pah_oil_ppm", 0.0)) < 0.05, "Oil Spills"),
+            _pill("Oil Spill" not in stat_str and safe_float(site_data.get("pah_oil_ppm", 0.0)) < 0.05, "Oil Spills"),
             _pill("Ocean Trash" not in stat_str, "Trash Gyres"),
             _pill("Storm" not in stat_str and "Shear" not in stat_str and "Restricted" not in stat_str, "Storms & Sanctuary"),
         ])
 
-        pareto_pct = min(100, max(0, int(round(float(site_data.get("pareto_score", 85))))))
-        equil_pct = min(100, max(0, int(round(float(site_data.get("air_sea_equil_pct", 88))))))
-        edna_val = float(site_data.get("edna_shannon_index", 4.1))
-        edna_pct = min(100, max(0, int(round((edna_val / 5.0) * 100))))
+        pareto_pct = min(100, max(0, safe_int(site_data.get("pareto_score", 85), 85)))
+        equil_pct = min(100, max(0, safe_int(site_data.get("air_sea_equil_pct", 88), 88)))
+        edna_val = safe_float(site_data.get("edna_shannon_index", 4.1), 4.1)
+        edna_pct = min(100, max(0, safe_int((edna_val / 5.0) * 100, 82)))
 
         def _svg_ring(pct: int, color: str, label: str, sub: str) -> str:
             dash = round((pct / 100.0) * 150.8, 1)
@@ -1521,20 +1600,20 @@ with col_ops:
 
         countdown_banner_html = (
             f"<div style='background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:8px;padding:6px 10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;'>"
-            f"<span style='font-size:0.80rem;font-weight:800;color:#991B1B;'>⏱️ LIVE SAR/FAI DRIFT ALERT: Beach &amp; Coral Impact in {site_data.get('hours_to_beach_impact', 36)} Hours</span>"
-            f"<span style='background:#DC2626;color:#FFFFFF;font-size:0.72rem;font-weight:800;padding:2px 8px;border-radius:999px;'>&gt;{site_data.get('pneumatocyst_crush_depth_m', 185)}m Crush Ready</span>"
+            f"<span style='font-size:0.80rem;font-weight:800;color:#991B1B;'>⏱️ LIVE SAR/FAI DRIFT ALERT: Beach &amp; Coral Impact in {safe_int(site_data.get('hours_to_beach_impact', 36), 36)} Hours</span>"
+            f"<span style='background:#DC2626;color:#FFFFFF;font-size:0.72rem;font-weight:800;padding:2px 8px;border-radius:999px;'>&gt;{safe_int(site_data.get('pneumatocyst_crush_depth_m', 185), 185)}m Crush Ready</span>"
             f"</div>"
             if is_sargassum_mode else
             f"<div style='background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:8px;padding:6px 10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;'>"
-            f"<span style='font-size:0.80rem;font-weight:800;color:#1E40AF;'>🌊 ABYSSAL TRENCH SINK: {site_data.get('trench_depth_m', 1850):,}m Depth ({site_data.get('trench_dist_km', 28)} km Offshore)</span>"
+            f"<span style='font-size:0.80rem;font-weight:800;color:#1E40AF;'>🌊 ABYSSAL TRENCH SINK: {safe_int(site_data.get('trench_depth_m', 2400), 2400):,}m Depth ({safe_float(site_data.get('trench_dist_km', site_data.get('abyssal_dist_km', 28.0)), 28.0):.1f} km Offshore)</span>"
             f"<span style='background:#1A73E8;color:#FFFFFF;font-size:0.72rem;font-weight:800;padding:2px 8px;border-radius:999px;'>100+ Yr Lock</span>"
             f"</div>"
         )
 
         extra_sarg_line = (
-            f"• <b style='color:#D93025;'>Sargassum Physics &amp; Arsenic Gate:</b> Beach Impact in <b>{site_data.get('hours_to_beach_impact', 36)}h</b> | Pneumatocyst Crush Depth: <b>&gt;{site_data.get('pneumatocyst_crush_depth_m', 185)}m</b> | Arsenic: <b>{site_data.get('arsenic_ppm', 62.0):.1f} ppm As</b> (Food Blocked -> Abyssal Sink &amp; Bio-Bricks) | Avoids <b>{site_data.get('methane_avoided_tco2e', 0):.1f} MT CO₂e Beach-Rot Methane (CH₄)</b> &amp; <b>{site_data.get('h2s_gas_avoided_mt', 0):.2f} MT H₂S gas</b><br/>"
+            f"• <b style='color:#D93025;'>Sargassum Physics &amp; Arsenic Gate:</b> Beach Impact in <b>{safe_int(site_data.get('hours_to_beach_impact', 36), 36)}h</b> | Pneumatocyst Crush Depth: <b>&gt;{safe_int(site_data.get('pneumatocyst_crush_depth_m', 185), 185)}m</b> | Arsenic: <b>{safe_float(site_data.get('arsenic_ppm', 62.0), 62.0):.1f} ppm As</b> (Food Blocked -> Abyssal Sink &amp; Bio-Bricks) | Avoids <b>{safe_float(site_data.get('methane_avoided_tco2e', 0)):.1f} MT CO₂e Beach-Rot Methane (CH₄)</b> &amp; <b>{safe_float(site_data.get('h2s_gas_avoided_mt', 0)):.2f} MT H₂S gas</b><br/>"
             if is_sargassum_mode else
-            f"• <b style='color:#1A73E8;'>Multi-Sensor &amp; IUCN Proof:</b> <b>{site_data.get('spectral_index_name', 'NDKI + FAI')}</b> (±{site_data.get('cloud_glint_ci_pct', 3.2)}% Glint/Cloud CI) | eDNA Shannon Diversity: <b>H' = {site_data.get('edna_shannon_index', 4.1)}</b><br/>"
+            f"• <b style='color:#1A73E8;'>Multi-Sensor &amp; IUCN Proof:</b> <b>{site_data.get('spectral_index_name', 'NDKI + FAI')}</b> (±{safe_float(site_data.get('cloud_glint_ci_pct', 3.2), 3.2)}% Glint/Cloud CI) | eDNA Shannon Diversity: <b>H' = {site_data.get('edna_shannon_index', 4.1)}</b><br/>"
         )
 
         bottom_line_txt = (
@@ -1569,7 +1648,7 @@ with col_ops:
         </div>
         """, unsafe_allow_html=True)
 
-        commons_share_pct = int(st.session_state.get("commons_share_slider", 8))
+        commons_share_pct = safe_int(st.session_state.get("commons_share_slider", 8), 8)
         permit_months = max(12, 36 - int(commons_share_pct * 2))
         qa1, qa2 = st.columns(2)
         if qa1.button("🚨 Intercept Sargassum & Mint Credits" if is_sargassum_mode else "🌿 Grow Kelp & Mint Credits", key="top_kelp_anim_btn", use_container_width=True, disabled=not is_sel_safe, help="Triggers activity-matched animation (Sargassum interception & >200m crush sinking in Mode 2; Kelp canopy growth in Mode 1) and simulates live non-demo credit minting!"):
@@ -1578,22 +1657,22 @@ with col_ops:
                 st.success(f"🚨 **Pelagic Sargassum Raft Intercepted & Sunk at {sel_site}!** Skimmed offshore via Sea-Turtle TED grid & pumped below `>200m` (`~20 bar`) pneumatocyst crush depth -> Minted **{site_data.get('net_bankable_co2')} MT Abyssal CO₂e** (`{site_data.get('abyssal_residence_yrs', 680)}-Yr τ_vent`) + **{site_data.get('methane_avoided_tco2e')} MT CO₂e Beach-Rot Methane Avoided** (= **{cars_off_road} cars/yr**).")
             else:
                 kelp_animation()
-                st.success(f"🌿 **Kelp Forest Grown & Verified at {sel_site}!** Minted **{site_data.get('net_bankable_co2')} MT CO₂e** (= **{cars_off_road} cars/yr**) + **{site_data.get('plastic_trash_tons', 0):.1f} MT Ocean Trash Credits** (`Ω_arag = {site_data.get('omega_aragonite', 2.85):.2f}`).")
+                st.success(f"🌿 **Kelp Forest Grown & Verified at {sel_site}!** Minted **{site_data.get('net_bankable_co2')} MT CO₂e** (= **{cars_off_road} cars/yr**) + **{safe_float(site_data.get('plastic_trash_tons', 0)):.1f} MT Ocean Trash Credits** (`Ω_arag = {safe_float(site_data.get('omega_aragonite', 2.85), 2.85):.2f}`).")
         if qa2.button("🤝 Initiate Maritime Permit Handshake" if is_sargassum_mode else "🤝 Initiate Lease Handshake", key="top_handshake_anim_btn", use_container_width=True, disabled=not is_sel_safe, help="Triggers the Permit Handshake animation and simulates live non-demo regulatory e-permitting & FPIC community escrow dispatch!"):
             handshake_animation()
             st.success(f"🤝 **Permit & Community Protocol Initiated for {sel_site}!** Fast-track NOAA, {'London Protocol Annex 4 / EPA MPRSA' if is_sargassum_mode else 'USACE / Coastal Commission'} & `{commons_share_pct}%` FPIC escrow pack dispatched.")
 
         btn1_title = "🚨 Intercept Sargassum & Mint Credits (Live Non-Demo Pipeline)" if is_sargassum_mode else "🌿 Grow Kelp & Mint Credits (Live Non-Demo Pipeline)"
         btn1_steps = (
-            f"<b>1) USV Autopilot Dispatch:</b> Sends NMEA-2000/AIS waypoints along 48h Sentinel-3 FAI + Sentinel-1 SAR drift vector ({site_data.get('lat'):.3f}°, {site_data.get('lon'):.3f}°). "
-            f"<b>2) Safe Interception & &gt;200m Crush:</b> Engages Hawksbill Sea-Turtle TED exclusion grid &amp; pumps biomass to <b>{int(site_data.get('pneumatocyst_crush_depth_m', 190))}m (~20 bar)</b> to collapse gas bladders for natural sinking to <b>{int(site_data.get('trench_depth_m', 2400)):,}m</b>. "
-            f"<b>3) Inline Toxicology &amp; Seafloor Gate:</b> Verifies Arsenic (<b>{site_data.get('arsenic_ppm', 62.0):.1f} ppm As</b> → blocks food/ag) &amp; SMART cable ΔO₂ (<b>{site_data.get('benthic_o2_delta_pct', -0.9)}%</b>, CH₄=0). "
+            f"<b>1) USV Autopilot Dispatch:</b> Sends NMEA-2000/AIS waypoints along 48h Sentinel-3 FAI + Sentinel-1 SAR drift vector ({safe_float(site_data.get('lat')):.3f}°, {safe_float(site_data.get('lon')):.3f}°). "
+            f"<b>2) Safe Interception & &gt;200m Crush:</b> Engages Hawksbill Sea-Turtle TED exclusion grid &amp; pumps biomass to <b>{safe_int(site_data.get('pneumatocyst_crush_depth_m', 190), 190)}m (~20 bar)</b> to collapse gas bladders for natural sinking to <b>{safe_int(site_data.get('trench_depth_m', 2400), 2400):,}m</b>. "
+            f"<b>3) Inline Toxicology &amp; Seafloor Gate:</b> Verifies Arsenic (<b>{safe_float(site_data.get('arsenic_ppm', 62.0), 62.0):.1f} ppm As</b> → blocks food/ag) &amp; SMART cable ΔO₂ (<b>{site_data.get('benthic_o2_delta_pct', -0.9)}%</b>, CH₄=0). "
             f"<b>4) Registry API Minting:</b> Mints <b>{site_data.get('net_bankable_co2')} MT CO₂e</b> + <b>{site_data.get('methane_avoided_tco2e')} MT CH₄ Avoided</b> via Isometric/Verra REST API &amp; logs SHA-256 seal to Spanner/BigQuery."
         ) if is_sargassum_mode else (
-            f"<b>1) Hatchery &amp; Mooring Telemetry:</b> Triggers multi-strain kelp spore-line tensioning across <b>{s_area_ha:.1f} HA</b> ({site_data.get('lat'):.3f}°, {site_data.get('lon'):.3f}°) with &gt;1.5km ICPC cable clearance (<b>{site_data.get('cable_dist_km')} km</b>). "
-            f"<b>2) 4-Tier Sensor Ingestion:</b> Pulls live GEE Sentinel-2 NDKI + Sentinel-1 SAR + ROV AI stipe density (<b>{site_data.get('rov_stipe_density', 14.2):.1f} stalks/m²</b>) &amp; perimeter trash boom load. "
-            f"<b>3) Biogeochemical Verification:</b> Confirms Revelle CO₂ equilibration, Aragonite saturation (<b>Ω_arag = {site_data.get('omega_aragonite', 2.85):.2f}</b>), &amp; oxic seafloor ΔO₂ (<b>{site_data.get('benthic_o2_delta_pct', -0.9)}%</b>). "
-            f"<b>4) Registry API Minting:</b> Mints <b>{site_data.get('net_bankable_co2')} MT CO₂e</b> + <b>{site_data.get('plastic_trash_tons', 0):.1f} MT Trash Credits</b> &amp; commits SHA-256 hash to Spanner/BigQuery."
+            f"<b>1) Hatchery &amp; Mooring Telemetry:</b> Triggers multi-strain kelp spore-line tensioning across <b>{s_area_ha:.1f} HA</b> ({safe_float(site_data.get('lat')):.3f}°, {safe_float(site_data.get('lon')):.3f}°) with &gt;1.5km ICPC cable clearance (<b>{site_data.get('cable_dist_km')} km</b>). "
+            f"<b>2) 4-Tier Sensor Ingestion:</b> Pulls live GEE Sentinel-2 NDKI + Sentinel-1 SAR + ROV AI stipe density (<b>{safe_float(site_data.get('rov_stipe_density', 14.2), 14.2):.1f} stalks/m²</b>) &amp; perimeter trash boom load. "
+            f"<b>3) Biogeochemical Verification:</b> Confirms Revelle CO₂ equilibration, Aragonite saturation (<b>Ω_arag = {safe_float(site_data.get('omega_aragonite', 2.85), 2.85):.2f}</b>), &amp; oxic seafloor ΔO₂ (<b>{site_data.get('benthic_o2_delta_pct', -0.9)}%</b>). "
+            f"<b>4) Registry API Minting:</b> Mints <b>{site_data.get('net_bankable_co2')} MT CO₂e</b> + <b>{safe_float(site_data.get('plastic_trash_tons', 0)):.1f} MT Trash Credits</b> &amp; commits SHA-256 hash to Spanner/BigQuery."
         )
         btn2_title = "🤝 Initiate Maritime Permit Handshake (Live Non-Demo Pipeline)" if is_sargassum_mode else "🤝 Initiate Lease Handshake (Live Non-Demo Pipeline)"
         btn2_steps = (
@@ -1619,14 +1698,14 @@ with col_ops:
         st.markdown(smart_card_html, unsafe_allow_html=True)
 
         with st.expander("🌊 Interactive Ocean Depth Cross-Section & Before/After Impact Profile", expanded=True):
-            crush_d = int(site_data.get("pneumatocyst_crush_depth_m", 190)) if is_sargassum_mode else 200
-            trench_d = int(site_data.get("trench_depth_m", 2400))
-            tau_yrs = int(site_data.get("abyssal_residence_yrs", 680))
+            crush_d = safe_int(site_data.get("pneumatocyst_crush_depth_m", 190), 190) if is_sargassum_mode else 200
+            trench_d = safe_int(site_data.get("trench_depth_m", 2400), 2400)
+            tau_yrs = safe_int(site_data.get("abyssal_residence_yrs", 680), 680)
             surf_desc = "Pelagic Sargassum Skimming + Turtle Escape Grid" if is_sargassum_mode else "Cultivated Canopy + +0.12 pH Halo + Trash Boom"
-            tot_bio_site = max(float(site_data.get("biomass_tons", 100.0)), 1.0)
-            sunk_mt_site = float(site_data.get("abyssal_sunk_mt", tot_bio_site * 0.65))
-            circ_mt_site = float(site_data.get("circular_surface_mt", tot_bio_site * 0.35))
-            sunk_pct = min(85, max(15, int(round((sunk_mt_site / tot_bio_site) * 100))))
+            tot_bio_site = max(safe_float(site_data.get("biomass_tons", 100.0), 100.0), 1.0)
+            sunk_mt_site = safe_float(site_data.get("abyssal_sunk_mt", tot_bio_site * 0.65), tot_bio_site * 0.65)
+            circ_mt_site = safe_float(site_data.get("circular_surface_mt", tot_bio_site * 0.35), tot_bio_site * 0.35)
+            sunk_pct = min(85, max(15, safe_int((sunk_mt_site / tot_bio_site) * 100, 65)))
             circ_pct = 100 - sunk_pct
             fate_left_lbl = f"⚓ {sunk_pct}% Abyssal Trench Sinking ({sunk_mt_site:.0f} MT → >{trench_d:,}m)"
             fate_right_lbl = (
@@ -1635,14 +1714,14 @@ with col_ops:
                 f"🧴 {circ_pct}% Bioplastics, Feed & Living Halo ({circ_mt_site:.0f} MT)"
             )
             without_b42 = (
-                f"Rots on beach in ~{int(site_data.get('hours_to_beach_impact', 36))}h • Emits <b>{site_data.get('methane_avoided_tco2e')} MT CO₂e CH₄</b> • Toxic H₂S &gt;85 ppb • <b>${site_data.get('averted_damage_millions')}M</b> reef/tourism loss"
+                f"Rots on beach in ~{safe_int(site_data.get('hours_to_beach_impact', 36), 36)}h • Emits <b>{site_data.get('methane_avoided_tco2e')} MT CO₂e CH₄</b> • Toxic H₂S &gt;85 ppb • <b>${site_data.get('averted_damage_millions')}M</b> reef/tourism loss"
                 if is_sargassum_mode else
                 f"0 MT carbon lock • Coastal acidification (pH 7.98) • Unabated storm wave damage (<b>${site_data.get('averted_damage_millions')}M/yr</b> at risk)"
             )
             with_b42 = (
-                f"Intercepted offshore • <b>{site_data.get('net_bankable_co2')} MT CO₂e</b> locked ({tau_yrs} yrs) • H₂S &lt;{site_data.get('shoreline_h2s_ppb', 1.8):.1f} ppb (WHO Safe) • <b>+{site_data.get('avoided_respiratory_visits_yr', 140)}</b> clinic visits avoided/yr"
+                f"Intercepted offshore • <b>{site_data.get('net_bankable_co2')} MT CO₂e</b> locked ({tau_yrs} yrs) • H₂S &lt;{safe_float(site_data.get('shoreline_h2s_ppb', 1.8), 1.8):.1f} ppb (WHO Safe) • <b>+{safe_int(site_data.get('avoided_respiratory_visits_yr', 140), 140)}</b> clinic visits avoided/yr"
                 if is_sargassum_mode else
-                f"<b>{site_data.get('net_bankable_co2')} MT CO₂e</b> locked ({tau_yrs} yrs) • +0.12 pH Halo (Ω_arag {site_data.get('omega_aragonite', 2.85):.2f}) • <b>{site_data.get('plastic_trash_tons', 0):.1f} MT</b> plastic removed/yr"
+                f"<b>{site_data.get('net_bankable_co2')} MT CO₂e</b> locked ({tau_yrs} yrs) • +0.12 pH Halo (Ω_arag {safe_float(site_data.get('omega_aragonite', 2.85), 2.85):.2f}) • <b>{safe_float(site_data.get('plastic_trash_tons', 0)):.1f} MT</b> plastic removed/yr"
             )
             depth_html = (
                 f"<div style='background-color:#F8FAFC !important;border-radius:12px;padding:12px 14px;color:#0F172A !important;border:2px solid #93C5FD;margin-bottom:4px;box-shadow:0 2px 8px rgba(15,23,42,0.05);'>"
@@ -1838,8 +1917,8 @@ with col_ops:
             - **Pneumatocyst Hydrostatic Compression Depth (`>150m–200m in Sargassum Mode`):** Floating *Sargassum* stays buoyant via tiny gas bladders (*pneumatocysts*). When pumped down to **185m–200m depth** (~20 bar hydrostatic pressure), those gas bladders permanently crush, making the seaweed negatively buoyant so it sinks naturally into **>1,000m–4,000m abyssal trenches** without energy-intensive mechanical baling!
             - **Inorganic Arsenic (`As`) Toxicity Gate (`Sargassum Safety Control`):** Pelagic *Sargassum* naturally hyper-accumulates **45–115 ppm of inorganic Arsenic (`As`)** and heavy metals from seawater, making it unsafe for food or agricultural fertilizer. Blue 42 automatically blocks food/feed sales in *Sargassum* Mode and routes biomass strictly to **>200m Abyssal Carbon Sinking** or **ASTM-Certified Mineralized Construction Bio-Bricks / Activated Biochar**.
             - **Coastal Public Health & Shoreline $\text{H}_2\text{S}$ Air-Quality Protection (`WHO <5 ppb Safe Standard`):** When *Sargassum* strands on beaches and rots anaerobically, it emits neurotoxic **Hydrogen Sulfide ($\text{H}_2\text{S}$) gas** (>50–200 ppb, causing coastal respiratory, neurological, and cardiovascular clinic surges) alongside potent **Methane ($\text{CH}_4$, 28x–80x warming of $\text{CO}_2$)**. Offshore interception keeps shoreline $\text{H}_2\text{S} < 5\text{ ppb}$ while our **Seafloor Oxic Guardrail ($\Delta\text{O}_2 < 2\%, \text{current} > 4.5\text{ cm/s}$)** guarantees zero deep-sea methanogenesis (`CH₄ Flux = 0.00 g/m²/yr`).
-            - **Multi-Sensor Spectral & SAR Fusion (`Nicholas Clinton & Katelyn Tarrio Alignment`):** Combines optical **Normalized Difference Kelp Index (NDKI)** and **Floating Algae Index (FAI)** with cloud-penetrating **Sentinel-1 C-Band SAR (Synthetic Aperture Radar)** surface roughness and **NASA PACE Hyperspectral Chlorophyll-a**, complete with a **$\pm\%$ Cloud/Sun-Glint Confidence Interval** and **Harmonic Seasonal Decomposition**.
-            - **IUCN Red List, eDNA & Bioacoustic Index (`Tanya Birch / Wildlife Insights Alignment`):** Measures real biodiversity recovery using **environmental DNA (eDNA) Shannon Diversity ($H'$)**, **passive hydrophone bioacoustic reef/forest soundscape gain ($+\text{dB}$)**, and multi-genotype spore banks to prevent monoculture genetic bottlenecks.
+            - **Multi-Sensor Spectral & SAR Fusion (`Google Earth Engine Multi-Sensor Standard`):** Combines optical **Normalized Difference Kelp Index (NDKI)** and **Floating Algae Index (FAI)** with cloud-penetrating **Sentinel-1 C-Band SAR (Synthetic Aperture Radar)** surface roughness and **NASA PACE Hyperspectral Chlorophyll-a**, complete with a **$\pm\%$ Cloud/Sun-Glint Confidence Interval** and **Harmonic Seasonal Decomposition**.
+            - **IUCN Red List, eDNA & Bioacoustic Index (`IUCN & Wildlife Insights Standard`):** Measures real biodiversity recovery using **environmental DNA (eDNA) Shannon Diversity ($H'$)**, **passive hydrophone bioacoustic reef/forest soundscape gain ($+\text{dB}$)**, and multi-genotype spore banks to prevent monoculture genetic bottlenecks.
             """)
 
         if not safe_df.empty:
@@ -2293,35 +2372,36 @@ with col_ops:
                 st.dataframe(pd.DataFrame(ctrl_rows), use_container_width=True, hide_index=True)
 
             def generate_expert_agent_response(user_q: str, s_data) -> str:
+                s_data = SafeSiteRecord(s_data)
                 q_low = user_q.lower()
-                s_id, status = s_data.get("id"), s_data.get("status")
-                area, pareto = float(s_data.get("area_ha", 0)), float(s_data.get("pareto_score", 0))
-                bio, net_c = float(s_data.get("biomass_tons", 0)), float(s_data.get("net_bankable_co2", 0))
-                c_dist, c_stat = float(s_data.get("cable_dist_km", 10.0)), s_data.get("smart_cable_status", "✅ Safe")
-                pah_ppm = float(s_data.get("pah_oil_ppm", 0.0))
-                as_ppm = float(s_data.get("arsenic_ppm", 1.9))
-                ch4_mt = float(s_data.get("methane_avoided_tco2e", 0.0))
-                trash_mt = float(s_data.get("plastic_trash_tons", 0.0))
-                nit_mt = float(s_data.get("nitrogen_tons", 0.0))
+                s_id, status = s_data.get("id", "K-1"), s_data.get("status", "✅ CLEARED (KELP KANDIDATE)")
+                area, pareto = safe_float(s_data.get("area_ha", 0), 40.0), safe_float(s_data.get("pareto_score", 0), 85.0)
+                bio, net_c = safe_float(s_data.get("biomass_tons", 0), 200.0), safe_float(s_data.get("net_bankable_co2", 0), 50.0)
+                c_dist, c_stat = safe_float(s_data.get("cable_dist_km", 10.0), 10.0), s_data.get("smart_cable_status", "✅ Safe")
+                pah_ppm = safe_float(s_data.get("pah_oil_ppm", 0.0), 0.0)
+                as_ppm = safe_float(s_data.get("arsenic_ppm", 1.9), 1.9)
+                ch4_mt = safe_float(s_data.get("methane_avoided_tco2e", 0.0), 0.0)
+                trash_mt = safe_float(s_data.get("plastic_trash_tons", 0.0), 0.0)
+                nit_mt = safe_float(s_data.get("nitrogen_tons", 0.0), 0.0)
                 site_capex = area * (11500.0 if s_data.get("is_sargassum") else 15000.0)
-                site_opex = (area * (1650.0 if s_data.get("is_sargassum") else 2000.0)) + float(s_data.get("sinking_cost", 0))
+                site_opex = (area * (1650.0 if s_data.get("is_sargassum") else 2000.0)) + safe_float(s_data.get("sinking_cost", 0), 0.0)
                 gross_rev = (net_c * 150.0) + ((ch4_mt * 85.0) if s_data.get("is_sargassum") else 0.0) + (bio * (180.0 if s_data.get("is_sargassum") else 300.0)) + (area * 1500.0) + (nit_mt * 2000.0) + (trash_mt * 850.0)
                 site_net_yr = (gross_rev * 0.92) - site_opex
 
                 if any(k in q_low for k in ["sargassum", "methane", "ch4", "arsenic", "pneumatocyst", "beach", "h2s", "health", "respiratory"]):
                     return (
                         f"### 🚨 Pelagic *Sargassum* Interception, Pneumatocyst Sinking, Methane & Public Health — **{s_id}**\n"
-                        f"- **1. Dynamic FAI Drift & Beach Countdown:** Tracked via **{s_data.get('spectral_index_name')}** (`±{s_data.get('cloud_glint_ci_pct')}% CI`). Without offshore interception, this raft impacts coral reefs & beaches in **`{s_data.get('hours_to_beach_impact', 36)} hours`**.\n"
-                        f"- **2. >200m Pneumatocyst Compression & Residence Time:** Pumping pelagic *Sargassum* down to **`>{s_data.get('pneumatocyst_crush_depth_m', 185)}m`** (~20 bar hydrostatic pressure) crushes its gas bladders (*pneumatocysts*), sinking it into `>{s_data.get('trench_depth_m', 2400):,}m` abyssal water masses with a **`{s_data.get('abyssal_residence_yrs', 740)}-Year Ventilation Residence Time (τ_vent)`**.\n"
-                        f"- **3. Coastal Methane ($\text{{CH}}_4$) & WHO `<5 ppb` $\text{{H}}_2\text{{S}}$ Air-Quality Protection:** Intercepting this raft at sea prevents anaerobic beach-rot emissions of **`{ch4_mt:.1f} MT CO₂e/yr of Methane`** and **`{s_data.get('h2s_gas_avoided_mt', 0):.2f} MT of neurotoxic H₂S gas`**, keeping shoreline air at **`{s_data.get('shoreline_h2s_ppb', 1.8):.1f} ppb H₂S`** (`<5 ppb` WHO safe limit) and avoiding **`~{s_data.get('avoided_respiratory_visits_yr', 420):,} coastal respiratory clinic visits/yr`**.\n"
+                        f"- **1. Dynamic FAI Drift & Beach Countdown:** Tracked via **{s_data.get('spectral_index_name')}** (`±{s_data.get('cloud_glint_ci_pct')}% CI`). Without offshore interception, this raft impacts coral reefs & beaches in **`{safe_int(s_data.get('hours_to_beach_impact', 36), 36)} hours`**.\n"
+                        f"- **2. >200m Pneumatocyst Compression & Residence Time:** Pumping pelagic *Sargassum* down to **`>{safe_int(s_data.get('pneumatocyst_crush_depth_m', 185), 185)}m`** (~20 bar hydrostatic pressure) crushes its gas bladders (*pneumatocysts*), sinking it into `>{safe_int(s_data.get('trench_depth_m', 2400), 2400):,}m` abyssal water masses with a **`{safe_int(s_data.get('abyssal_residence_yrs', 740), 740)}-Year Ventilation Residence Time (τ_vent)`**.\n"
+                        f"- **3. Coastal Methane ($\\text{{CH}}_4$) & WHO `<5 ppb` $\\text{{H}}_2\\text{{S}}$ Air-Quality Protection:** Intercepting this raft at sea prevents anaerobic beach-rot emissions of **`{ch4_mt:.1f} MT CO₂e/yr of Methane`** and **`{safe_float(s_data.get('h2s_gas_avoided_mt', 0), 0.0):.2f} MT of neurotoxic H₂S gas`**, keeping shoreline air at **`{safe_float(s_data.get('shoreline_h2s_ppb', 1.8), 1.8):.1f} ppb H₂S`** (`<5 ppb` WHO safe limit) and avoiding **`~{safe_int(s_data.get('avoided_respiratory_visits_yr', 420), 420):,} coastal respiratory clinic visits/yr`**.\n"
                         f"- **4. Inorganic Arsenic (`As`) Gate:** Reading is **`{as_ppm:.1f} ppm As`**. Food/fertilizer pathways are automatically blocked in *Sargassum* Mode; biomass is routed strictly to **>200m Abyssal Sinking** or **ASTM-Certified Mineralized Construction Bio-Bricks**."
                     )
                 if any(k in q_low for k in ["untapped", "known", "new site", "frontier", "ghost forest", "discover", "historic", "expert", "biodiversity", "edna", "sar", "aragonite"]):
                     return (
                         f"### 🧭 Site Discovery, Multi-Sensor Remote Sensing, Aragonite & IUCN Biodiversity — **{s_id}**\n"
                         f"- **Selected Classification:** **{s_data.get('site_category')}** — {s_data.get('discovery_basis')}\n"
-                        f"- **Multi-Sensor Remote Sensing (Nicholas Clinton & Katelyn Tarrio Standard):** Fuses **{s_data.get('spectral_index_name')}** (`{s_data.get('ndki_fai_val')}`, `±{s_data.get('cloud_glint_ci_pct')}%` glint/cloud CI) with cloud-penetrating **Sentinel-1 C-Band SAR** (`{s_data.get('sar_roughness_db')} dB`) and **NASA PACE Hyperspectral Chl-a** (`{s_data.get('pace_chla_mg_m3')} mg/m³`).\n"
-                        f"- **IUCN, eDNA, Aragonite ($\\Omega_{{\\text{{arag}}}}$) & Bioacoustics:** Protects **{s_data.get('iucn_keystone_species')}**, elevates **Aragonite Saturation State to `Ω_arag = {s_data.get('omega_aragonite', 2.85):.2f}`** (`+0.12 pH`), and is verified by **eDNA Shannon Index `H' = {s_data.get('edna_shannon_index')}`** and **`+{s_data.get('bioacoustic_db_gain')} dB` hydrophone soundscape recovery**."
+                        f"- **Multi-Sensor Remote Sensing (Google Earth Engine Multi-Sensor Standard):** Fuses **{s_data.get('spectral_index_name')}** (`{s_data.get('ndki_fai_val')}`, `±{s_data.get('cloud_glint_ci_pct')}%` glint/cloud CI) with cloud-penetrating **Sentinel-1 C-Band SAR** (`{s_data.get('sar_roughness_db')} dB`) and **NASA PACE Hyperspectral Chl-a** (`{s_data.get('pace_chla_mg_m3')} mg/m³`).\n"
+                        f"- **IUCN, eDNA, Aragonite ($\\Omega_{{\\text{{arag}}}}$) & Bioacoustics:** Protects **{s_data.get('iucn_keystone_species')}**, elevates **Aragonite Saturation State to `Ω_arag = {safe_float(s_data.get('omega_aragonite', 2.85), 2.85):.2f}`** (`+0.12 pH`), and is verified by **eDNA Shannon Index `H' = {s_data.get('edna_shannon_index')}`** and **`+{s_data.get('bioacoustic_db_gain')} dB` hydrophone soundscape recovery**."
                     )
                 if any(k in q_low for k in ["oil", "spill", "trash", "plastic", "garbage", "pollution", "waste", "ghost", "pah"]):
                     return (
